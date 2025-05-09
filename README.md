@@ -2,6 +2,8 @@
 
 LLMIR is a compiler infrastructure for large language models based on MLIR (Multi-Level Intermediate Representation), designed to optimize and accelerate LLM inference through compilation techniques.
 
+**Project Website**: [https://chenxingqiang.github.io/llmir-www/](https://chenxingqiang.github.io/llmir-www/)
+
 ## Overview
 
 LLMIR provides a unified intermediate representation layer for large language models, enhancing inference performance through specialized optimizations. It integrates capabilities from high-performance inference frameworks like vLLM and SGLang with MLIR's compilation infrastructure.
@@ -67,6 +69,15 @@ LLMIR follows a layered architecture:
    - Attention computation fusion
    - Quantization support
 
+## Resources
+
+- **Project Website**: [https://chenxingqiang.github.io/llmir-www/](https://chenxingqiang.github.io/llmir-www/)
+- **GitHub Repository**: [https://github.com/chenxingqiang/llmir](https://github.com/chenxingqiang/llmir)
+- **Documentation**: Available on the [project website](https://chenxingqiang.github.io/llmir-www/)
+- **Community**: 
+  - Forums: LLVM forums LLMIR section
+  - Chat: LLVM Discord server (LLMIR channel)
+
 ## Getting Started
 
 ### Prerequisites
@@ -80,7 +91,7 @@ LLMIR follows a layered architecture:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/llmir.git
+git clone https://github.com/chenxingqiang/llmir.git
 cd llmir
 
 # Create build directory
