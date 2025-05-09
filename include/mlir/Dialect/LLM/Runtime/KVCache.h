@@ -48,12 +48,28 @@ struct PairHash {
   }
 };
 
+/// Struct to track sequence information in the KV cache
+struct SequenceInfo {
+  // Current position in the sequence
+  int64_t currentPos = 0;
+  
+  // Block indices and positions within blocks for this sequence
+  std::vector<std::pair<int32_t, int64_t>> blockPositions;
+  
+  // Reference to the last active block
+  int32_t lastBlockIdx = -1;
+  
+  // Position within the last block
+  int64_t posInLastBlock = 0;
+};
+
 /// Represents a block of KV cache with a fixed block size
 class KVBlock {
 public:
   /// Constructor
   KVBlock(void* keyPtr, void* valuePtr, int64_t blockSize, int64_t headDim)
-      : keyPtr(keyPtr), valuePtr(valuePtr), blockSize(blockSize), headDim(headDim) {}
+      : keyPtr(keyPtr), valuePtr(valuePtr), blockSize(blockSize), headDim(headDim),
+        usedSlots(0), refCount(0) {}
 
   /// Get the pointer to key storage
   void* getKeyPtr() const { return keyPtr; }
@@ -66,12 +82,41 @@ public:
 
   /// Get head dimension size
   int64_t getHeadDim() const { return headDim; }
+  
+  /// Get number of used slots in this block
+  int64_t getUsedSlots() const { return usedSlots; }
+  
+  /// Increment used slots count
+  void incrementUsedSlots(int64_t count = 1) { usedSlots += count; }
+  
+  /// Reset used slots count
+  void resetUsedSlots() { usedSlots = 0; }
+  
+  /// Check if block is full
+  bool isFull() const { return usedSlots >= blockSize; }
+  
+  /// Get the reference count
+  int32_t getRefCount() const { return refCount; }
+  
+  /// Increment reference count
+  void incrementRefCount() { refCount++; }
+  
+  /// Decrement reference count
+  bool decrementRefCount() { 
+    if (refCount > 0) {
+      refCount--;
+      return true;
+    }
+    return false;
+  }
 
 private:
   void* keyPtr;
   void* valuePtr;
   int64_t blockSize;
   int64_t headDim;
+  int64_t usedSlots;
+  int32_t refCount;
 };
 
 /// Block allocator for KV cache
@@ -89,12 +134,30 @@ public:
 
   /// Free a KV block
   void freeBlock(KVBlock* block);
+  
+  /// Get block by index
+  KVBlock* getBlock(int32_t blockIdx) const;
 
   /// Get number of allocated blocks
   int64_t getNumAllocatedBlocks() const { return allocatedBlocks.size(); }
 
   /// Get number of free blocks
   int64_t getNumFreeBlocks() const { return freeBlocks.size(); }
+  
+  /// Get element type size
+  int64_t getElementTypeSize() const;
+  
+  /// Get block size
+  int64_t getBlockSize() const { return blockSize; }
+  
+  /// Get number of heads
+  int64_t getNumHeads() const { return numHeads; }
+  
+  /// Get head dimension
+  int64_t getHeadDim() const { return headDim; }
+  
+  /// Get element type
+  Type getElementType() const { return elementType; }
   
   // Make allocatedBlocks public for testing
   std::vector<KVBlock*> allocatedBlocks;
@@ -131,6 +194,12 @@ public:
   /// Lookup key-value pairs from the cache
   LogicalResult lookupKV(const int32_t* blockIndices, const int32_t* seqLens,
                         int64_t batchSize, void* outputKeys, void* outputValues);
+                        
+  /// Clear sequence data from the cache                    
+  LogicalResult clearSequence(int32_t seqId);
+  
+  /// Reset the entire cache
+  void reset();
 
   /// Get the number of layers
   int64_t getNumLayers() const { return numLayers; }
@@ -149,6 +218,15 @@ public:
 
   /// Get the element type
   Type getElementType() const { return elementType; }
+  
+  /// Get the total memory usage in bytes
+  int64_t getTotalMemoryUsage() const;
+  
+  /// Get the number of sequences currently in the cache
+  int64_t getNumSequences() const;
+  
+  /// Get the number of tokens for a sequence
+  int64_t getSequenceLength(int32_t seqId) const;
 
 private:
   int64_t numLayers;
@@ -162,12 +240,28 @@ private:
   // One block allocator per layer
   std::vector<std::unique_ptr<BlockAllocator>> blockAllocators;
 
-  // Maps sequence IDs to their block indices and positions
+  // Maps sequence IDs to their information per layer
   // Key: (sequenceId, layerIdx)
-  // Value: vector of (blockIdx, posInBlock) pairs for this sequence
+  // Value: SequenceInfo containing current position and block mappings
   std::unordered_map<std::pair<int32_t, int64_t>, 
-                     std::vector<std::pair<int32_t, int64_t>>, 
-                     PairHash> seqToBlocks;
+                     SequenceInfo,
+                     PairHash> seqInfo;
+                     
+  // Helper methods
+  
+  // Copy key-value data to a specific position in a block
+  LogicalResult copyToBlock(KVBlock* block, int64_t posInBlock,
+                           const void* keyPtr, const void* valuePtr,
+                           int64_t tokenOffset, int64_t numTokens);
+                           
+  // Copy key-value data from a specific position in a block
+  LogicalResult copyFromBlock(const KVBlock* block, int64_t posInBlock,
+                             void* outputKeys, void* outputValues,
+                             int64_t tokenOffset, int64_t numTokens);
+                             
+  // Allocate a new block for a sequence in a specific layer
+  LogicalResult allocateBlockForSequence(int32_t seqId, int64_t layerIdx,
+                                        int32_t& blockIdx);
 };
 
 } // namespace runtime

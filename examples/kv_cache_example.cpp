@@ -1,4 +1,4 @@
-//===- kv_cache_example.cpp - Example using KV cache runtime -----*- C++ -*-===//
+//===- kv_cache_example.cpp - Example of using PagedKVCache -------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,159 +6,191 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file provides an example of using the LLM KV cache runtime.
+// This file contains an example of using the PagedKVCache runtime library.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/LLM/Runtime/KVCache.h"
-#include "mlir/IR/BuiltinTypes.h"
-#include "mlir/Support/LogicalResult.h"
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
+#include <vector>
+#include <cstdint>
+#include <memory>
+#include <random>
 
-using namespace mlir;
 using namespace mlir::llm::runtime;
 
-// A simple Type implementation for testing
-class SimpleType : public mlir::Type {
+// Mock Type class for testing in a standalone example
+namespace mlir {
+class Type {
 public:
-  SimpleType() : mlir::Type() {}
+  Type() = default;
+  int getIntOrFloatBitWidth() const { return 16; } // Simulate f16 type
+  bool isF16() const { return true; }
 };
 
-void printLine(const char* message) {
-  std::cout << "----------------------------------------" << std::endl;
-  std::cout << message << std::endl;
-  std::cout << "----------------------------------------" << std::endl;
+// Simplified LogicalResult definition
+class LogicalResult {
+  bool success;
+  
+public:
+  LogicalResult(bool success = true) : success(success) {}
+  
+  bool succeeded() const { return success; }
+  bool failed() const { return !success; }
+  
+  static LogicalResult success() { return LogicalResult(true); }
+  static LogicalResult failure() { return LogicalResult(false); }
+};
+
+inline LogicalResult success() { return LogicalResult::success(); }
+inline LogicalResult failure() { return LogicalResult::failure(); }
+inline bool succeeded(LogicalResult result) { return result.succeeded(); }
+inline bool failed(LogicalResult result) { return result.failed(); }
+} // namespace mlir
+
+// Helper function to print tensor information
+template <typename T>
+void printTensorInfo(const std::vector<T>& data, const std::string& name, int64_t batchSize, int64_t seqLen, int64_t numHeads, int64_t headDim) {
+  std::cout << name << " tensor shape: [" << batchSize << ", " << seqLen << ", " << numHeads << ", " << headDim << "]" << std::endl;
+  std::cout << "First few values: ";
+  for (size_t i = 0; i < std::min(size_t(5), data.size()); i++) {
+    std::cout << data[i] << " ";
+  }
+  std::cout << "..." << std::endl;
 }
 
 int main() {
-  printLine("LLM KV Cache Example");
-  
-  // Create a simple f16 type for testing
-  SimpleType f16Type;
-  
-  // Configuration
-  const int64_t numLayers = 12;
-  const int64_t numHeads = 16;
+  // Configuration for the KV cache
+  const int64_t numLayers = 2;
+  const int64_t numHeads = 12;
   const int64_t headDim = 64;
   const int64_t blockSize = 16;
   const int64_t maxSeqLen = 4096;
-  const int64_t batchSize = 2;
-  const int64_t seqLen = 1;
+  const bool useGPU = false; // Use CPU for this example
   
-  std::cout << "Creating KV cache with configuration:" << std::endl;
+  // Create a PagedKVCache
+  mlir::Type elementType;
+  auto kvCache = std::make_unique<PagedKVCache>(
+      numLayers, numHeads, headDim, blockSize, maxSeqLen, elementType, useGPU);
+  
+  std::cout << "Created PagedKVCache with:" << std::endl;
   std::cout << "  Layers: " << numLayers << std::endl;
   std::cout << "  Heads: " << numHeads << std::endl;
   std::cout << "  Head Dimension: " << headDim << std::endl;
   std::cout << "  Block Size: " << blockSize << std::endl;
   std::cout << "  Max Sequence Length: " << maxSeqLen << std::endl;
   
-  // Create the paged KV cache
-  PagedKVCache cache(numLayers, numHeads, headDim, blockSize, maxSeqLen, f16Type);
+  // Simulate a batch of queries for autoregressive generation
+  const int64_t batchSize = 2;
+  const int64_t seqLen = 1; // Autoregressive generation generates one token at a time
   
-  // Prepare test data - two different sequences
-  const size_t keyValueSize = batchSize * seqLen * numHeads * headDim * sizeof(float);
-  void* keyData = malloc(keyValueSize);
-  void* valueData = malloc(keyValueSize);
+  // Create random query data
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<float> dist(-1.0, 1.0);
   
-  // Set some pattern in the data for verification
-  for (size_t i = 0; i < keyValueSize; i++) {
-    static_cast<unsigned char*>(keyData)[i] = i % 256;
-    static_cast<unsigned char*>(valueData)[i] = (i + 128) % 256;
+  std::vector<float> keyData(batchSize * seqLen * numHeads * headDim);
+  std::vector<float> valueData(batchSize * seqLen * numHeads * headDim);
+  
+  // Fill with random data
+  for (size_t i = 0; i < keyData.size(); i++) {
+    keyData[i] = dist(gen);
+    valueData[i] = dist(gen);
   }
   
-  // Two different sequence IDs
-  int32_t seqIds[batchSize] = {100, 200};
+  // Print tensor information
+  printTensorInfo(keyData, "Key", batchSize, seqLen, numHeads, headDim);
+  printTensorInfo(valueData, "Value", batchSize, seqLen, numHeads, headDim);
   
-  // Output block indices
-  int32_t blockIndices[batchSize * seqLen * numLayers];
+  // Sequence IDs for the batch
+  std::vector<int32_t> seqIds = {100, 101};
   
-  printLine("Appending KV pairs to the cache");
+  // Block indices will be filled by appendKV
+  std::vector<int32_t> blockIndices(numLayers * batchSize * seqLen);
   
-  // Append KV pairs
-  LogicalResult appendResult = cache.appendKV(
-      keyData, valueData, batchSize, seqLen, seqIds, blockIndices);
+  // Simulate generating multiple tokens autoregressively
+  const int numGenerationSteps = 10;
   
-  if (failed(appendResult)) {
-    std::cerr << "Failed to append KV pairs!" << std::endl;
-    return 1;
+  // Store block indices for each step and layer
+  std::vector<std::vector<std::vector<int32_t>>> savedBlockIndices(
+      numLayers, std::vector<std::vector<int32_t>>(
+          batchSize, std::vector<int32_t>(numGenerationSteps)));
+  
+  for (int step = 0; step < numGenerationSteps; step++) {
+    std::cout << "\nGeneration step " << step + 1 << std::endl;
+    
+    // Append the current KV pairs to the cache
+    mlir::LogicalResult result = kvCache->appendKV(
+        keyData.data(), valueData.data(), batchSize, seqLen,
+        seqIds.data(), blockIndices.data());
+    
+    if (mlir::failed(result)) {
+      std::cerr << "Failed to append KV pairs!" << std::endl;
+      return 1;
+    }
+    
+    // Save the block indices for later lookup
+    for (int layer = 0; layer < numLayers; layer++) {
+      for (int b = 0; b < batchSize; b++) {
+        int idx = layer * batchSize * seqLen + b * seqLen + 0; // 0 because seqLen=1
+        savedBlockIndices[layer][b][step] = blockIndices[idx];
+      }
+    }
+    
+    // Print sequence lengths after append
+    for (int i = 0; i < batchSize; i++) {
+      std::cout << "Sequence " << seqIds[i] << " length: " 
+                << kvCache->getSequenceLength(seqIds[i]) << std::endl;
+    }
+    
+    // Generate new random KV pairs for the next step
+    for (size_t i = 0; i < keyData.size(); i++) {
+      keyData[i] = dist(gen);
+      valueData[i] = dist(gen);
+    }
   }
   
-  std::cout << "Successfully appended KV pairs" << std::endl;
-  std::cout << "Block indices for the first token of the first sequence: " << blockIndices[0] << std::endl;
-  std::cout << "Block indices for the first token of the second sequence: " << blockIndices[1] << std::endl;
+  // Lookup the full cached sequences
+  std::vector<int32_t> seqLens = {numGenerationSteps, numGenerationSteps};
+  std::vector<int32_t> allBlockIndices(numLayers * batchSize * numGenerationSteps);
+  std::vector<float> outputKeys(batchSize * numGenerationSteps * numHeads * headDim);
+  std::vector<float> outputValues(batchSize * numGenerationSteps * numHeads * headDim);
   
-  // Add one more token to the first sequence
-  printLine("Appending one more token to the first sequence");
-  
-  int32_t seqId2[1] = {100};
-  int32_t blockIndices2[1 * seqLen * numLayers];
-  
-  // Append KV pairs
-  LogicalResult appendResult2 = cache.appendKV(
-      keyData, valueData, 1, seqLen, seqId2, blockIndices2);
-  
-  if (failed(appendResult2)) {
-    std::cerr << "Failed to append KV pairs for the second token!" << std::endl;
-    return 1;
+  // Build a block indices tensor using the saved block indices
+  for (int layer = 0; layer < numLayers; layer++) {
+    for (int b = 0; b < batchSize; b++) {
+      for (int t = 0; t < numGenerationSteps; t++) {
+        int32_t blockIdx = savedBlockIndices[layer][b][t];
+        allBlockIndices[layer * batchSize * numGenerationSteps + b * numGenerationSteps + t] = blockIdx;
+      }
+    }
   }
   
-  std::cout << "Successfully appended the second token" << std::endl;
-  std::cout << "Block indices for the second token of the first sequence: " << blockIndices2[0] << std::endl;
+  // Lookup all KV pairs
+  mlir::LogicalResult lookupResult = kvCache->lookupKV(
+      allBlockIndices.data(), seqLens.data(), batchSize,
+      outputKeys.data(), outputValues.data());
   
-  // Retrieve the KV pairs for the sequences
-  printLine("Looking up KV pairs from the cache");
-  
-  // Allocate memory for lookup results
-  const size_t lookupSize = batchSize * 2 * numHeads * headDim * sizeof(float); // 2 tokens for each sequence
-  void* lookupKeys = malloc(lookupSize);
-  void* lookupValues = malloc(lookupSize);
-  memset(lookupKeys, 0, lookupSize);
-  memset(lookupValues, 0, lookupSize);
-  
-  // Sequence lengths for lookup - first sequence has 2 tokens, second has 1
-  int32_t seqLens[batchSize] = {2, 1};
-  
-  // Combine block indices for lookup
-  int32_t combinedIndices[batchSize * 2]; // Space for 2 tokens per sequence
-  combinedIndices[0] = blockIndices[0];  // First token of first sequence
-  combinedIndices[1] = blockIndices2[0]; // Second token of first sequence
-  combinedIndices[2] = blockIndices[1];  // First token of second sequence
-  combinedIndices[3] = 0;                // Padding
-  
-  // Look up KV pairs
-  LogicalResult lookupResult = cache.lookupKV(
-      combinedIndices, seqLens, batchSize, lookupKeys, lookupValues);
-  
-  if (failed(lookupResult)) {
+  if (mlir::failed(lookupResult)) {
     std::cerr << "Failed to lookup KV pairs!" << std::endl;
     return 1;
   }
   
-  std::cout << "Successfully looked up KV pairs" << std::endl;
+  std::cout << "\nSuccessfully looked up KV pairs for " << numGenerationSteps 
+            << " tokens per sequence" << std::endl;
   
-  // Verify a few values
-  unsigned char* keysData = static_cast<unsigned char*>(lookupKeys);
-  unsigned char* valuesData = static_cast<unsigned char*>(lookupValues);
+  // Print memory usage
+  std::cout << "\nTotal memory usage: " << kvCache->getTotalMemoryUsage() 
+            << " bytes" << std::endl;
   
-  std::cout << "First byte of first token key: " << static_cast<int>(keysData[0]) << std::endl;
-  std::cout << "First byte of first token value: " << static_cast<int>(valuesData[0]) << std::endl;
+  // Clean up by clearing sequences
+  for (int32_t seqId : seqIds) {
+    kvCache->clearSequence(seqId);
+  }
   
-  // Calculate offset to second token of first sequence
-  size_t tokenSize = numHeads * headDim * sizeof(float);
-  std::cout << "First byte of second token key: " << static_cast<int>(keysData[tokenSize]) << std::endl;
-  std::cout << "First byte of second token value: " << static_cast<int>(valuesData[tokenSize]) << std::endl;
+  std::cout << "Sequences cleared. Total sequences remaining: " 
+            << kvCache->getNumSequences() << std::endl;
   
-  // Clean up
-  free(keyData);
-  free(valueData);
-  free(lookupKeys);
-  free(lookupValues);
-  
-  printLine("KV Cache Example Complete");
-  
+  std::cout << "Example completed successfully!" << std::endl;
   return 0;
 } 
