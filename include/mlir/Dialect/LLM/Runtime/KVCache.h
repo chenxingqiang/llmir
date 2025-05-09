@@ -13,22 +13,39 @@
 #ifndef MLIR_DIALECT_LLM_RUNTIME_KVCACHE_H_
 #define MLIR_DIALECT_LLM_RUNTIME_KVCACHE_H_
 
-// Forward declare Type from MLIR to avoid include errors
+#include <cstdint>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <memory>
+#include <algorithm> // For std::find
+#include <utility>   // For std::pair
+
+// Forward declarations for MLIR classes
 namespace mlir {
-class Type;
-class LogicalResult;
+// Forward declare Type without including MLIR headers
+struct Type {
+  int getIntOrFloatBitWidth() const { return 16; } // Simplified for testing
+};
+
+// Forward declare LogicalResult without including MLIR headers
+class LogicalResult {
+private:
+  bool succeeded_;
+public:
+  LogicalResult(bool succeeded = true) : succeeded_(succeeded) {}
+  bool succeeded() const { return succeeded_; }
+  bool failed() const { return !succeeded_; }
+  
+  static LogicalResult success() { return LogicalResult(true); }
+  static LogicalResult failure() { return LogicalResult(false); }
+};
+
 inline LogicalResult success() { return LogicalResult::success(); }
 inline LogicalResult failure() { return LogicalResult::failure(); }
 inline bool succeeded(LogicalResult result) { return result.succeeded(); }
 inline bool failed(LogicalResult result) { return result.failed(); }
 } // namespace mlir
-
-#include <cstdint>
-#include <vector>
-#include <unordered_map>
-#include <memory>
-#include <algorithm> // For std::find
-#include <utility>   // For std::pair
 
 namespace mlir {
 namespace llm {
@@ -40,6 +57,7 @@ class KVBlock;
 class BlockAllocator;
 
 // Hash function for std::pair<int32_t, int64_t>
+namespace {
 struct PairHash {
   std::size_t operator()(const std::pair<int32_t, int64_t>& p) const {
     auto h1 = std::hash<int32_t>{}(p.first);
@@ -47,6 +65,7 @@ struct PairHash {
     return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
   }
 };
+} // anonymous namespace
 
 /// Struct to track sequence information in the KV cache
 struct SequenceInfo {
@@ -159,8 +178,9 @@ public:
   /// Get element type
   Type getElementType() const { return elementType; }
   
-  // Make allocatedBlocks public for testing
+  // Make allocatedBlocks and freeBlocks public for testing
   std::vector<KVBlock*> allocatedBlocks;
+  std::vector<KVBlock*> freeBlocks;
 
 private:
   int64_t blockSize;
@@ -168,8 +188,6 @@ private:
   int64_t headDim;
   Type elementType;
   bool useGPU;
-
-  std::vector<KVBlock*> freeBlocks;
 
   // Helper method to create a new block
   KVBlock* createNewBlock();

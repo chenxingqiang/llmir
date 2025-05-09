@@ -20,6 +20,7 @@
 #include <array>
 #include <algorithm> // For std::find
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <stdexcept>
 
@@ -30,7 +31,7 @@ namespace runtime {
 namespace {
 // Helper function to get the size in bytes for a type
 // This is a simplified version for testing without actual MLIR Type definitions
-int64_t getTypeSizeInBytes(Type type) {
+int64_t getTypeSizeInBytes(const Type& type) {
   // Since we can't access the actual Type methods due to forward declaration,
   // we'll return a default value for testing
   return 2; // Default to 2 bytes (f16)
