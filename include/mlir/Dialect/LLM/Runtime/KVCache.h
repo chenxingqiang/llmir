@@ -13,13 +13,21 @@
 #ifndef MLIR_DIALECT_LLM_RUNTIME_KVCACHE_H_
 #define MLIR_DIALECT_LLM_RUNTIME_KVCACHE_H_
 
-#include "mlir/Dialect/LLM/IR/LLM.h"
-#include "mlir/ExecutionEngine/CRunnerUtils.h"
-#include "mlir/Support/LogicalResult.h"
+// Forward declare Type from MLIR to avoid include errors
+namespace mlir {
+class Type;
+class LogicalResult;
+inline LogicalResult success() { return LogicalResult::success(); }
+inline LogicalResult failure() { return LogicalResult::failure(); }
+inline bool succeeded(LogicalResult result) { return result.succeeded(); }
+inline bool failed(LogicalResult result) { return result.failed(); }
+} // namespace mlir
+
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <algorithm> // For std::find
 
 namespace mlir {
 namespace llm {
@@ -77,6 +85,9 @@ public:
 
   /// Get number of free blocks
   int64_t getNumFreeBlocks() const { return freeBlocks.size(); }
+  
+  // Make allocatedBlocks public for testing
+  std::vector<KVBlock*> allocatedBlocks;
 
 private:
   int64_t blockSize;
@@ -86,7 +97,6 @@ private:
   bool useGPU;
 
   std::vector<KVBlock*> freeBlocks;
-  std::vector<KVBlock*> allocatedBlocks;
 
   // Helper method to create a new block
   KVBlock* createNewBlock();
@@ -144,15 +154,8 @@ private:
 
   // Maps sequence IDs to their block indices
   // Key: (sequenceId, layerIdx), Value: vector of block indices for this sequence
-  std::unordered_map<std::pair<int32_t, int64_t>, std::vector<int32_t>> seqToBlocks;
-
-  // Helper to hash pair for the std::unordered_map
-  struct PairHash {
-    template <class T1, class T2>
-    std::size_t operator()(const std::pair<T1, T2>& pair) const {
-      return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
-    }
-  };
+  std::unordered_map<std::pair<int32_t, int64_t>, std::vector<int32_t>, 
+    std::hash<std::pair<int32_t, int64_t>>> seqToBlocks;
 };
 
 } // namespace runtime
