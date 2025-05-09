@@ -28,6 +28,7 @@ inline bool failed(LogicalResult result) { return result.failed(); }
 #include <unordered_map>
 #include <memory>
 #include <algorithm> // For std::find
+#include <utility>   // For std::pair
 
 namespace mlir {
 namespace llm {
@@ -37,6 +38,15 @@ namespace runtime {
 class PagedKVCache;
 class KVBlock;
 class BlockAllocator;
+
+// Hash function for std::pair<int32_t, int64_t>
+struct PairHash {
+  std::size_t operator()(const std::pair<int32_t, int64_t>& p) const {
+    auto h1 = std::hash<int32_t>{}(p.first);
+    auto h2 = std::hash<int64_t>{}(p.second);
+    return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+  }
+};
 
 /// Represents a block of KV cache with a fixed block size
 class KVBlock {
@@ -152,10 +162,12 @@ private:
   // One block allocator per layer
   std::vector<std::unique_ptr<BlockAllocator>> blockAllocators;
 
-  // Maps sequence IDs to their block indices
-  // Key: (sequenceId, layerIdx), Value: vector of block indices for this sequence
-  std::unordered_map<std::pair<int32_t, int64_t>, std::vector<int32_t>, 
-    std::hash<std::pair<int32_t, int64_t>>> seqToBlocks;
+  // Maps sequence IDs to their block indices and positions
+  // Key: (sequenceId, layerIdx)
+  // Value: vector of (blockIdx, posInBlock) pairs for this sequence
+  std::unordered_map<std::pair<int32_t, int64_t>, 
+                     std::vector<std::pair<int32_t, int64_t>>, 
+                     PairHash> seqToBlocks;
 };
 
 } // namespace runtime

@@ -17,6 +17,11 @@
 #include <cstring>
 #include <iostream>
 #include <utility> // for std::make_pair
+#include <array>
+#include <algorithm> // For std::find
+#include <unordered_map>
+#include <memory>
+#include <stdexcept>
 
 namespace mlir {
 namespace llm {
@@ -77,6 +82,15 @@ void copyMemory(void* dst, const void* src, int64_t sizeInBytes, bool useGPU) {
   }
 }
 
+// Hash function for std::pair<int32_t, int64_t> using Boost's hash_combine algorithm
+struct PairHash {
+  std::size_t operator()(const std::pair<int32_t, int64_t>& p) const {
+    auto h1 = std::hash<int32_t>{}(p.first);
+    auto h2 = std::hash<int64_t>{}(p.second);
+    return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+  }
+};
+
 } // anonymous namespace
 
 //===----------------------------------------------------------------------===//
@@ -89,7 +103,10 @@ BlockAllocator::BlockAllocator(int64_t blockSize, int64_t numHeads,
       elementType(elementType), useGPU(useGPU) {
   // Pre-allocate some blocks to avoid frequent allocation
   for (int i = 0; i < 8; i++) {
-    freeBlocks.push_back(createNewBlock());
+    KVBlock* block = createNewBlock();
+    if (block) {
+      freeBlocks.push_back(block);
+    }
   }
 }
 
@@ -115,6 +132,9 @@ KVBlock* BlockAllocator::allocateBlock() {
   if (freeBlocks.empty()) {
     // No free blocks available, create a new one
     KVBlock* block = createNewBlock();
+    if (!block) {
+      return nullptr;
+    }
     allocatedBlocks.push_back(block);
     return block;
   }
@@ -131,6 +151,11 @@ void BlockAllocator::freeBlock(KVBlock* block) {
   auto it = std::find(allocatedBlocks.begin(), allocatedBlocks.end(), block);
   if (it != allocatedBlocks.end()) {
     allocatedBlocks.erase(it);
+    
+    // Optionally clear the block memory for security/debugging
+    std::memset(block->getKeyPtr(), 0, blockSize * numHeads * headDim * getTypeSizeInBytes(elementType));
+    std::memset(block->getValuePtr(), 0, blockSize * numHeads * headDim * getTypeSizeInBytes(elementType));
+    
     freeBlocks.push_back(block);
   }
 }
@@ -205,23 +230,38 @@ LogicalResult PagedKVCache::appendKV(const void* keyPtr, const void* valuePtr,
       
       // For each token in the sequence
       for (int64_t t = 0; t < seqLen; t++) {
+        // Calculate total tokens in the sequence so far
+        int64_t totalTokens = blocks.size() > 0 ? 
+                             (blocks.size() - 1) * blockSize + 
+                             (blocks.back().second % blockSize) + 1 : 0;
+                             
+        // Calculate current position within the last block
+        int64_t posInLastBlock = totalTokens > 0 ? totalTokens % blockSize : 0;
+        
         // Check if we need a new block
-        if (blocks.empty() || (blocks.size() * blockSize) % maxSeqLen == 0) {
+        if (blocks.empty() || posInLastBlock == 0) {
           // Allocate a new block
           KVBlock* block = blockAllocators[layer]->allocateBlock();
           if (!block) {
             return failure();
           }
           
-          // Add the block index
-          blocks.push_back(blockAllocators[layer]->getNumAllocatedBlocks() - 1);
+          // Add the block index and starting position
+          int32_t blockIdx = static_cast<int32_t>(
+              std::find(blockAllocators[layer]->allocatedBlocks.begin(),
+                      blockAllocators[layer]->allocatedBlocks.end(), block) - 
+              blockAllocators[layer]->allocatedBlocks.begin());
+              
+          blocks.push_back(std::make_pair(blockIdx, 0));
         }
         
-        // Get the current block index
-        int32_t blockIdx = blocks.back();
+        // Get the current block and position
+        auto& blockInfo = blocks.back();
+        int32_t blockIdx = blockInfo.first;
+        int64_t posInBlock = blockInfo.second;
         
-        // Calculate position within the block
-        int64_t posInBlock = (blocks.size() * blockSize - 1) % blockSize;
+        // Update position for the next token
+        blockInfo.second = (posInBlock + 1) % blockSize;
         
         // Get the KV block
         KVBlock* block = blockAllocators[layer]->allocatedBlocks[blockIdx];
@@ -239,8 +279,9 @@ LogicalResult PagedKVCache::appendKV(const void* keyPtr, const void* valuePtr,
         copyMemory(blockKeyPtr, srcKeyPtr, singleTokenSize, useGPU);
         copyMemory(blockValuePtr, srcValuePtr, singleTokenSize, useGPU);
         
-        // Update block indices output
-        blockIndices[b * seqLen + t] = blockIdx;
+        // Update block indices output - store the index for this layer and token
+        int64_t outputIdx = layer == 0 ? (b * seqLen + t) : (b * seqLen + t + (layer * batchSize * seqLen));
+        blockIndices[outputIdx] = blockIdx;
       }
     }
   }
@@ -262,15 +303,16 @@ LogicalResult PagedKVCache::lookupKV(const int32_t* blockIndices, const int32_t*
   for (int64_t b = 0; b < batchSize; b++) {
     int32_t seqLen = seqLens[b];
     
-    // For each layer
-    for (int64_t layer = 0; layer < numLayers; layer++) {
-      // For each token position
-      for (int64_t t = 0; t < seqLen; t++) {
-        // Get the block index for this token
-        int32_t blockIdx = blockIndices[b * maxSeqLen + t];
+    // For each token position
+    for (int64_t t = 0; t < seqLen; t++) {
+      // For each layer
+      for (int64_t layer = 0; layer < numLayers; layer++) {
+        // Get the block index for this token and layer
+        int64_t blockIdxOffset = layer == 0 ? (b * seqLen + t) : (b * seqLen + t + (layer * batchSize * seqLen));
+        int32_t blockIdx = blockIndices[blockIdxOffset];
         
         // Check if the block index is valid
-        if (blockIdx < 0 || blockIdx >= (int32_t)blockAllocators[layer]->getNumAllocatedBlocks()) {
+        if (blockIdx < 0 || blockIdx >= (int32_t)blockAllocators[layer]->allocatedBlocks.size()) {
           return failure();
         }
         
@@ -278,6 +320,7 @@ LogicalResult PagedKVCache::lookupKV(const int32_t* blockIndices, const int32_t*
         KVBlock* block = blockAllocators[layer]->allocatedBlocks[blockIdx];
         
         // Calculate position within the block
+        // This is simplified and assumes tokens are stored sequentially in blocks
         int64_t posInBlock = t % blockSize;
         
         // Calculate offsets
