@@ -125,7 +125,9 @@ void registerAttentionInterfaceExternalModels(DialectRegistry &registry);
 } // namespace llm
 } // namespace mlir
 
-// Include the generated interface declarations
-#include "mlir/Dialect/LLM/Runtime/RuntimeInterfaces.h.inc"
+// The generated interface include file will be created during build time.
+// This file is not required for compilation of the runtime library itself,
+// as the methods are declared above. It's used by clients implementing
+// the interfaces.
 
 #endif // MLIR_DIALECT_LLM_RUNTIME_RUNTIMEINTERFACES_H_ 

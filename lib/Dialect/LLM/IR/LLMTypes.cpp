@@ -239,4 +239,50 @@ int64_t QuantizedTensorType::getNumBits() {
 //===----------------------------------------------------------------------===//
 
 #define GET_TYPEDEF_CLASSES
-#include "mlir/Dialect/LLM/IR/LLMTypes.cpp.inc" 
+#include "mlir/Dialect/LLM/IR/LLMTypes.cpp.inc"
+
+//===----------------------------------------------------------------------===//
+// KVCacheType
+//===----------------------------------------------------------------------===//
+
+KVCacheType KVCacheType::get(MLIRContext *context) {
+  return Base::get(context);
+}
+
+bool KVCacheType::classof(Type type) {
+  return type.isa<KVCacheType>();
+}
+
+//===----------------------------------------------------------------------===//
+// Helper methods
+//===----------------------------------------------------------------------===//
+
+bool mlir::llm::isLLMDialectType(Type type) {
+  return type.getDialect().getNamespace() == LLMDialect::getDialectNamespace();
+}
+
+//===----------------------------------------------------------------------===//
+// Type parsers and printers
+//===----------------------------------------------------------------------===//
+
+// Called from LLMDialect::parseType to parse an LLM type
+Type LLMDialect::parseType(DialectAsmParser &parser) const {
+  StringRef keyword;
+  if (parser.parseKeyword(&keyword))
+    return Type();
+    
+  MLIRContext *context = getContext();
+  
+  if (keyword == "kvcache")
+    return KVCacheType::get(context);
+    
+  parser.emitError(parser.getNameLoc(), "unknown LLM type: ") << keyword;
+  return Type();
+}
+
+// Called from LLMDialect::printType to print an LLM type
+void LLMDialect::printType(Type type, DialectAsmPrinter &printer) const {
+  TypeSwitch<Type>(type)
+      .Case<KVCacheType>([&](Type) { printer << "kvcache"; })
+      .Default([](Type) { llvm_unreachable("unexpected 'llm' type"); });
+} 

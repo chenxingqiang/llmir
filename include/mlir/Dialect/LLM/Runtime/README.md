@@ -1,83 +1,131 @@
-# LLM Runtime Support Library
+# LLMIR Runtime Support Library
 
-This directory contains the runtime support library for the LLM dialect. The runtime library provides efficient implementations of key components needed for LLM inference, with a focus on optimizing memory usage and computation performance.
+This directory contains runtime support libraries for the LLMIR compiler infrastructure,
+including implementations for the PagedKVCache data structure used for optimizing
+LLM inference.
 
-## Key-Value Cache Implementation
+## PagedKVCache
 
-The KV cache is a critical component for efficient LLM inference, enabling reuse of previously computed key and value tensors across multiple decoding steps. This implementation is inspired by the PagedAttention mechanism from vLLM, which uses a block-based memory management approach to efficiently handle varying sequence lengths.
+The `PagedKVCache` is a high-performance, memory-efficient implementation of the key-value
+cache mechanism used in transformer-based language models. It is designed based on the
+PagedAttention algorithm from vLLM, organizing memory in fixed-size blocks for efficient
+memory management during autoregressive generation.
 
 ### Core Components
 
-#### `KVBlock`
+1. **KVBlock**
+   - Represents a fixed-size memory block for storing key-value pairs
+   - Manages memory for keys and values with reference counting
+   - Tracks usage statistics for efficient memory management
 
-Represents a single block of memory containing key-value pairs for a fixed number of tokens. Each block has:
-- Pointers to key and value memory regions
-- Information about block size and dimensions
-- Support for both CPU and GPU memory
+2. **BlockAllocator**
+   - Manages memory allocation and pooling of KV blocks
+   - Provides efficient block reuse to minimize allocation overhead
+   - Maintains separate allocators per transformer layer
 
-#### `BlockAllocator`
+3. **PagedKVCache**
+   - Main API for interacting with the KV cache
+   - Supports multi-layer, multi-head attention models
+   - Efficiently tracks and manages sequences through block-based mapping
 
-Manages a pool of KV blocks for efficient memory allocation:
-- Pre-allocates blocks to avoid frequent memory allocations
-- Tracks used and free blocks
-- Provides efficient block allocation and deallocation
+### Memory Management
 
-#### `PagedKVCache`
+The KV cache implementation uses a block-based approach to minimize memory fragmentation and
+optimize cache usage. Instead of allocating memory per sequence, which can lead to inefficient
+memory usage, it:
 
-Provides the main API for interacting with the paged KV cache:
-- Manages multiple layers of KV caches for transformer models
-- Maps sequence IDs to their respective blocks
-- Handles appending new KV pairs and looking up existing ones
-- Supports efficient batch processing
+- Allocates fixed-size blocks of memory that can be shared across sequences
+- Maintains a pool of blocks for reuse
+- Tracks reference counts to efficiently free blocks when no longer needed
+- Maps sequence tokens to block positions for efficient lookup
 
-### Memory Management Strategy
+### Block Size Considerations
 
-The library implements a block-based memory management approach:
-- Memory is allocated in fixed-size blocks (e.g., 16 tokens per block)
-- Blocks can be dynamically allocated and freed
-- Sequences can span multiple blocks
+The block size is a critical parameter that affects memory efficiency and performance:
 
-This strategy provides several advantages:
-1. Memory efficiency - only allocate what's needed
-2. Support for variable sequence lengths
-3. Reduced memory fragmentation
-4. Efficient memory reuse
+- Small block sizes (e.g., 16 tokens) reduce memory waste but may increase overhead
+- Larger block sizes reduce allocation overhead but might waste memory
+- Optimal block size depends on the distribution of sequence lengths
+- The optimization pass `llm-optimize-kv-cache` can automatically adjust block sizes
 
-### API and Operations
+### API Usage
 
-The KV cache library supports the following operations:
+#### Creating a PagedKVCache
 
-1. **Append KV Pairs**: Add new key-value pairs to the cache
-   - Input: New key-value tensors, batch information
-   - Output: Block indices for the new tokens
+```cpp
+PagedKVCache cache(
+    numLayers,    // Number of transformer layers
+    numHeads,     // Number of attention heads per layer
+    headDim,      // Dimension of each attention head
+    blockSize,    // Size of each memory block (in tokens)
+    maxSeqLen,    // Maximum sequence length
+    elementType,  // Data type (e.g., f16, f32)
+    useGPU        // Whether to use GPU memory
+);
+```
 
-2. **Lookup KV Pairs**: Retrieve key-value pairs from the cache
-   - Input: Block indices, sequence lengths
-   - Output: Retrieved key-value tensors
+#### Appending Key-Value Pairs
 
-### Future Enhancements
+```cpp
+// For a batch of sequences
+LogicalResult result = cache.appendKV(
+    keyPtr,        // Pointer to key tensor data
+    valuePtr,      // Pointer to value tensor data
+    batchSize,     // Number of sequences in the batch
+    seqLen,        // Number of tokens per sequence
+    seqIds,        // Array of sequence IDs
+    blockIndices   // Output array for block indices
+);
+```
 
-1. **GPU Support**: Full implementation of GPU memory allocation and operations
-2. **Quantization**: Support for quantized KV caches (INT8/INT4)
-3. **Advanced Memory Strategies**: Implement eviction policies for constrained memory environments
-4. **Continuous KV Cache**: Alternative implementation for scenarios where block-based approach is suboptimal
-5. **Distributed KV Cache**: Support for multi-GPU and multi-node setups
+#### Looking Up Key-Value Pairs
 
-## Usage Example
+```cpp
+// Retrieve KV pairs for a batch of sequences
+LogicalResult result = cache.lookupKV(
+    blockIndices,  // Array of block indices for each token
+    seqLens,       // Array of sequence lengths
+    batchSize,     // Number of sequences in the batch
+    outputKeys,    // Output buffer for keys
+    outputValues   // Output buffer for values
+);
+```
 
-In MLIR, operations can use these runtime components through the defined interfaces:
+#### Managing Sequences
 
-```mlir
-// Append key-value pairs to the cache
-%new_kv = "llm.append_kv"(%kv_cache, %key, %value) {
-  block_size = 16 : i32,
-  max_seq_len = 4096 : i32
-} : (!llm.paged_kv_cache, tensor<1x1x16x64xf16>, tensor<1x1x16x64xf16>) -> !llm.paged_kv_cache
+```cpp
+// Clear a sequence when no longer needed
+cache.clearSequence(seqId);
 
-// Perform paged attention with KV cache
-%output = "llm.paged_attention"(%query, %new_kv, %block_indices) {
-  num_heads = 16 : i32,
-  head_dim = 64 : i32,
-  scale = 0.125 : f32
-} : (tensor<1x1x16x64xf16>, !llm.paged_kv_cache, tensor<1x16xi32>) -> tensor<1x1x16x64xf16>
-``` 
+// Reset the entire cache
+cache.reset();
+```
+
+### Performance Considerations
+
+1. **Memory Efficiency**
+   - Block-based allocation reduces fragmentation
+   - Reference counting ensures timely release of memory
+   - Pre-allocation of blocks reduces allocation overhead
+   - Block pooling improves memory reuse
+
+2. **GPU Optimization**
+   - Memory operations are optimized for both CPU and GPU usage
+   - Compatible with CUDA/HIP for GPU-accelerated LLM inference
+   - Minimizes data transfers between CPU and GPU
+
+3. **Scaling**
+   - Efficiently handles batched inference across multiple sequences
+   - Scales to support long context models
+   - Supports variable-length sequences efficiently
+
+### Integration with MLIR
+
+The PagedKVCache runtime library is integrated with MLIR through operations defined
+in the LLM dialect:
+
+- `llm.append_kv`: Appends key-value pairs to the cache
+- `llm.lookup_kv`: Retrieves key-value pairs from the cache
+- `llm.paged_attention`: Performs attention computation using the paged cache
+
+See the full example in `examples/kv_cache_example.cpp` for a complete usage demonstration. 

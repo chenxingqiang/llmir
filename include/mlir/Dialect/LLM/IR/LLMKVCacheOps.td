@@ -21,117 +21,109 @@ include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
 //===----------------------------------------------------------------------===//
-// AppendKV Op
+// KVCache Type definitions
+//===----------------------------------------------------------------------===//
+
+def LLM_KVCacheType : DialectType<LLM_Dialect,
+    "KVCache", "!llm.kvcache">,
+    BuildableType<"$_builder.getType<::mlir::llm::KVCacheType>()">;
+
+//===----------------------------------------------------------------------===//
+// AppendKV Operation
 //===----------------------------------------------------------------------===//
 
 def LLM_AppendKVOp : LLM_Op<"append_kv", [
-    DeclareOpInterfaceMethods<LLM_KVCacheInterface>,
-    MemoryEffects<[MemWrite]>
-  ]> {
+    AttrSizedResultSegments,
+    DeclareOpInterfaceMethods<LLM_KVCacheInterface>
+]> {
   let summary = "Append key-value pairs to a KV cache";
   let description = [{
-    This operation appends new key-value pairs to a PagedKVCache.
-    
-    The operation takes the current KV cache, a batch of new key tensors,
-    a batch of new value tensors, and sequence IDs. It returns the updated
-    KV cache and the block indices for the appended tokens.
-    
+    The `llm.append_kv` operation adds new key-value pairs to a paged KV cache.
+    It takes key and value tensors, sequence IDs, and an optional existing KV cache.
+    It returns an updated KV cache and block indices for the newly added key-value pairs.
+
     Example:
     ```mlir
-    %new_kv, %block_indices = llm.append_kv %kv_cache, %keys, %values, %seq_ids {
-      block_size = 16 : i32,
-      max_seq_len = 4096 : i32
-    } : (!llm.paged_kv_cache, tensor<2x1x16x64xf16>, tensor<2x1x16x64xf16>, tensor<2xi32>) 
-        -> (!llm.paged_kv_cache, tensor<2x1xi32>)
+    %kv_cache_updated, %block_indices = llm.append_kv(%keys, %values, %seq_ids, %kv_cache) : 
+      (tensor<2x8x16xf16>, tensor<2x8x16xf16>, tensor<2xi32>, !llm.kvcache) -> 
+      (!llm.kvcache, tensor<2x1xi32>)
     ```
   }];
-  
+
   let arguments = (ins
-    LLM_PagedKVCacheType:$kv_cache,
-    AnyTensor:$keys,
-    AnyTensor:$values,
-    I32Tensor:$seq_ids,
-    
-    DefaultValuedAttr<I32Attr, "16">:$block_size,
-    DefaultValuedAttr<I32Attr, "4096">:$max_seq_len
+    Arg<AnyTensor, "Key tensor to append to the cache", [MemRead]>:$keys,
+    Arg<AnyTensor, "Value tensor to append to the cache", [MemRead]>:$values,
+    Arg<AnyTensor, "Sequence IDs for the batch", [MemRead]>:$seq_ids,
+    Optional<LLM_KVCacheType>:$kv_cache
   );
-  
+
   let results = (outs
-    LLM_PagedKVCacheType:$new_kv_cache,
-    I32Tensor:$block_indices
+    LLM_KVCacheType:$updated_kv_cache,
+    Res<AnyTensor, "Block indices for the appended KV pairs", [MemWrite]>:$block_indices
   );
-  
-  let hasVerifier = 1;
-  
-  let assemblyFormat = [{
-    $kv_cache `,` $keys `,` $values `,` $seq_ids attr-dict `:` 
-    `(` type($kv_cache) `,` type($keys) `,` type($values) `,` type($seq_ids) `)`
-    `->` `(` type($new_kv_cache) `,` type($block_indices) `)`
-  }];
-  
+
   let extraClassDeclaration = [{
-    // LLM_KVCacheInterface methods
+    // KVCacheInterface methods
     bool usesKVCache() { return true; }
     int64_t getNumKVTokens();
-    mlir::Value getKVCacheInput() { return getKvCache(); }
-    mlir::Value getKVCacheOutput() { return getNewKvCache(); }
+    mlir::Value getKVCacheInput() { return getKVCache(); }
+    mlir::Value getKVCacheOutput() { return getUpdatedKVCache(); }
   }];
+
+  let assemblyFormat = [{
+    `(` $keys `,` $values `,` $seq_ids (`,` $kv_cache^)? `)`
+    attr-dict `:` functional-type(operands, results)
+  }];
+
+  let hasCanonicalizer = 1;
+  let hasVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//
-// LookupKV Op
+// LookupKV Operation
 //===----------------------------------------------------------------------===//
 
 def LLM_LookupKVOp : LLM_Op<"lookup_kv", [
-    DeclareOpInterfaceMethods<LLM_KVCacheInterface>,
-    MemoryEffects<[MemRead]>
-  ]> {
+    DeclareOpInterfaceMethods<LLM_KVCacheInterface>
+]> {
   let summary = "Look up key-value pairs from a KV cache";
   let description = [{
-    This operation retrieves key-value pairs from a PagedKVCache.
-    
-    The operation takes the KV cache, block indices for the tokens to retrieve,
-    and sequence lengths. It returns the retrieved key and value tensors.
-    
+    The `llm.lookup_kv` operation retrieves key-value pairs from a paged KV cache 
+    based on block indices. It returns the relevant key and value tensors.
+
     Example:
     ```mlir
-    %keys, %values = llm.lookup_kv %kv_cache, %block_indices, %seq_lens {
-      num_heads = 16 : i32,
-      head_dim = 64 : i32
-    } : (!llm.paged_kv_cache, tensor<2x128xi32>, tensor<2xi32>) 
-        -> (tensor<2x128x16x64xf16>, tensor<2x128x16x64xf16>)
+    %keys, %values = llm.lookup_kv(%block_indices, %seq_lens, %kv_cache) : 
+      (tensor<2x8xi32>, tensor<2xi32>, !llm.kvcache) -> 
+      (tensor<2x8x16xf16>, tensor<2x8x16xf16>)
     ```
   }];
-  
+
   let arguments = (ins
-    LLM_PagedKVCacheType:$kv_cache,
-    I32Tensor:$block_indices,
-    I32Tensor:$seq_lens,
-    
-    I32Attr:$num_heads,
-    I32Attr:$head_dim
+    Arg<AnyTensor, "Block indices for tokens to look up", [MemRead]>:$block_indices,
+    Arg<AnyTensor, "Sequence lengths for each sequence in the batch", [MemRead]>:$seq_lens,
+    LLM_KVCacheType:$kv_cache
   );
-  
+
   let results = (outs
-    AnyTensor:$keys,
-    AnyTensor:$values
+    Res<AnyTensor, "Retrieved key tensors", [MemWrite]>:$keys,
+    Res<AnyTensor, "Retrieved value tensors", [MemWrite]>:$values
   );
-  
-  let hasVerifier = 1;
-  
-  let assemblyFormat = [{
-    $kv_cache `,` $block_indices `,` $seq_lens attr-dict `:` 
-    `(` type($kv_cache) `,` type($block_indices) `,` type($seq_lens) `)`
-    `->` `(` type($keys) `,` type($values) `)`
-  }];
-  
+
   let extraClassDeclaration = [{
-    // LLM_KVCacheInterface methods
+    // KVCacheInterface methods
     bool usesKVCache() { return true; }
-    int64_t getNumKVTokens() { return 0; } // No new tokens, just lookup
-    mlir::Value getKVCacheInput() { return getKvCache(); }
-    mlir::Value getKVCacheOutput() { return nullptr; }
+    int64_t getNumKVTokens();
+    mlir::Value getKVCacheInput() { return getKVCache(); }
+    mlir::Value getKVCacheOutput() { return Value(); } // No output cache
   }];
+
+  let assemblyFormat = [{
+    `(` $block_indices `,` $seq_lens `,` $kv_cache `)`
+    attr-dict `:` functional-type(operands, results)
+  }];
+
+  let hasVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//

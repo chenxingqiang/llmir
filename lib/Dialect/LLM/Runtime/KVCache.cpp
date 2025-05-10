@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/LLM/Runtime/KVCache.h"
+#include "mlir/Dialect/LLM/Runtime/AttentionOpt.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -23,6 +24,14 @@
 #include <unordered_set>
 #include <memory>
 #include <stdexcept>
+#include <cmath>
+
+// Include CUDA headers when GPU support is enabled
+#if defined(LLMIR_ENABLE_CUDA)
+#include <cuda_runtime.h>
+#elif defined(LLMIR_ENABLE_HIP)
+#include <hip/hip_runtime.h>
+#endif
 
 namespace mlir {
 namespace llm {
@@ -42,16 +51,54 @@ void* allocateMemory(int64_t sizeInBytes, bool useGPU) {
   void* ptr = nullptr;
   
   if (useGPU) {
-    // TODO: Implement GPU memory allocation using CUDA/HIP
-    // For now, just use CPU memory
+#if defined(LLMIR_ENABLE_CUDA)
+    // Use CUDA for memory allocation
+    cudaError_t error = cudaMalloc(&ptr, sizeInBytes);
+    if (error != cudaSuccess) {
+      std::cerr << "CUDA memory allocation failed: " 
+                << cudaGetErrorString(error) << std::endl;
+      return nullptr;
+    }
+    
+    // Initialize memory to zeros
+    error = cudaMemset(ptr, 0, sizeInBytes);
+    if (error != cudaSuccess) {
+      std::cerr << "CUDA memory initialization failed: " 
+                << cudaGetErrorString(error) << std::endl;
+      cudaFree(ptr);
+      return nullptr;
+    }
+#elif defined(LLMIR_ENABLE_HIP)
+    // Use HIP for memory allocation (AMD GPUs)
+    hipError_t error = hipMalloc(&ptr, sizeInBytes);
+    if (error != hipSuccess) {
+      std::cerr << "HIP memory allocation failed: " 
+                << hipGetErrorString(error) << std::endl;
+      return nullptr;
+    }
+    
+    // Initialize memory to zeros
+    error = hipMemset(ptr, 0, sizeInBytes);
+    if (error != hipSuccess) {
+      std::cerr << "HIP memory initialization failed: " 
+                << hipGetErrorString(error) << std::endl;
+      hipFree(ptr);
+      return nullptr;
+    }
+#else
+    // Fallback to CPU if no GPU support is compiled in
+    std::cerr << "GPU support not enabled, falling back to CPU allocation" << std::endl;
     ptr = std::malloc(sizeInBytes);
+    if (ptr) {
+      std::memset(ptr, 0, sizeInBytes);
+    }
+#endif
   } else {
+    // CPU memory allocation
     ptr = std::malloc(sizeInBytes);
-  }
-  
-  // Initialize to zeros
-  if (ptr) {
-    std::memset(ptr, 0, sizeInBytes);
+    if (ptr) {
+      std::memset(ptr, 0, sizeInBytes);
+    }
   }
   
   return ptr;
@@ -61,10 +108,26 @@ void* allocateMemory(int64_t sizeInBytes, bool useGPU) {
 void freeMemory(void* ptr, bool useGPU) {
   if (ptr) {
     if (useGPU) {
-      // TODO: Implement GPU memory deallocation using CUDA/HIP
-      // For now, just use CPU memory free
+#if defined(LLMIR_ENABLE_CUDA)
+      // Use CUDA for memory deallocation
+      cudaError_t error = cudaFree(ptr);
+      if (error != cudaSuccess) {
+        std::cerr << "CUDA memory free failed: " 
+                  << cudaGetErrorString(error) << std::endl;
+      }
+#elif defined(LLMIR_ENABLE_HIP)
+      // Use HIP for memory deallocation
+      hipError_t error = hipFree(ptr);
+      if (error != hipSuccess) {
+        std::cerr << "HIP memory free failed: " 
+                  << hipGetErrorString(error) << std::endl;
+      }
+#else
+      // Fallback to CPU if no GPU support is compiled in
       std::free(ptr);
+#endif
     } else {
+      // CPU memory deallocation
       std::free(ptr);
     }
   }
@@ -74,23 +137,30 @@ void freeMemory(void* ptr, bool useGPU) {
 void copyMemory(void* dst, const void* src, int64_t sizeInBytes, bool useGPU) {
   if (dst && src) {
     if (useGPU) {
-      // TODO: Implement GPU memory copy using CUDA/HIP
-      // For now, just use CPU memory copy
+#if defined(LLMIR_ENABLE_CUDA)
+      // Use CUDA for memory copying
+      cudaError_t error = cudaMemcpy(dst, src, sizeInBytes, cudaMemcpyDeviceToDevice);
+      if (error != cudaSuccess) {
+        std::cerr << "CUDA memory copy failed: " 
+                  << cudaGetErrorString(error) << std::endl;
+      }
+#elif defined(LLMIR_ENABLE_HIP)
+      // Use HIP for memory copying
+      hipError_t error = hipMemcpy(dst, src, sizeInBytes, hipMemcpyDeviceToDevice);
+      if (error != hipSuccess) {
+        std::cerr << "HIP memory copy failed: " 
+                  << hipGetErrorString(error) << std::endl;
+      }
+#else
+      // Fallback to CPU if no GPU support is compiled in
       std::memcpy(dst, src, sizeInBytes);
+#endif
     } else {
+      // CPU memory copy
       std::memcpy(dst, src, sizeInBytes);
     }
   }
 }
-
-// Hash function for std::pair<int32_t, int64_t> using Boost's hash_combine algorithm
-struct PairHash {
-  std::size_t operator()(const std::pair<int32_t, int64_t>& p) const {
-    auto h1 = std::hash<int32_t>{}(p.first);
-    auto h2 = std::hash<int64_t>{}(p.second);
-    return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
-  }
-};
 
 } // anonymous namespace
 
@@ -102,14 +172,12 @@ BlockAllocator::BlockAllocator(int64_t blockSize, int64_t numHeads,
                               int64_t headDim, Type elementType, bool useGPU)
     : blockSize(blockSize), numHeads(numHeads), headDim(headDim),
       elementType(elementType), useGPU(useGPU) {
+  
+  // Set default eviction policy to LRU if none provided
+  evictionPolicy = std::make_unique<LRUEvictionPolicy>();
+  
   // Pre-allocate some blocks to avoid frequent allocation
-  const int initialBlocks = 8;
-  for (int i = 0; i < initialBlocks; i++) {
-    KVBlock* block = createNewBlock();
-    if (block) {
-      freeBlocks.push_back(block);
-    }
-  }
+  preallocateBlocks(8);
 }
 
 BlockAllocator::~BlockAllocator() {
@@ -131,13 +199,33 @@ BlockAllocator::~BlockAllocator() {
 }
 
 KVBlock* BlockAllocator::allocateBlock() {
+  // Check if we need to evict blocks before allocation
+  if (freeBlocks.empty()) {
+    // Try to evict blocks if memory is constrained
+    if (collectMetrics) {
+      metrics.numEvictionAttempts++;
+    }
+    evictBlocksIfNeeded(1);
+  }
+  
   if (freeBlocks.empty()) {
     // No free blocks available, create a new one
     KVBlock* block = createNewBlock();
     if (!block) {
       return nullptr;
     }
+    
+    // Update access time for LRU tracking
+    block->updateAccessTime(getCurrentTimestamp());
+    
     allocatedBlocks.push_back(block);
+    
+    // Update metrics
+    if (collectMetrics) {
+      metrics.numCreated++;
+      updateMetrics();
+    }
+    
     return block;
   }
   
@@ -147,8 +235,16 @@ KVBlock* BlockAllocator::allocateBlock() {
   
   // Reset the block state
   block->resetUsedSlots();
+  block->updateAccessTime(getCurrentTimestamp());
   
   allocatedBlocks.push_back(block);
+  
+  // Update metrics
+  if (collectMetrics) {
+    metrics.numReused++;
+    updateMetrics();
+  }
+  
   return block;
 }
 
@@ -167,6 +263,11 @@ void BlockAllocator::freeBlock(KVBlock* block) {
     block->resetUsedSlots();
     
     freeBlocks.push_back(block);
+    
+    // Update metrics
+    if (collectMetrics) {
+      updateMetrics();
+    }
   }
 }
 
@@ -203,6 +304,368 @@ KVBlock* BlockAllocator::createNewBlock() {
   return new KVBlock(keyPtr, valuePtr, blockSize, headDim);
 }
 
+void BlockAllocator::preallocateBlocks(int64_t baseNumBlocks, 
+                                int64_t avgSeqLen, 
+                                int64_t maxNumSequences) {
+  // Determine how many blocks to allocate
+  int64_t blocksToAllocate = std::max(static_cast<int64_t>(0), baseNumBlocks);
+  
+  // If we have sequence statistics, use them to make a better estimate
+  if (avgSeqLen > 0 && maxNumSequences > 0) {
+    // Calculate total tokens we need to support
+    int64_t totalTokens = avgSeqLen * maxNumSequences;
+    
+    // Calculate how many blocks we need for this many tokens
+    int64_t blocksNeeded = (totalTokens + blockSize - 1) / blockSize; // Ceiling division
+    
+    // Add a safety margin of 20%
+    blocksNeeded = static_cast<int64_t>(blocksNeeded * 1.2);
+    
+    // Take the maximum of our base allocation and the calculated need
+    blocksToAllocate = std::max(blocksToAllocate, blocksNeeded);
+  } else if (avgObservedSeqLen > 0 && totalObservations > 0) {
+    // Use observed statistics if we have them and external stats weren't provided
+    int64_t totalTokens = static_cast<int64_t>(avgObservedSeqLen * std::max(totalObservations, static_cast<int64_t>(4)));
+    int64_t blocksNeeded = (totalTokens + blockSize - 1) / blockSize;
+    blocksNeeded = static_cast<int64_t>(blocksNeeded * 1.2); // 20% safety margin
+    blocksToAllocate = std::max(blocksToAllocate, blocksNeeded);
+  }
+  
+  // Don't allocate more than a reasonable maximum (avoid excessive memory usage)
+  const int64_t maxReasonableBlocks = 1000;
+  blocksToAllocate = std::min(blocksToAllocate, maxReasonableBlocks);
+  
+  // Calculate how many additional blocks we need to allocate
+  int64_t currentBlocks = freeBlocks.size() + allocatedBlocks.size();
+  int64_t additionalBlocksNeeded = blocksToAllocate - currentBlocks;
+  
+  // Only allocate if we need more blocks
+  if (additionalBlocksNeeded <= 0) {
+    return;
+  }
+  
+  // Update metrics
+  if (collectMetrics) {
+    metrics.numPreallocated += additionalBlocksNeeded;
+  }
+  
+  // Allocate the blocks
+  for (int64_t i = 0; i < additionalBlocksNeeded; i++) {
+    KVBlock* block = createNewBlock();
+    if (block) {
+      freeBlocks.push_back(block);
+    } else {
+      // Failed to allocate memory, stop preallocating
+      break;
+    }
+  }
+  
+  // Update metrics
+  if (collectMetrics) {
+    updateMetrics();
+  }
+}
+
+int64_t BlockAllocator::coalesceBlocks(double fragmentationThreshold, 
+                                int64_t maxBlocksToCoalesce,
+                                bool preserveOrder) {
+  // Find blocks with high fragmentation that we could potentially merge
+  std::vector<std::pair<int32_t, double>> fragmentedBlocks;
+  
+  for (size_t i = 0; i < allocatedBlocks.size(); i++) {
+    KVBlock* block = allocatedBlocks[i];
+    if (block && block->getRefCount() == 0) { // Only consider unreferenced blocks
+      // Update fragmentation metric
+      block->updateFragmentation();
+      
+      if (block->getFragmentation() > fragmentationThreshold) {
+        fragmentedBlocks.push_back(std::make_pair(
+            static_cast<int32_t>(i), block->getFragmentation()));
+      }
+    }
+  }
+  
+  // Sort by fragmentation (most fragmented first)
+  std::sort(fragmentedBlocks.begin(), fragmentedBlocks.end(),
+           [](const auto& a, const auto& b) {
+             return a.second > b.second; // Higher fragmentation first
+           });
+  
+  // Limit the number of blocks we'll try to coalesce
+  if (fragmentedBlocks.size() > static_cast<size_t>(maxBlocksToCoalesce)) {
+    fragmentedBlocks.resize(maxBlocksToCoalesce);
+  }
+  
+  // If we don't have any fragmented blocks, return early
+  if (fragmentedBlocks.empty()) {
+    return 0;
+  }
+  
+  int64_t blocksCoalesced = 0;
+  std::set<int32_t> processedBlocks; // Keep track of blocks we've already processed
+  
+  // Try to coalesce each fragmented block
+  for (const auto& [blockIdx, fragmentation] : fragmentedBlocks) {
+    // Skip if we already processed this block
+    if (processedBlocks.count(blockIdx) > 0) {
+      continue;
+    }
+    
+    KVBlock* sourceBlock = allocatedBlocks[blockIdx];
+    
+    // Find a potential target block to merge with
+    int32_t targetIdx = findCoalescingTarget(sourceBlock);
+    if (targetIdx >= 0 && targetIdx != blockIdx && 
+        processedBlocks.count(targetIdx) == 0) {
+      
+      KVBlock* targetBlock = allocatedBlocks[targetIdx];
+      
+      // Calculate how many tokens we can move
+      int64_t sourceUsed = sourceBlock->getUsedSlots();
+      int64_t targetUsed = targetBlock->getUsedSlots();
+      int64_t targetFree = blockSize - targetUsed;
+      int64_t tokensToMove = std::min(sourceUsed, targetFree);
+      
+      if (tokensToMove > 0) {
+        // Copy data from source to target
+        if (succeeded(copyBetweenBlocks(sourceBlock, targetBlock, 
+                                      0, targetUsed, tokensToMove))) {
+          // Update slot counts
+          targetBlock->incrementUsedSlots(tokensToMove);
+          
+          // If we moved all tokens from source, we can free it
+          if (tokensToMove == sourceUsed) {
+            freeBlock(sourceBlock);
+            blocksCoalesced++;
+          } else if (preserveOrder) {
+            // If we need to preserve order, we're done with this block
+            // since we can't safely move the remaining tokens without
+            // potentially breaking sequence continuity
+          } else {
+            // Otherwise, we could try to move the remaining tokens to another block
+            // This is left as a potential enhancement
+          }
+          
+          // Mark both blocks as processed
+          processedBlocks.insert(blockIdx);
+          processedBlocks.insert(targetIdx);
+          
+          // Update the target's fragmentation metric
+          targetBlock->updateFragmentation();
+        }
+      }
+    }
+  }
+  
+  // Update metrics
+  if (collectMetrics && blocksCoalesced > 0) {
+    metrics.numCoalesces += blocksCoalesced;
+    updateMetrics();
+  }
+  
+  return blocksCoalesced;
+}
+
+int32_t BlockAllocator::findCoalescingTarget(KVBlock* sourceBlock) const {
+  if (!sourceBlock || sourceBlock->getRefCount() > 0) {
+    return -1;
+  }
+  
+  int64_t sourceUsed = sourceBlock->getUsedSlots();
+  if (sourceUsed == 0) {
+    return -1; // Nothing to move
+  }
+  
+  int32_t bestTargetIdx = -1;
+  int64_t bestScore = 0;
+  
+  // Find the best target for coalescing
+  for (size_t i = 0; i < allocatedBlocks.size(); i++) {
+    KVBlock* targetBlock = allocatedBlocks[i];
+    
+    // Skip if it's the same block or has references
+    if (targetBlock == sourceBlock || targetBlock->getRefCount() > 0) {
+      continue;
+    }
+    
+    int64_t targetUsed = targetBlock->getUsedSlots();
+    int64_t targetFree = blockSize - targetUsed;
+    
+    // Skip if target is full
+    if (targetFree <= 0) {
+      continue;
+    }
+    
+    // Calculate how many tokens we could move
+    int64_t tokensToMove = std::min(sourceUsed, targetFree);
+    
+    // Skip if we can't move any tokens
+    if (tokensToMove <= 0) {
+      continue;
+    }
+    
+    // Calculate how full the target would be after coalescing
+    double finalUtilization = static_cast<double>(targetUsed + tokensToMove) / blockSize;
+    
+    // Score is a combination of:
+    // 1. How many tokens we can move (more is better)
+    // 2. How full the target would be after (closer to full is better)
+    int64_t score = static_cast<int64_t>(tokensToMove * 100 + finalUtilization * 50);
+    
+    // Pick the target with the highest score
+    if (score > bestScore) {
+      bestScore = score;
+      bestTargetIdx = static_cast<int32_t>(i);
+    }
+  }
+  
+  return bestTargetIdx;
+}
+
+LogicalResult BlockAllocator::copyBetweenBlocks(KVBlock* sourceBlock, KVBlock* targetBlock,
+                                             int64_t sourceStartPos, int64_t targetStartPos,
+                                             int64_t numTokens) {
+  if (!sourceBlock || !targetBlock || 
+      sourceStartPos + numTokens > sourceBlock->getUsedSlots() ||
+      targetStartPos + numTokens > blockSize) {
+    return failure();
+  }
+  
+  int64_t typeSizeInBytes = getElementTypeSize();
+  int64_t tokensPerHead = numHeads * headDim;
+  int64_t singleTokenSize = tokensPerHead * typeSizeInBytes;
+  
+  // Calculate offsets
+  int64_t sourceOffset = sourceStartPos * singleTokenSize;
+  int64_t targetOffset = targetStartPos * singleTokenSize;
+  int64_t copySize = numTokens * singleTokenSize;
+  
+  // Copy key data
+  copyMemory(
+      static_cast<char*>(targetBlock->getKeyPtr()) + targetOffset,
+      static_cast<const char*>(sourceBlock->getKeyPtr()) + sourceOffset,
+      copySize, useGPU);
+  
+  // Copy value data
+  copyMemory(
+      static_cast<char*>(targetBlock->getValuePtr()) + targetOffset,
+      static_cast<const char*>(sourceBlock->getValuePtr()) + sourceOffset,
+      copySize, useGPU);
+  
+  return success();
+}
+
+void BlockAllocator::evictBlocksIfNeeded(int64_t numBlocksNeeded) {
+  // If we have enough free blocks, no need to evict
+  if (static_cast<int64_t>(freeBlocks.size()) >= numBlocksNeeded) {
+    return;
+  }
+  
+  // Use the eviction policy to select blocks for eviction
+  if (evictionPolicy) {
+    std::vector<int32_t> blocksToEvict = evictionPolicy->selectBlocksForEviction(
+        *this, numBlocksNeeded - freeBlocks.size());
+    
+    // Free the selected blocks
+    for (int32_t blockIdx : blocksToEvict) {
+      if (blockIdx >= 0 && blockIdx < static_cast<int32_t>(allocatedBlocks.size())) {
+        KVBlock* block = allocatedBlocks[blockIdx];
+        
+        // Verify the block is evictable
+        if (block && block->isEvictable()) {
+          freeBlock(block);
+          
+          if (collectMetrics) {
+            metrics.numEvictions++;
+          }
+        }
+      }
+    }
+  }
+  
+  // Update metrics
+  if (collectMetrics) {
+    updateMetrics();
+  }
+}
+
+BlockMetrics BlockAllocator::getMetrics() const {
+  // Refresh metrics before returning
+  if (collectMetrics) {
+    metrics.totalBlocks = allocatedBlocks.size() + freeBlocks.size();
+    metrics.freeBlocks = freeBlocks.size();
+    metrics.usedBlocks = allocatedBlocks.size();
+    metrics.avgFragmentation = calculateFragmentation();
+  }
+  
+  return metrics;
+}
+
+void BlockAllocator::updateMetrics() {
+  metrics.totalBlocks = allocatedBlocks.size() + freeBlocks.size();
+  metrics.freeBlocks = freeBlocks.size();
+  metrics.usedBlocks = allocatedBlocks.size();
+  metrics.avgFragmentation = calculateFragmentation();
+}
+
+double BlockAllocator::calculateFragmentation() const {
+  if (allocatedBlocks.empty()) {
+    return 0.0;
+  }
+  
+  double totalFragmentation = 0.0;
+  for (auto* block : allocatedBlocks) {
+    block->updateFragmentation();
+    totalFragmentation += block->getFragmentation();
+  }
+  
+  return totalFragmentation / allocatedBlocks.size();
+}
+
+//===----------------------------------------------------------------------===//
+// LRUEvictionPolicy Implementation
+//===----------------------------------------------------------------------===//
+
+std::vector<int32_t> LRUEvictionPolicy::selectBlocksForEviction(
+    const BlockAllocator& allocator, int64_t numBlocksNeeded) const {
+  std::vector<int32_t> blocksToEvict;
+  
+  // If no blocks needed, return empty list
+  if (numBlocksNeeded <= 0) {
+    return blocksToEvict;
+  }
+  
+  // Create a vector of (blockIdx, lastAccessTime) pairs for sorting
+  std::vector<std::pair<int32_t, int64_t>> blockTimes;
+  
+  for (size_t i = 0; i < allocator.allocatedBlocks.size(); i++) {
+    KVBlock* block = allocator.allocatedBlocks[i];
+    
+    // Only consider evictable blocks (refCount == 0 and isEvictable)
+    if (block && block->isEvictable()) {
+      blockTimes.push_back(std::make_pair(
+          static_cast<int32_t>(i), block->getLastAccessTime()));
+    }
+  }
+  
+  // Sort by last access time (older blocks first)
+  std::sort(blockTimes.begin(), blockTimes.end(), 
+           [](const auto& a, const auto& b) {
+             return a.second < b.second;
+           });
+  
+  // Take up to numBlocksNeeded blocks
+  for (size_t i = 0; i < std::min(static_cast<size_t>(numBlocksNeeded), blockTimes.size()); i++) {
+    blocksToEvict.push_back(blockTimes[i].first);
+  }
+  
+  return blocksToEvict;
+}
+
+std::unique_ptr<EvictionPolicy> LRUEvictionPolicy::clone() const {
+  return std::make_unique<LRUEvictionPolicy>(*this);
+}
+
 //===----------------------------------------------------------------------===//
 // PagedKVCache Implementation
 //===----------------------------------------------------------------------===//
@@ -214,86 +677,156 @@ PagedKVCache::PagedKVCache(int64_t numLayers, int64_t numHeads, int64_t headDim,
       blockSize(blockSize), maxSeqLen(maxSeqLen), elementType(elementType),
       useGPU(useGPU) {
   
-  // Create block allocators for each layer
+  // Create one block allocator per layer
+  blockAllocators.reserve(numLayers);
   for (int64_t i = 0; i < numLayers; i++) {
     blockAllocators.push_back(
-        std::make_unique<BlockAllocator>(blockSize, numHeads, headDim, 
-                                        elementType, useGPU));
+        std::make_unique<BlockAllocator>(blockSize, numHeads, headDim, elementType, useGPU));
+  }
+  
+  // Initialize the layer sequence info vectors
+  layerSeqInfo.resize(numLayers);
+  
+  // Preallocate blocks based on expected usage
+  // A heuristic: allocate blocks to handle at least 4 sequences of half maxSeqLen
+  int64_t estimatedTokens = 4 * (maxSeqLen / 2);
+  int64_t blocksPerLayer = (estimatedTokens + blockSize - 1) / blockSize; // Ceiling division
+  
+  for (auto& allocator : blockAllocators) {
+    allocator->preallocateBlocks(blocksPerLayer);
   }
 }
 
 PagedKVCache::~PagedKVCache() {
   // BlockAllocators will be automatically freed by their destructors
   blockAllocators.clear();
-  seqInfo.clear();
+  
+  // Clear all sequence information
+  for (auto& layerInfo : layerSeqInfo) {
+    layerInfo.clear();
+  }
+  contentHashToSeqIds.clear();
 }
 
 LogicalResult PagedKVCache::appendKV(const void* keyPtr, const void* valuePtr,
-                                    int64_t batchSize, int64_t seqLen,
-                                    const int32_t* seqIds, int32_t* blockIndices) {
-  if (!keyPtr || !valuePtr || !seqIds || !blockIndices) {
-    return failure();
-  }
-  
-  int64_t typeSizeInBytes = getTypeSizeInBytes(elementType);
-  int64_t tokensPerHead = numHeads * headDim;
-  int64_t singleTokenSize = tokensPerHead * typeSizeInBytes;
-  
-  // For each sequence in the batch
-  for (int64_t b = 0; b < batchSize; b++) {
-    int32_t seqId = seqIds[b];
+                                   int64_t batchSize, int64_t seqLen, 
+                                   const int32_t* seqIds, int32_t* blockIndices) {
+  // Check for duplicate sequences before appending
+  for (int64_t batchIdx = 0; batchIdx < batchSize; batchIdx++) {
+    int32_t seqId = seqIds[batchIdx];
     
-    // For each layer
-    for (int64_t layer = 0; layer < numLayers; layer++) {
-      // Get or create the sequence info for this sequence and layer
-      auto key = std::make_pair(seqId, layer);
-      auto& info = seqInfo[key];
-      
-      // For each token in the sequence
-      for (int64_t t = 0; t < seqLen; t++) {
-        // Check if we need a new block
-        if (info.lastBlockIdx < 0 || 
-            info.posInLastBlock >= blockSize) {
-          // Allocate a new block for this sequence
-          int32_t newBlockIdx;
-          if (failed(allocateBlockForSequence(seqId, layer, newBlockIdx))) {
-            return failure();
-          }
-          
-          // Update the sequence info
-          info.lastBlockIdx = newBlockIdx;
-          info.posInLastBlock = 0;
+    // Compute a content hash for this batch item
+    std::size_t contentHash = generateContentHash(
+        static_cast<const char*>(keyPtr) + batchIdx * seqLen * numHeads * headDim * getTypeSizeInBytes(elementType),
+        static_cast<const char*>(valuePtr) + batchIdx * seqLen * numHeads * headDim * getTypeSizeInBytes(elementType),
+        seqLen);
+    
+    // Check if we have identical content already cached
+    int32_t sourceSeqId = findIdenticalSequence(
+        static_cast<const char*>(keyPtr) + batchIdx * seqLen * numHeads * headDim * getTypeSizeInBytes(elementType),
+        static_cast<const char*>(valuePtr) + batchIdx * seqLen * numHeads * headDim * getTypeSizeInBytes(elementType),
+        seqLen);
+    
+    if (sourceSeqId >= 0 && sourceSeqId != seqId) {
+      // We found a duplicate sequence, share blocks instead of creating new ones
+      if (succeeded(shareSequenceBlocks(sourceSeqId, seqId, seqLen))) {
+        // Update the content hash mapping
+        updateContentHashMapping(seqId, contentHash);
+        
+        // Set block indices for the caller
+        for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+          auto& seqInfo = layerSeqInfo[layerIdx][seqId];
+          blockIndices[batchIdx * numLayers + layerIdx] = seqInfo.lastBlockIdx;
         }
         
-        // Get the current block
-        KVBlock* block = blockAllocators[layer]->getBlock(info.lastBlockIdx);
-        if (!block) {
-          return failure();
-        }
-        
-        // Copy the key and value data to the block
-        int64_t tokenOffset = b * seqLen + t;
-        if (failed(copyToBlock(block, info.posInLastBlock, 
-                              keyPtr, valuePtr, tokenOffset, 1))) {
-          return failure();
-        }
-        
-        // Update block indices output - store the index for this layer and token
-        int64_t outputIdx = layer * batchSize * seqLen + b * seqLen + t;
-        blockIndices[outputIdx] = info.lastBlockIdx;
-        
-        // Store the block and position info for this token
-        info.blockPositions.push_back(std::make_pair(info.lastBlockIdx, info.posInLastBlock));
-        
-        // Increment positions
-        info.posInLastBlock++;
-        info.currentPos++;
-        
-        // Increment the used slots in the block
-        block->incrementUsedSlots();
+        // Skip processing this sequence since we're sharing blocks
+        continue;
       }
     }
+    
+    // Regular processing for non-duplicate sequences
+    for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+      auto& layerInfo = layerSeqInfo[layerIdx];
+      auto& allocator = blockAllocators[layerIdx];
+      
+      // Create entry for this sequence if it doesn't exist
+      if (layerInfo.find(seqId) == layerInfo.end()) {
+        layerInfo[seqId] = SequenceInfo();
+        layerInfo[seqId].contentHash = contentHash;
+      }
+      
+      auto& info = layerInfo[seqId];
+      
+      // Check if we need a new block or can use the existing one
+      if (info.lastBlockIdx < 0 || 
+          allocator->getBlock(info.lastBlockIdx)->getUsedSlots() + seqLen > blockSize) {
+        
+        // Try to coalesce blocks if memory is constrained
+        if (allocator->getNumFreeBlocks() == 0) {
+          allocator->coalesceBlocks(0.5, 1, false);
+          allocator->evictBlocksIfNeeded(1);
+        }
+        
+        // Need a new block
+        int32_t newBlockIdx;
+        if (failed(allocateBlockForSequence(seqId, layerIdx, newBlockIdx))) {
+          return failure();
+        }
+        
+        // Update block info
+        info.lastBlockIdx = newBlockIdx;
+        info.posInLastBlock = 0;
+        
+        // Add to block positions
+        info.blockPositions.push_back(std::make_pair(newBlockIdx, 0));
+      }
+      
+      // Get the block
+      KVBlock* block = allocator->getBlock(info.lastBlockIdx);
+      if (!block) {
+        return failure();
+      }
+      
+      // Update the block's access time for LRU tracking
+      block->updateAccessTime(allocator->getCurrentTimestamp());
+      
+      // Copy data to the block
+      if (failed(copyToBlock(block, info.posInLastBlock,
+                            keyPtr, valuePtr,
+                            batchIdx * seqLen, seqLen))) {
+        return failure();
+      }
+      
+      // Update pointers
+      info.posInLastBlock += seqLen;
+      info.currentPos += seqLen;
+      
+      // Increment the block's used slots
+      block->incrementUsedSlots(seqLen);
+      
+      // Update fragmentation metric
+      block->updateFragmentation();
+      
+      // Store block index for the caller
+      blockIndices[batchIdx * numLayers + layerIdx] = info.lastBlockIdx;
+    }
+    
+    // Update the content hash mapping for future sharing
+    updateContentHashMapping(seqId, contentHash);
   }
+  
+  // Try auto-coalescing if enabled and memory is constrained
+  if (autoCoalescingEnabled && allocator->getNumFreeBlocks() == 0) {
+    // Check if average fragmentation exceeds threshold
+    auto metrics = allocator->getMetrics();
+    if (metrics.avgFragmentation > autoCoalescingThreshold) {
+      // Run coalescing to free up some blocks
+      allocator->coalesceBlocks(autoCoalescingThreshold, 5, true);
+    }
+  }
+  
+  // Update sequence length statistics to help with future preallocation
+  allocator->updateSeqLengthStats(info.currentPos + seqLen);
   
   return success();
 }
@@ -329,6 +862,9 @@ LogicalResult PagedKVCache::lookupKV(const int32_t* blockIndices, const int32_t*
           return failure();
         }
         
+        // Update the block's access time for LRU tracking
+        block->updateAccessTime(blockAllocators[layer]->getCurrentTimestamp());
+        
         // Calculate the position within the block
         // This assumes that tokens are stored in the order they were added to the block
         int64_t posInBlock = t % blockSize;
@@ -350,40 +886,64 @@ LogicalResult PagedKVCache::lookupKV(const int32_t* blockIndices, const int32_t*
 }
 
 LogicalResult PagedKVCache::clearSequence(int32_t seqId) {
-  // For each layer
-  for (int64_t layer = 0; layer < numLayers; layer++) {
-    auto key = std::make_pair(seqId, layer);
+  bool hadSequence = false;
+  
+  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+    auto& layerInfo = layerSeqInfo[layerIdx];
+    auto& allocator = blockAllocators[layerIdx];
     
-    // Remove the sequence info if it exists
-    auto it = seqInfo.find(key);
-    if (it != seqInfo.end()) {
-      auto& info = it->second;
+    auto it = layerInfo.find(seqId);
+    if (it != layerInfo.end()) {
+      hadSequence = true;
       
-      // Decrease reference counts for all blocks used by this sequence
-      std::unordered_set<int32_t> uniqueBlocks;
-      for (const auto& blockPos : info.blockPositions) {
-        uniqueBlocks.insert(blockPos.first);
-      }
-      
-      // Free blocks that are no longer needed
-      for (int32_t blockIdx : uniqueBlocks) {
-        KVBlock* block = blockAllocators[layer]->getBlock(blockIdx);
-        if (block && block->decrementRefCount() && block->getRefCount() == 0) {
-          blockAllocators[layer]->freeBlock(block);
+      // If this sequence shares blocks with another, don't free them,
+      // just decrement reference counts
+      if (it->second.sharesBlocks) {
+        // Remove from hash mapping
+        std::size_t contentHash = it->second.contentHash;
+        auto& seqIds = contentHashToSeqIds[contentHash];
+        seqIds.erase(std::remove(seqIds.begin(), seqIds.end(), seqId), seqIds.end());
+        
+        // Decrement reference counts for shared blocks
+        for (const auto& [blockIdx, posInBlock] : it->second.blockPositions) {
+          KVBlock* block = allocator->getBlock(blockIdx);
+          if (block) {
+            block->decrementRefCount();
+          }
+        }
+      } else {
+        // Remove from hash mapping
+        std::size_t contentHash = it->second.contentHash;
+        auto& seqIds = contentHashToSeqIds[contentHash];
+        seqIds.erase(std::remove(seqIds.begin(), seqIds.end(), seqId), seqIds.end());
+        
+        // Free blocks only if they're not shared with other sequences
+        for (const auto& [blockIdx, posInBlock] : it->second.blockPositions) {
+          KVBlock* block = allocator->getBlock(blockIdx);
+          if (block && block->getRefCount() <= 1) {
+            allocator->freeBlock(block);
+          } else if (block) {
+            block->decrementRefCount();
+          }
         }
       }
       
-      // Remove the sequence info
-      seqInfo.erase(it);
+      // Remove sequence info
+      layerInfo.erase(it);
     }
   }
   
-  return success();
+  return hadSequence ? success() : failure();
 }
 
 void PagedKVCache::reset() {
+  // Reset the content hash to sequence ID mapping
+  contentHashToSeqIds.clear();
+  
   // Clear all sequence information
-  seqInfo.clear();
+  for (auto& layerInfo : layerSeqInfo) {
+    layerInfo.clear();
+  }
   
   // Reset all block allocators
   for (auto& allocator : blockAllocators) {
@@ -391,6 +951,7 @@ void PagedKVCache::reset() {
     for (auto* block : allocator->allocatedBlocks) {
       // Reset block state
       block->resetUsedSlots();
+      block->setEvictable(true);
       
       // Add to free blocks
       allocator->freeBlocks.push_back(block);
@@ -398,6 +959,11 @@ void PagedKVCache::reset() {
     
     // Clear allocated blocks
     allocator->allocatedBlocks.clear();
+    
+    // Update metrics
+    if (auto metrics = allocator->getMetrics(); metrics.numEvictions > 0 || metrics.numCoalesces > 0) {
+      allocator->enableMetrics(true); // Ensure metrics are updated
+    }
   }
 }
 
@@ -421,8 +987,11 @@ int64_t PagedKVCache::getTotalMemoryUsage() const {
 int64_t PagedKVCache::getNumSequences() const {
   std::unordered_set<int32_t> uniqueSeqIds;
   
-  for (const auto& entry : seqInfo) {
-    uniqueSeqIds.insert(entry.first.first); // Insert sequence ID
+  // Collect unique sequence IDs from all layers
+  for (const auto& layerInfo : layerSeqInfo) {
+    for (const auto& entry : layerInfo) {
+      uniqueSeqIds.insert(entry.first); // Insert sequence ID
+    }
   }
   
   return uniqueSeqIds.size();
@@ -430,10 +999,14 @@ int64_t PagedKVCache::getNumSequences() const {
 
 int64_t PagedKVCache::getSequenceLength(int32_t seqId) const {
   // Find the sequence info for the first layer, if it exists
-  auto key = std::make_pair(seqId, 0);
-  auto it = seqInfo.find(key);
+  if (layerSeqInfo.empty()) {
+    return 0;
+  }
   
-  if (it != seqInfo.end()) {
+  const auto& firstLayerInfo = layerSeqInfo[0];
+  auto it = firstLayerInfo.find(seqId);
+  
+  if (it != firstLayerInfo.end()) {
     return it->second.currentPos;
   }
   
@@ -529,6 +1102,528 @@ LogicalResult PagedKVCache::allocateBlockForSequence(int32_t seqId, int64_t laye
   
   // Increment the reference count for this block
   block->incrementRefCount();
+  
+  return success();
+}
+
+// Implementation of cross-sequence cache sharing methods
+
+bool PagedKVCache::hasIdenticalPrefix(int32_t seqId1, int32_t seqId2, int64_t prefixLen) const {
+  // Check if both sequences exist
+  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+    const auto& layerInfo = layerSeqInfo[layerIdx];
+    
+    auto it1 = layerInfo.find(seqId1);
+    auto it2 = layerInfo.find(seqId2);
+    
+    if (it1 == layerInfo.end() || it2 == layerInfo.end()) {
+      return false;
+    }
+    
+    const auto& info1 = it1->second;
+    const auto& info2 = it2->second;
+    
+    // Check if sequences are long enough
+    if (info1.currentPos < prefixLen || info2.currentPos < prefixLen) {
+      return false;
+    }
+  }
+  
+  // Compare sequence contents
+  return compareSequenceContent(seqId1, seqId2, prefixLen);
+}
+
+LogicalResult PagedKVCache::shareSequenceBlocks(int32_t sourceSeqId, int32_t targetSeqId, int64_t numTokens) {
+  // Check if source sequence exists and has enough tokens
+  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+    auto& layerInfo = layerSeqInfo[layerIdx];
+    
+    auto it = layerInfo.find(sourceSeqId);
+    if (it == layerInfo.end() || it->second.currentPos < numTokens) {
+      return failure();
+    }
+  }
+  
+  // Share blocks from source to target
+  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+    auto& layerInfo = layerSeqInfo[layerIdx];
+    auto& allocator = blockAllocators[layerIdx];
+    
+    // Get source sequence info
+    const auto& sourceInfo = layerInfo[sourceSeqId];
+    
+    // Create or get target sequence info
+    if (layerInfo.find(targetSeqId) == layerInfo.end()) {
+      layerInfo[targetSeqId] = SequenceInfo();
+    }
+    
+    auto& targetInfo = layerInfo[targetSeqId];
+    
+    // Mark as sharing blocks
+    targetInfo.sharesBlocks = true;
+    targetInfo.sourceSeqId = sourceSeqId;
+    
+    // Calculate how many blocks we need to share
+    int64_t tokensRemaining = numTokens;
+    int64_t blockPos = 0;
+    
+    while (tokensRemaining > 0 && blockPos < sourceInfo.blockPositions.size()) {
+      auto [blockIdx, posInBlock] = sourceInfo.blockPositions[blockPos];
+      
+      // Get the block
+      KVBlock* block = allocator->getBlock(blockIdx);
+      if (!block) {
+        return failure();
+      }
+      
+      // Calculate tokens in this block
+      int64_t tokensInBlock = std::min(blockSize - posInBlock, tokensRemaining);
+      
+      // Increment reference count for the shared block
+      block->incrementRefCount();
+      
+      // Add the block position mapping
+      targetInfo.blockPositions.push_back(std::make_pair(blockIdx, posInBlock));
+      targetInfo.sharedBlockMapping[blockIdx] = posInBlock;
+      
+      // Update tokens remaining
+      tokensRemaining -= tokensInBlock;
+      blockPos++;
+    }
+    
+    // Update target sequence info
+    targetInfo.lastBlockIdx = sourceInfo.blockPositions[blockPos - 1].first;
+    targetInfo.posInLastBlock = sourceInfo.blockPositions[blockPos - 1].second + 
+                               (blockSize - tokensRemaining);
+    targetInfo.currentPos = numTokens;
+  }
+  
+  return success();
+}
+
+std::size_t PagedKVCache::getSequenceContentHash(int32_t seqId) const {
+  // Return the content hash for the first layer (should be the same for all layers)
+  if (numLayers == 0) {
+    return 0;
+  }
+  
+  const auto& layerInfo = layerSeqInfo[0];
+  auto it = layerInfo.find(seqId);
+  
+  if (it != layerInfo.end()) {
+    return it->second.contentHash;
+  }
+  
+  return 0;
+}
+
+std::size_t PagedKVCache::generateContentHash(const void* keyPtr, const void* valuePtr, 
+                                            int64_t seqLen) const {
+  // Generate a hash based on the first few tokens (or all if sequence is short)
+  int64_t tokensToHash = std::min(seqLen, static_cast<int64_t>(16));
+  
+  // Get element size
+  int64_t elementSize = getTypeSizeInBytes(elementType);
+  
+  // Calculate total bytes to hash
+  int64_t bytesToHash = tokensToHash * numHeads * headDim * elementSize;
+  
+  // Create a simple hash
+  std::size_t hash = 0;
+  
+  // Hash key data
+  const char* keyData = static_cast<const char*>(keyPtr);
+  for (int64_t i = 0; i < bytesToHash; i++) {
+    hash ^= std::hash<char>{}(keyData[i]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  }
+  
+  // Hash value data
+  const char* valueData = static_cast<const char*>(valuePtr);
+  for (int64_t i = 0; i < bytesToHash; i++) {
+    hash ^= std::hash<char>{}(valueData[i]) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+  }
+  
+  return hash;
+}
+
+int32_t PagedKVCache::findIdenticalSequence(const void* keyPtr, const void* valuePtr, 
+                                          int64_t seqLen) const {
+  // Generate content hash
+  std::size_t contentHash = generateContentHash(keyPtr, valuePtr, seqLen);
+  
+  // Look up sequences with the same hash
+  auto it = contentHashToSeqIds.find(contentHash);
+  if (it == contentHashToSeqIds.end()) {
+    return -1;
+  }
+  
+  // Check each sequence with the same hash for actual content equality
+  for (int32_t candidateSeqId : it->second) {
+    bool identical = true;
+    
+    // Verify sequence length
+    for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+      const auto& layerInfo = layerSeqInfo[layerIdx];
+      auto seqIt = layerInfo.find(candidateSeqId);
+      
+      if (seqIt == layerInfo.end() || seqIt->second.currentPos != seqLen) {
+        identical = false;
+        break;
+      }
+    }
+    
+    if (!identical) {
+      continue;
+    }
+    
+    // For detailed comparison, we'd need to extract the actual data
+    // This would be more complex, so for simplicity we'll trust the hash
+    // In a real implementation, you might want to do a detailed comparison
+    
+    return candidateSeqId;
+  }
+  
+  return -1;
+}
+
+bool PagedKVCache::compareSequenceContent(int32_t seqId1, int32_t seqId2, int64_t length) const {
+  // Compare content hash as a quick check
+  std::size_t hash1 = getSequenceContentHash(seqId1);
+  std::size_t hash2 = getSequenceContentHash(seqId2);
+  
+  if (hash1 != hash2) {
+    return false;
+  }
+  
+  // For simplicity, we'll just compare the content hash
+  // In a more detailed implementation, we would need to extract and compare
+  // the actual KV data from the cache
+  
+  return true;
+}
+
+void PagedKVCache::updateContentHashMapping(int32_t seqId, std::size_t contentHash) {
+  // Update the content hash to sequence ID mapping
+  contentHashToSeqIds[contentHash].push_back(seqId);
+  
+  // Update the hash in all layers
+  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+    auto& layerInfo = layerSeqInfo[layerIdx];
+    if (layerInfo.find(seqId) != layerInfo.end()) {
+      layerInfo[seqId].contentHash = contentHash;
+    }
+  }
+}
+
+// Add new methods to access and configure the block allocation optimization features
+
+void PagedKVCache::configureBlockAllocators(int64_t initialBlocksPerLayer, bool enableMetrics) {
+  for (auto& allocator : blockAllocators) {
+    allocator->enableMetrics(enableMetrics);
+    
+    // If requested blocks are more than current free blocks, preallocate more
+    int64_t additionalBlocks = initialBlocksPerLayer - allocator->getNumFreeBlocks();
+    if (additionalBlocks > 0) {
+      allocator->preallocateBlocks(additionalBlocks);
+    }
+  }
+}
+
+void PagedKVCache::setEvictionPolicy(std::unique_ptr<EvictionPolicy> policy) {
+  for (auto& allocator : blockAllocators) {
+    if (policy) {
+      // Clone the policy for each allocator
+      // Use the clone method directly instead of dynamic_cast
+      void* clonedPtr = policy->clone();
+      if (clonedPtr) {
+        allocator->setEvictionPolicy(
+            std::unique_ptr<EvictionPolicy>(static_cast<EvictionPolicy*>(clonedPtr)));
+      } else {
+        // Fallback to LRU if clone fails
+        allocator->setEvictionPolicy(std::make_unique<LRUEvictionPolicy>());
+      }
+    } else {
+      // Default to LRU if no policy provided
+      allocator->setEvictionPolicy(std::make_unique<LRUEvictionPolicy>());
+    }
+  }
+}
+
+void PagedKVCache::runBlockCoalescing() {
+  for (auto& allocator : blockAllocators) {
+    allocator->coalesceBlocks(0.5, 1, false);
+  }
+}
+
+std::vector<BlockMetrics> PagedKVCache::getAllBlockMetrics() const {
+  std::vector<BlockMetrics> allMetrics;
+  allMetrics.reserve(blockAllocators.size());
+  
+  for (const auto& allocator : blockAllocators) {
+    allMetrics.push_back(allocator->getMetrics());
+  }
+  
+  return allMetrics;
+}
+
+// We need to add the clone method to EvictionPolicy interface
+void* EvictionPolicy::clone() const {
+  return nullptr; // Base implementation returns nullptr
+}
+
+// LRUEvictionPolicy implementation of clone
+std::unique_ptr<EvictionPolicy> LRUEvictionPolicy::clone() const {
+  return std::make_unique<LRUEvictionPolicy>(*this);
+}
+
+std::vector<int32_t> FragmentationAwareLRUPolicy::selectBlocksForEviction(
+    const BlockAllocator& allocator, int64_t numBlocksNeeded) const {
+  std::vector<int32_t> blocksToEvict;
+  
+  // If no blocks needed, return empty list
+  if (numBlocksNeeded <= 0) {
+    return blocksToEvict;
+  }
+  
+  // Create a vector of (blockIdx, score) pairs for sorting
+  // Score is a weighted combination of last access time and fragmentation
+  std::vector<std::pair<int32_t, double>> blockScores;
+  
+  for (size_t i = 0; i < allocator.allocatedBlocks.size(); i++) {
+    KVBlock* block = allocator.allocatedBlocks[i];
+    
+    // Only consider evictable blocks (refCount == 0 and isEvictable)
+    if (block && block->isEvictable()) {
+      // Normalize last access time to 0.0-1.0 scale
+      // Since higher timestamp means more recent, we invert it
+      double ageScore = 0.0;
+      // Since we don't have the max timestamp, we use a simpler approach:
+      // For LRU part, we'll use the raw access time which will give
+      // older blocks (lower timestamps) preference
+      int64_t lastAccessTime = block->getLastAccessTime();
+      
+      // Fragmentation score is already in 0.0-1.0 range
+      double fragScore = block->getFragmentation();
+      
+      // Combine scores based on weight
+      // For LRU part, we'll use negative lastAccessTime so that 
+      // older blocks have higher priority
+      double combinedScore = (1.0 - fragmentationWeight) * (-lastAccessTime) + 
+                            fragmentationWeight * fragScore * 1000000;
+                            
+      blockScores.push_back(std::make_pair(static_cast<int32_t>(i), combinedScore));
+    }
+  }
+  
+  // Sort by combined score (higher score first)
+  std::sort(blockScores.begin(), blockScores.end(), 
+           [](const auto& a, const auto& b) {
+             return a.second > b.second;
+           });
+  
+  // Take up to numBlocksNeeded blocks
+  for (size_t i = 0; i < std::min(static_cast<size_t>(numBlocksNeeded), blockScores.size()); i++) {
+    blocksToEvict.push_back(blockScores[i].first);
+  }
+  
+  return blocksToEvict;
+}
+
+void BlockAllocator::updateSeqLengthStats(int64_t seqLen) {
+  if (seqLen <= 0) {
+    return;
+  }
+  
+  // First observation
+  if (totalObservations == 0) {
+    minObservedSeqLen = seqLen;
+    maxObservedSeqLen = seqLen;
+    avgObservedSeqLen = seqLen;
+    totalObservations = 1;
+    return;
+  }
+  
+  // Update min and max
+  minObservedSeqLen = std::min(minObservedSeqLen, seqLen);
+  maxObservedSeqLen = std::max(maxObservedSeqLen, seqLen);
+  
+  // Update running average
+  // Use a weighted average to give more weight to recent observations
+  // but still keep historical data somewhat relevant
+  const double alpha = 0.25; // Weight for new observation
+  avgObservedSeqLen = (1 - alpha) * avgObservedSeqLen + alpha * seqLen;
+  
+  // Increment observation count
+  totalObservations++;
+}
+
+int64_t PagedKVCache::runAdvancedBlockCoalescing(double fragmentationThreshold,
+                                         int64_t maxBlocksToCoalesce,
+                                         bool preserveOrder) {
+  int64_t totalCoalesced = 0;
+  
+  for (auto& allocator : blockAllocators) {
+    totalCoalesced += allocator->coalesceBlocks(fragmentationThreshold, 
+                                              maxBlocksToCoalesce, 
+                                              preserveOrder);
+  }
+  
+  return totalCoalesced;
+}
+
+void PagedKVCache::enableAutoCoalescing(double fragmentationThreshold) {
+  autoCoalescingEnabled = true;
+  autoCoalescingThreshold = fragmentationThreshold;
+}
+
+void PagedKVCache::disableAutoCoalescing() {
+  autoCoalescingEnabled = false;
+}
+
+void PagedKVCache::configureBlockAllocatorsAdvanced(int64_t avgSeqLen, int64_t maxConcurrentSeqs,
+                                                 bool enableMetrics, int preallocationStrategy) {
+  // Determine base number of blocks to preallocate per layer based on strategy
+  int64_t baseBlocksPerLayer;
+  switch (preallocationStrategy) {
+    case 0: // Minimal
+      baseBlocksPerLayer = 4;
+      break;
+    case 1: // Balanced
+      baseBlocksPerLayer = 8;
+      break;
+    case 2: // Aggressive
+      baseBlocksPerLayer = 16;
+      break;
+    default:
+      baseBlocksPerLayer = 8; // Default to balanced
+      break;
+  }
+  
+  // Configure each allocator
+  for (auto& allocator : blockAllocators) {
+    // Enable/disable metrics
+    allocator->enableMetrics(enableMetrics);
+    
+    // Set eviction policy based on strategy
+    if (preallocationStrategy == 0) {
+      // Minimal strategy prioritizes memory usage over performance
+      // Use fragmentation-aware policy with high weight on fragmentation
+      allocator->setEvictionPolicy(std::make_unique<FragmentationAwareLRUPolicy>(0.7));
+    } else {
+      // Other strategies can use regular LRU
+      allocator->setEvictionPolicy(std::make_unique<LRUEvictionPolicy>());
+    }
+    
+    // Preallocate blocks with advanced parameters
+    allocator->preallocateBlocks(baseBlocksPerLayer, avgSeqLen, maxConcurrentSeqs);
+  }
+}
+
+int64_t PagedKVCache::calculateOptimalBlockSize(int64_t minBlockSize, int64_t maxBlockSize) const {
+  // Get sequence length statistics
+  int64_t minSeqLen, maxSeqLen;
+  double avgSeqLen;
+  getSequenceLengthStats(minSeqLen, maxSeqLen, avgSeqLen);
+  
+  // If we don't have enough data, use default block size
+  if (minSeqLen <= 0 || maxSeqLen <= 0) {
+    return blockSize;
+  }
+  
+  // Calculate a block size that balances:
+  // 1. Not too small (would require too many blocks for long sequences)
+  // 2. Not too large (would waste memory for short sequences)
+  // A good heuristic is to aim for blocks that can hold about 20-25% of the average sequence
+  int64_t optimalSize = static_cast<int64_t>(avgSeqLen * 0.25);
+  
+  // Make sure it's a power of 2 for memory alignment
+  int64_t powerOf2 = 1;
+  while (powerOf2 < optimalSize) {
+    powerOf2 *= 2;
+  }
+  
+  // Clamp to min/max range
+  return std::max(minBlockSize, std::min(maxBlockSize, powerOf2));
+}
+
+void PagedKVCache::getSequenceLengthStats(int64_t& minSeqLen, int64_t& maxSeqLen, double& avgSeqLen) const {
+  minSeqLen = 0;
+  maxSeqLen = 0;
+  avgSeqLen = 0.0;
+  
+  // Count all sequences
+  int64_t totalSequences = 0;
+  int64_t totalTokens = 0;
+  
+  // We can use any layer's sequence info since they all have the same sequences
+  if (!layerSeqInfo.empty()) {
+    const auto& seqInfo = layerSeqInfo[0];
+    
+    if (seqInfo.empty()) {
+      return;
+    }
+    
+    minSeqLen = std::numeric_limits<int64_t>::max();
+    
+    for (const auto& [seqId, info] : seqInfo) {
+      int64_t seqLen = info.currentPos;
+      
+      if (seqLen > 0) {
+        minSeqLen = std::min(minSeqLen, seqLen);
+        maxSeqLen = std::max(maxSeqLen, seqLen);
+        totalTokens += seqLen;
+        totalSequences++;
+      }
+    }
+    
+    // Calculate average
+    if (totalSequences > 0) {
+      avgSeqLen = static_cast<double>(totalTokens) / totalSequences;
+    }
+    
+    // If we didn't find any non-zero lengths, reset minSeqLen
+    if (minSeqLen == std::numeric_limits<int64_t>::max()) {
+      minSeqLen = 0;
+    }
+  }
+}
+
+void PagedKVCache::configureAttentionOpt(const AttentionConfig& config) {
+  // Create a copy of the config and ensure it has the correct parameters
+  AttentionConfig attConfig = config;
+  attConfig.numHeads = numHeads;
+  attConfig.headDim = headDim;
+  attConfig.setDefaultsFromHeadDim();
+  
+  // Create an appropriate attention implementation
+  attentionImpl = createAttentionImpl(attConfig, elementType);
+}
+
+LogicalResult PagedKVCache::computeAttention(
+    void* output,
+    const void* queries,
+    const int32_t* blockIndices,
+    const int32_t* seqLens,
+    int64_t batchSize,
+    int64_t seqLen) {
+  
+  // Check if attention implementation is configured
+  if (!attentionImpl) {
+    // Create a default attention configuration
+    AttentionConfig defaultConfig;
+    defaultConfig.numHeads = numHeads;
+    defaultConfig.headDim = headDim;
+    defaultConfig.maskType = AttentionMaskType::CAUSAL;
+    defaultConfig.optLevel = AttentionOptLevel::BASIC;
+    defaultConfig.setDefaultsFromHeadDim();
+    
+    // Create attention implementation
+    attentionImpl = createAttentionImpl(defaultConfig, elementType);
+  }
+  
+  // Compute attention using the configured implementation
+  attentionImpl->computePaged(
+      output, queries, this, blockIndices, seqLens, batchSize, seqLen);
   
   return success();
 }

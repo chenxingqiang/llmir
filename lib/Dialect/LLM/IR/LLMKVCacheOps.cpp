@@ -27,17 +27,76 @@ using namespace mlir::llm;
 // AppendKVOp Implementation
 //===----------------------------------------------------------------------===//
 
-int64_t AppendKVOp::getNumKVTokens() {
-  // Try to determine the number of tokens from the input tensor shape
-  if (auto keysType = getKeys().getType().dyn_cast<RankedTensorType>()) {
-    auto shape = keysType.getShape();
-    // Assuming shape format: [batch_size, seq_len, num_heads, head_dim]
-    if (shape.size() >= 2 && shape[0] != ShapedType::kDynamic && 
-        shape[1] != ShapedType::kDynamic) {
-      return shape[0] * shape[1]; // batch_size * seq_len
+LogicalResult AppendKVOp::verify() {
+  // Get batch size from keys tensor
+  if (!getKeys().getType().isa<RankedTensorType>())
+    return emitOpError("keys must have ranked tensor type");
+
+  RankedTensorType keysTy = getKeys().getType().cast<RankedTensorType>();
+  if (keysTy.getRank() < 2)
+    return emitOpError("keys must have rank >= 2, got: ") << keysTy.getRank();
+
+  // Verify values tensor shape matches keys
+  if (!getValues().getType().isa<RankedTensorType>())
+    return emitOpError("values must have ranked tensor type");
+
+  RankedTensorType valuesTy = getValues().getType().cast<RankedTensorType>();
+  if (valuesTy.getRank() != keysTy.getRank())
+    return emitOpError("values rank must match keys rank");
+
+  for (int64_t i = 0; i < keysTy.getRank(); ++i) {
+    if (keysTy.getDimSize(i) != valuesTy.getDimSize(i) && 
+        keysTy.isDynamicDim(i) && valuesTy.isDynamicDim(i)) {
+      return emitOpError("values shape must match keys shape, mismatch at dim ")
+             << i << ": " << keysTy.getDimSize(i) << " vs " 
+             << valuesTy.getDimSize(i);
     }
   }
-  return -1; // Not statically known
+
+  // Verify seq_ids is 1D tensor with batch_size elements
+  if (!getSeqIds().getType().isa<RankedTensorType>())
+    return emitOpError("seq_ids must have ranked tensor type");
+
+  RankedTensorType seqIdsTy = getSeqIds().getType().cast<RankedTensorType>();
+  if (seqIdsTy.getRank() != 1)
+    return emitOpError("seq_ids must be 1D tensor, got rank: ") 
+           << seqIdsTy.getRank();
+
+  int64_t batchSize = keysTy.getDimSize(0);
+  if (!seqIdsTy.isDynamicDim(0) && !keysTy.isDynamicDim(0) && 
+      seqIdsTy.getDimSize(0) != batchSize) {
+    return emitOpError("seq_ids size must match batch size (first dim of keys), got: ") 
+           << seqIdsTy.getDimSize(0) << " vs " << batchSize;
+  }
+
+  // Verify block_indices output is 2D tensor with shape [batch_size, seq_len]
+  if (!getBlockIndices().getType().isa<RankedTensorType>())
+    return emitOpError("block_indices must have ranked tensor type");
+
+  RankedTensorType blockIdxTy = getBlockIndices().getType().cast<RankedTensorType>();
+  if (blockIdxTy.getRank() != 2)
+    return emitOpError("block_indices must be 2D tensor, got rank: ") 
+           << blockIdxTy.getRank();
+
+  return success();
+}
+
+void AppendKVOp::getCanonicalizationPatterns(RewritePatternSet &results,
+                                          MLIRContext *context) {
+  // Add canonicalization patterns here when needed
+}
+
+int64_t AppendKVOp::getNumKVTokens() {
+  if (auto keysTy = getKeys().getType().dyn_cast<RankedTensorType>()) {
+    // If we have a ranked keys tensor, we can determine the number of tokens
+    // For a batch of sequences, the total number of tokens is batch_size * seq_len
+    if (keysTy.getRank() >= 2 && !keysTy.isDynamicDim(0) && !keysTy.isDynamicDim(1)) {
+      int64_t batchSize = keysTy.getDimSize(0);
+      int64_t seqLen = keysTy.getDimSize(1);
+      return batchSize * seqLen;
+    }
+  }
+  return -1; // unknown at compile time
 }
 
 //===----------------------------------------------------------------------===//
@@ -69,184 +128,149 @@ int64_t PagedAttentionOp::getSeqLength() {
 }
 
 //===----------------------------------------------------------------------===//
+// LookupKVOp Implementation
+//===----------------------------------------------------------------------===//
+
+LogicalResult LookupKVOp::verify() {
+  // Verify block_indices has rank 2 (batch_size x seq_len)
+  if (!getBlockIndices().getType().isa<RankedTensorType>())
+    return emitOpError("block_indices must have ranked tensor type");
+
+  RankedTensorType blockIdxTy = getBlockIndices().getType().cast<RankedTensorType>();
+  if (blockIdxTy.getRank() != 2)
+    return emitOpError("block_indices must be 2D tensor, got rank: ") 
+           << blockIdxTy.getRank();
+
+  // Verify seq_lens has rank 1 (batch_size)
+  if (!getSeqLens().getType().isa<RankedTensorType>())
+    return emitOpError("seq_lens must have ranked tensor type");
+
+  RankedTensorType seqLensTy = getSeqLens().getType().cast<RankedTensorType>();
+  if (seqLensTy.getRank() != 1)
+    return emitOpError("seq_lens must be 1D tensor, got rank: ") 
+           << seqLensTy.getRank();
+
+  // Verify batch size is consistent (first dimension of block_indices and size of seq_lens)
+  if (!blockIdxTy.isDynamicDim(0) && !seqLensTy.isDynamicDim(0) &&
+      blockIdxTy.getDimSize(0) != seqLensTy.getDimSize(0)) {
+    return emitOpError("batch size in block_indices (")
+           << blockIdxTy.getDimSize(0) << ") doesn't match "
+           << "batch size in seq_lens (" << seqLensTy.getDimSize(0) << ")";
+  }
+
+  // Output keys and values should have the same shape
+  if (auto keysTy = getKeys().getType().dyn_cast<RankedTensorType>()) {
+    if (auto valuesTy = getValues().getType().dyn_cast<RankedTensorType>()) {
+      if (keysTy.getRank() != valuesTy.getRank())
+        return emitOpError("output keys and values must have the same rank");
+
+      for (int64_t i = 0; i < keysTy.getRank(); ++i) {
+        if (!keysTy.isDynamicDim(i) && !valuesTy.isDynamicDim(i) &&
+            keysTy.getDimSize(i) != valuesTy.getDimSize(i)) {
+          return emitOpError("output keys and values must have the same shape, "
+                            "mismatch at dimension ") 
+                 << i << ": " << keysTy.getDimSize(i) << " vs " 
+                 << valuesTy.getDimSize(i);
+        }
+      }
+    }
+  }
+
+  return success();
+}
+
+int64_t LookupKVOp::getNumKVTokens() {
+  // LookupKVOp doesn't add new tokens to the cache, it only retrieves them
+  return 0;
+}
+
+//===----------------------------------------------------------------------===//
 // Op Verifiers
 //===----------------------------------------------------------------------===//
 
-LogicalResult AppendKVOp::verify() {
-  // Verify input/output KV cache type matches
-  auto inputType = getKvCache().getType().cast<PagedKVCacheType>();
-  auto outputType = getNewKvCache().getType().cast<PagedKVCacheType>();
-  
-  // The input and output KV cache must have the same type
-  if (inputType != outputType) {
-    return emitOpError("input and output KV cache types must match");
-  }
-  
-  // Verify key and value tensors have compatible shapes
-  auto keysType = getKeys().getType().dyn_cast<RankedTensorType>();
-  auto valuesType = getValues().getType().dyn_cast<RankedTensorType>();
-  
-  if (keysType && valuesType) {
-    // Key and value should have the same shape
-    if (keysType.getShape() != valuesType.getShape()) {
-      return emitOpError("key and value tensors must have the same shape");
-    }
-    
-    // If we can determine the number of heads and head dimension, verify they match the KV cache
-    auto shape = keysType.getShape();
-    if (shape.size() >= 4) {
-      if (shape[2] != ShapedType::kDynamic && 
-          static_cast<int64_t>(shape[2]) != inputType.getNumHeads()) {
-        return emitOpError("number of heads in input tensor (")
-               << shape[2] << ") doesn't match KV cache ("
-               << inputType.getNumHeads() << ")";
-      }
-      
-      if (shape[3] != ShapedType::kDynamic && 
-          static_cast<int64_t>(shape[3]) != inputType.getHeadDim()) {
-        return emitOpError("head dimension in input tensor (")
-               << shape[3] << ") doesn't match KV cache ("
-               << inputType.getHeadDim() << ")";
-      }
-    }
-  }
-  
-  // Verify sequence IDs tensor
-  auto seqIdsType = getSeqIds().getType().dyn_cast<RankedTensorType>();
-  if (seqIdsType) {
-    // Sequence IDs should be a 1D tensor
-    if (seqIdsType.getRank() != 1) {
-      return emitOpError("sequence IDs tensor must be 1D");
-    }
-    
-    // If we can determine the batch size from keys, verify it matches seqIds
-    if (keysType && keysType.getRank() >= 1 && 
-        keysType.getDimSize(0) != ShapedType::kDynamic && 
-        seqIdsType.getDimSize(0) != ShapedType::kDynamic &&
-        keysType.getDimSize(0) != seqIdsType.getDimSize(0)) {
-      return emitOpError("batch size in key tensor (")
-             << keysType.getDimSize(0) << ") doesn't match "
-             << "sequence IDs tensor size (" << seqIdsType.getDimSize(0) << ")";
-    }
-  }
-  
-  return success();
-}
-
-LogicalResult LookupKVOp::verify() {
-  // Verify KV cache type
-  auto kvCacheType = getKvCache().getType().cast<PagedKVCacheType>();
-  
-  // Verify block indices tensor
-  auto blockIndicesType = getBlockIndices().getType().dyn_cast<RankedTensorType>();
-  if (!blockIndicesType) {
-    return emitOpError("block indices must have a ranked tensor type");
-  }
-  
-  // Verify sequence lengths tensor
-  auto seqLensType = getSeqLens().getType().dyn_cast<RankedTensorType>();
-  if (!seqLensType) {
-    return emitOpError("sequence lengths must have a ranked tensor type");
-  }
-  
-  // Sequence lengths should be a 1D tensor
-  if (seqLensType.getRank() != 1) {
-    return emitOpError("sequence lengths tensor must be 1D");
-  }
-  
-  // Verify output types
-  auto keysType = getKeys().getType().dyn_cast<RankedTensorType>();
-  auto valuesType = getValues().getType().dyn_cast<RankedTensorType>();
-  
-  if (keysType && valuesType) {
-    // Keys and values should have the same shape
-    if (keysType.getShape() != valuesType.getShape()) {
-      return emitOpError("output key and value tensors must have the same shape");
-    }
-    
-    // If we have num_heads and head_dim attributes, verify they match the output tensors
-    if (keysType.getRank() >= 4) {
-      int64_t numHeads = getNumHeadsAttr().getInt();
-      int64_t headDim = getHeadDimAttr().getInt();
-      
-      if (keysType.getDimSize(2) != ShapedType::kDynamic && 
-          keysType.getDimSize(2) != numHeads) {
-        return emitOpError("number of heads in output tensor (")
-               << keysType.getDimSize(2) << ") doesn't match num_heads attribute ("
-               << numHeads << ")";
-      }
-      
-      if (keysType.getDimSize(3) != ShapedType::kDynamic && 
-          keysType.getDimSize(3) != headDim) {
-        return emitOpError("head dimension in output tensor (")
-               << keysType.getDimSize(3) << ") doesn't match head_dim attribute ("
-               << headDim << ")";
-      }
-    }
-  }
-  
-  return success();
-}
-
 LogicalResult PagedAttentionOp::verify() {
-  // Verify query tensor
-  auto queryType = getQuery().getType().dyn_cast<RankedTensorType>();
-  if (!queryType) {
-    return emitOpError("query must have a ranked tensor type");
+  // Verify query tensor has proper rank (batch_size x seq_len x num_heads x head_dim)
+  if (!getQuery().getType().isa<RankedTensorType>())
+    return emitOpError("query must have ranked tensor type");
+    
+  RankedTensorType queryTy = getQuery().getType().cast<RankedTensorType>();
+  if (queryTy.getRank() < 3)
+    return emitOpError("query must have rank >= 3, got: ") << queryTy.getRank();
+    
+  // Verify block_indices has rank 2 (batch_size x max_seq_len)
+  if (!getBlockIndices().getType().isa<RankedTensorType>())
+    return emitOpError("block_indices must have ranked tensor type");
+
+  RankedTensorType blockIdxTy = getBlockIndices().getType().cast<RankedTensorType>();
+  if (blockIdxTy.getRank() != 2)
+    return emitOpError("block_indices must be 2D tensor, got rank: ") 
+           << blockIdxTy.getRank();
+           
+  // Verify seq_lens has rank 1 (batch_size)
+  if (!getSeqLens().getType().isa<RankedTensorType>())
+    return emitOpError("seq_lens must have ranked tensor type");
+
+  RankedTensorType seqLensTy = getSeqLens().getType().cast<RankedTensorType>();
+  if (seqLensTy.getRank() != 1)
+    return emitOpError("seq_lens must be 1D tensor, got rank: ") 
+           << seqLensTy.getRank();
+           
+  // Verify batch size is consistent across all tensors
+  int64_t queryBatchSize = queryTy.getDimSize(0);
+  int64_t blockIdxBatchSize = blockIdxTy.getDimSize(0);
+  int64_t seqLensBatchSize = seqLensTy.getDimSize(0);
+  
+  if (!queryTy.isDynamicDim(0) && !blockIdxTy.isDynamicDim(0) && 
+      queryBatchSize != blockIdxBatchSize) {
+    return emitOpError("batch size in query (")
+           << queryBatchSize << ") doesn't match "
+           << "batch size in block_indices (" << blockIdxBatchSize << ")";
   }
   
-  // Verify KV cache type
-  auto kvCacheType = getKvCache().getType().cast<PagedKVCacheType>();
-  
-  // Verify block indices tensor
-  auto blockIndicesType = getBlockIndices().getType().dyn_cast<RankedTensorType>();
-  if (!blockIndicesType) {
-    return emitOpError("block indices must have a ranked tensor type");
+  if (!queryTy.isDynamicDim(0) && !seqLensTy.isDynamicDim(0) && 
+      queryBatchSize != seqLensBatchSize) {
+    return emitOpError("batch size in query (")
+           << queryBatchSize << ") doesn't match "
+           << "batch size in seq_lens (" << seqLensBatchSize << ")";
   }
   
-  // Verify sequence lengths tensor
-  auto seqLensType = getSeqLens().getType().dyn_cast<RankedTensorType>();
-  if (!seqLensType) {
-    return emitOpError("sequence lengths must have a ranked tensor type");
-  }
-  
-  // Sequence lengths should be a 1D tensor
-  if (seqLensType.getRank() != 1) {
-    return emitOpError("sequence lengths tensor must be 1D");
-  }
-  
-  // If query has known rank, it should be 4D: [batch_size, seq_len, num_heads, head_dim]
-  if (queryType.getRank() != 4) {
-    return emitOpError("query tensor must have rank 4");
-  }
-  
-  // Output shape should match query shape
-  auto outputType = getOutput().getType().dyn_cast<RankedTensorType>();
-  if (outputType && queryType) {
-    if (outputType.getShape() != queryType.getShape()) {
-      return emitOpError("output shape must match query shape");
+  // Verify output tensor shape matches query shape
+  if (!getAttentionOutput().getType().isa<RankedTensorType>())
+    return emitOpError("attention_output must have ranked tensor type");
+
+  RankedTensorType outputTy = getAttentionOutput().getType().cast<RankedTensorType>();
+  if (outputTy.getRank() != queryTy.getRank())
+    return emitOpError("attention_output rank must match query rank");
+
+  for (int64_t i = 0; i < queryTy.getRank(); ++i) {
+    if (!outputTy.isDynamicDim(i) && !queryTy.isDynamicDim(i) &&
+        outputTy.getDimSize(i) != queryTy.getDimSize(i)) {
+      return emitOpError("attention_output shape must match query shape, "
+                        "mismatch at dimension ") 
+             << i << ": " << outputTy.getDimSize(i) << " vs " 
+             << queryTy.getDimSize(i);
     }
   }
   
-  // Verify num_heads and head_dim attributes match query tensor if possible
-  int64_t numHeads = getNumHeadsAttr().getInt();
-  int64_t headDim = getHeadDimAttr().getInt();
-  
-  if (queryType.getDimSize(2) != ShapedType::kDynamic && 
-      queryType.getDimSize(2) != numHeads) {
-    return emitOpError("number of heads in query tensor (")
-           << queryType.getDimSize(2) << ") doesn't match num_heads attribute ("
-           << numHeads << ")";
-  }
-  
-  if (queryType.getDimSize(3) != ShapedType::kDynamic && 
-      queryType.getDimSize(3) != headDim) {
-    return emitOpError("head dimension in query tensor (")
-           << queryType.getDimSize(3) << ") doesn't match head_dim attribute ("
-           << headDim << ")";
+  // Verify alibi_slopes if present
+  if (getAlibiSlopes()) {
+    auto alibiSlopes = getAlibiSlopes().value();
+    if (queryTy.getRank() >= 3 && !queryTy.isDynamicDim(2)) {
+      int64_t numHeads = queryTy.getDimSize(2);
+      if (alibiSlopes.size() != numHeads) {
+        return emitOpError("alibi_slopes size (")
+               << alibiSlopes.size() << ") doesn't match "
+               << "number of heads (" << numHeads << ")";
+      }
+    }
   }
   
   return success();
+}
+
+int64_t PagedAttentionOp::getNumKVTokens() {
+  // PagedAttentionOp doesn't add new tokens to the cache
+  return 0;
 }
 
 #define GET_OP_CLASSES

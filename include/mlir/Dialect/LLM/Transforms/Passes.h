@@ -38,8 +38,28 @@ std::unique_ptr<Pass> createKVCacheOptimizationPass();
 // Registration
 //===----------------------------------------------------------------------===//
 
-/// Generate the code for registering passes.
-#define GEN_PASS_REGISTRATION
+/// Register all LLM dialect passes.
+void registerLLMPasses();
+
+/// Register just the KV cache lowering passes.
+void registerLowerKVCacheOpsPasses();
+
+//===----------------------------------------------------------------------===//
+// Passes
+//===----------------------------------------------------------------------===//
+
+/// Creates a pass that transforms high-level LLM operations to lower-level ones.
+std::unique_ptr<Pass> createLLMLoweringPass();
+
+/// Creates a pass that lowers KV cache operations to runtime function calls.
+std::unique_ptr<Pass> createLowerKVCacheOpsPass();
+
+//===----------------------------------------------------------------------===//
+// Declarations
+//===----------------------------------------------------------------------===//
+
+#define GEN_PASS_DECL_LOWERKVCACHEOPS
+#define GEN_PASS_DECL_LLMLOWERING
 #include "mlir/Dialect/LLM/Transforms/Passes.h.inc"
 
 } // namespace llm
