@@ -315,3 +315,6 @@ endif()
 if(MLIR_STANDALONE_BUILD)
   llvm_distribution_add_targets()
 endif()
+
+# Add benchmark directory
+add_subdirectory(benchmark)
