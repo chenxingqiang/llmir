@@ -183,6 +183,40 @@ LLMIR follows a phased development approach:
    - Pipeline parallelism
    - Backend code generation
 
+## Attention Optimization Benchmarks
+
+The LLMIR project includes comprehensive benchmarks for various attention optimization techniques, which are critical for LLM inference performance. These benchmarks evaluate different approaches to optimizing the attention mechanism, a crucial component in transformer models.
+
+### Optimization Techniques
+
+Three key attention optimization techniques have been implemented and evaluated:
+
+1. **Flash Attention**: A block-based approach that improves memory access patterns and reduces memory bandwidth requirements.
+2. **Multi-Query Attention (MQA)**: Uses multiple query heads but shares a single key-value head across all queries, significantly reducing memory usage.
+3. **Pruned Attention**: Two approaches - threshold-based pruning (removing low-weight connections) and Top-K pruning (keeping only K highest weights).
+
+### Performance Results
+
+Benchmark results on Mac M3 ARM processor show significant performance improvements:
+
+| Technique | Speedup Range | Memory Reduction | Accuracy Impact |
+|-----------|---------------|------------------|-----------------|
+| Flash Attention | 1.28-1.69x | Minimal | Very Low |
+| Multi-Query Attention | 1.12-1.38x | 60-70% | Moderate |
+| Threshold Pruning | 1.96-2.09x | Moderate | Higher |
+| Top-K Pruning | 1.52-1.73x | Moderate | Controllable |
+
+All optimization techniques show better performance as sequence length increases, making them particularly valuable for LLM inference with long context windows.
+
+### Key Findings
+
+- **For maximum speed**: Threshold-based pruning provides the highest speedup (up to 2.09x)
+- **For memory efficiency**: Multi-Query Attention offers significant memory savings (60-70%)
+- **For accuracy-speed balance**: Flash Attention provides good speedup with minimal accuracy impact
+- **For scalability**: Benefits of all optimization techniques increase with sequence length
+
+For detailed information, see the [attention optimization test procedure](docs/attention_optimization_test_procedure.md) and [comprehensive benchmark report](docs/attention_optimization_test_report.md).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
