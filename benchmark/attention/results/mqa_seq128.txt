@@ -1,0 +1,19 @@
+==== Multi-Query Attention Benchmark ====
+Config: batch=2, seqLen=128, contextLen=128, heads=12, dim=64
+
+Standard Multi-Head Attention:
+  Time: 26.3512 ms per run
+  Performance: 3.82007 GFLOPs/sec
+  Memory: 3 MB
+
+Multi-Query Attention:
+  Time: 23.0274 ms per run
+  Performance: 2.18573 GFLOPs/sec
+  Memory: 1.625 MB
+  Memory Reduction: 45.8333%
+
+Speedup: 1.14434x
+
+Output Difference (MHA vs MQA):
+  Max Difference: 0.124833
+  Average Difference: 0.00728135
