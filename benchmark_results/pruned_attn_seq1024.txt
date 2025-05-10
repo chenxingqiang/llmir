@@ -1,0 +1,27 @@
+==== Pruned Attention Benchmark ====
+Config: batch=2, seqLen=1024, contextLen=1024, heads=8, dim=64
+Threshold: 0.01, TopK: 128
+
+Standard Attention:
+  Time: 1890.84 ms per run
+  Performance: 2.27146 GFLOPs/sec
+
+Threshold-Pruned Attention:
+  Time: 892.683 ms per run
+  Performance: 0.470092 GFLOPs/sec
+  Pruning Ratio: ~90.2294%
+  Speedup: 2.11816x
+
+Top-K Pruned Attention:
+  Time: 1512.96 ms per run
+  Performance: 0.354848 GFLOPs/sec
+  Pruning Ratio: 87.5%
+  Speedup: 1.24976x
+
+Output Differences:
+  Threshold-Pruned vs Standard:
+    Max Difference: 0.0998971
+    Average Difference: 0.00197728
+  Top-K Pruned vs Standard:
+    Max Difference: 0.0229791
+    Average Difference: 0.00294147

@@ -1,0 +1,17 @@
+==== Attention Benchmark ====
+Config: batch=2, seqLen=128, contextLen=128, heads=8, dim=64
+
+Flash Attention:
+  Time: 14.75 ms per run
+  Performance: 4.63862 GFLOPs/sec
+
+Standard Attention:
+  Time: 18.471 ms per run
+  Performance: 3.70416 GFLOPs/sec
+
+Speedup: 1.25228x
+
+Correctness Check:
+  Max difference: 3.44677e-05
+  Average difference: 5.03237e-07
+  Elements with diff > 1e-4: 0 (0%)
