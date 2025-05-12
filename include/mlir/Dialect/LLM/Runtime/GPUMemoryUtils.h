@@ -25,6 +25,9 @@
 #include <cuda_runtime.h>
 #elif defined(LLMIR_ENABLE_HIP)
 #include <hip/hip_runtime.h>
+#elif defined(LLMIR_ENABLE_METAL) && defined(__APPLE__)
+#include <Metal/Metal.h>
+#include <Foundation/Foundation.h>
 #endif
 
 namespace mlir {

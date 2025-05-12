@@ -32,4 +32,13 @@ if(LLMIR_ENABLE_HIP)
   target_link_libraries(MLIRLLMRuntime PRIVATE hip::device)
   target_compile_definitions(MLIRLLMRuntime PRIVATE LLMIR_ENABLE_HIP)
   message(STATUS "Building MLIRLLMRuntime with HIP support")
+endif()
+
+# Check for Metal support on Apple platforms
+if(LLMIR_ENABLE_METAL AND APPLE)
+  find_library(METAL_LIBRARY Metal REQUIRED)
+  find_library(FOUNDATION_LIBRARY Foundation REQUIRED)
+  target_link_libraries(MLIRLLMRuntime PRIVATE ${METAL_LIBRARY} ${FOUNDATION_LIBRARY})
+  target_compile_definitions(MLIRLLMRuntime PRIVATE LLMIR_ENABLE_METAL)
+  message(STATUS "Building MLIRLLMRuntime with Metal support")
 endif() 

@@ -23,7 +23,16 @@ if [ ! -f "$BENCHMARK_EXEC" ]; then
     echo "Please build the project first using:"
     echo "  mkdir -p $BUILD_DIR"
     echo "  cd $BUILD_DIR"
-    echo "  cmake -G Ninja .. -DLLMIR_ENABLE_CUDA=ON"
+    
+    # Check if running on macOS with Apple Silicon
+    if [[ "$(uname)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+        echo "  cmake -G Ninja .. -DLLMIR_ENABLE_METAL=ON"
+        METAL_FLAG="-DLLMIR_ENABLE_METAL=ON"
+    else
+        echo "  cmake -G Ninja .. -DLLMIR_ENABLE_CUDA=ON"
+        METAL_FLAG=""
+    fi
+    
     echo "  ninja llama3_kvcache_benchmark"
     exit 1
 fi
