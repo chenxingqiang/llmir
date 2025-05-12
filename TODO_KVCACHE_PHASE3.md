@@ -69,25 +69,25 @@ This document outlines the remaining tasks to complete the PagedKVCache implemen
 
 ## 4. Testing and Benchmarking
 
-- [ ] Create comprehensive unit tests
-  - Test all edge cases of block allocation/deallocation
-  - Test cross-block boundary handling
-  - Test reference counting and cache sharing
+- [x] Create comprehensive unit tests
+  - [x] Test all edge cases of block allocation/deallocation
+  - [x] Test cross-block boundary handling
+  - [x] Test reference counting and cache sharing
 
-- [ ] Implement performance benchmarks
-  - Measure throughput for different batch sizes
-  - Compare memory usage vs. non-paged implementations
-  - Benchmark against vLLM for validation
+- [x] Implement performance benchmarks
+  - [x] Measure throughput for different batch sizes
+  - [x] Compare memory usage vs. non-paged implementations
+  - [x] Benchmark against vLLM for validation
 
-- [ ] Test with large models
-  - Configure tests with realistic Transformer configurations
-  - Test with variable sequence lengths
-  - Measure performance with different block sizes
+- [x] Test with large models
+  - [x] Configure tests with realistic Transformer configurations
+  - [x] Test with variable sequence lengths
+  - [x] Measure performance with different block sizes
 
-- [ ] Create integration tests
-  - Test integration with MLIR operations
-  - Test end-to-end inference performance
-  - Test memory usage under sustained load
+- [x] Create integration tests
+  - [x] Test integration with MLIR operations
+  - [x] Test end-to-end inference performance
+  - [x] Test memory usage under sustained load
 
 ## 5. Advanced Features
 
