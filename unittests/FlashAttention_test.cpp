@@ -241,42 +241,123 @@ TEST_F(FlashAttentionTest, LongSequenceFlashAttention) {
 TEST_F(FlashAttentionTest, FlashAttentionWithKVCache) {
   createTestData();
   
-  // Add some KV data to the cache
-  std::vector<int32_t> seqIds = {10, 20};
   std::vector<int32_t> blockIndices(batchSize * numLayers);
+  std::vector<int32_t> seqLens(batchSize, contextLen);
   
-  // Append KV pairs to cache
-  LogicalResult result = kvCache->appendKV(
-      keyData.data(), valueData.data(), 
-      batchSize, contextLen, seqIds.data(), blockIndices.data());
+  // Create sequence data and fill KV cache
+  for (int32_t i = 0; i < batchSize; i++) {
+    // Add a new sequence to the cache
+    int32_t seqId = 1000 + i;
+    
+    // Append key-value pairs to the cache
+    for (int64_t pos = 0; pos < contextLen; pos++) {
+      float* keyPtr = keyData.data() + (i * contextLen * numHeads * headDim) + 
+                     (pos * numHeads * headDim);
+      float* valuePtr = valueData.data() + (i * contextLen * numHeads * headDim) + 
+                       (pos * numHeads * headDim);
+      
+      ASSERT_TRUE(succeeded(kvCache->append(seqId, keyPtr, valuePtr)));
+    }
+    
+    // Fill in block indices - for simplicity, use seqId and layer 0
+    for (int64_t j = 0; j < contextLen; j++) {
+      blockIndices[i * contextLen + j] = (seqId << 16) | 0;
+    }
+  }
   
-  ASSERT_TRUE(succeeded(result));
-  
-  // Set sequence lengths for attention
-  std::vector<int32_t> seqLens = {contextLen, contextLen};
-  
-  // Compute attention with the KV cache
-  result = kvCache->computeAttention(
+  // Compute attention using the KV cache
+  attImpl->computePaged(
       outputData.data(),
       queryData.data(),
+      kvCache.get(),
       blockIndices.data(),
       seqLens.data(),
       batchSize,
       seqLen);
   
-  ASSERT_TRUE(succeeded(result));
-  
-  // Check for basic output properties
-  bool allZeros = true;
+  // Verify output is valid
   bool hasNaNs = false;
+  bool allZeros = true;
   
   for (float val : outputData) {
-    if (val != 0.0f) allZeros = false;
     if (std::isnan(val)) hasNaNs = true;
+    if (val != 0.0f) allZeros = false;
   }
   
-  EXPECT_FALSE(allZeros);
   EXPECT_FALSE(hasNaNs);
+  EXPECT_FALSE(allZeros);
+}
+
+// Test the gatherKVForAttention method for Flash Attention
+TEST_F(FlashAttentionTest, GatherKVForAttention) {
+  createTestData();
+  
+  // Add a sequence to the KV cache
+  int32_t seqId = 1234;
+  
+  // Append key-value pairs to the cache
+  for (int64_t pos = 0; pos < contextLen; pos++) {
+    float* keyPtr = keyData.data() + (pos * numHeads * headDim);
+    float* valuePtr = valueData.data() + (pos * numHeads * headDim);
+    
+    ASSERT_TRUE(succeeded(kvCache->append(seqId, keyPtr, valuePtr)));
+  }
+  
+  // Allocate buffers for gathered keys and values
+  std::vector<float> gatheredKeys(numLayers * contextLen * numHeads * headDim, 0.0f);
+  std::vector<float> gatheredValues(numLayers * contextLen * numHeads * headDim, 0.0f);
+  
+  // Test gathering the entire sequence
+  ASSERT_TRUE(succeeded(kvCache->gatherKVForAttention(
+      gatheredKeys.data(), 
+      gatheredValues.data(), 
+      seqId, 
+      0,  // start position 
+      contextLen)));
+  
+  // Verify gathered data is not all zeros
+  bool keysAllZeros = true;
+  bool valuesAllZeros = true;
+  
+  for (float val : gatheredKeys) {
+    if (val != 0.0f) keysAllZeros = false;
+  }
+  
+  for (float val : gatheredValues) {
+    if (val != 0.0f) valuesAllZeros = false;
+  }
+  
+  EXPECT_FALSE(keysAllZeros);
+  EXPECT_FALSE(valuesAllZeros);
+  
+  // Test gathering a subset of the sequence
+  std::fill(gatheredKeys.begin(), gatheredKeys.end(), 0.0f);
+  std::fill(gatheredValues.begin(), gatheredValues.end(), 0.0f);
+  
+  const int64_t startPos = 5;
+  const int64_t numTokens = 10;
+  
+  ASSERT_TRUE(succeeded(kvCache->gatherKVForAttention(
+      gatheredKeys.data(), 
+      gatheredValues.data(), 
+      seqId, 
+      startPos,
+      numTokens)));
+  
+  // Verify gathered subset is not all zeros
+  keysAllZeros = true;
+  valuesAllZeros = true;
+  
+  for (float val : gatheredKeys) {
+    if (val != 0.0f) keysAllZeros = false;
+  }
+  
+  for (float val : gatheredValues) {
+    if (val != 0.0f) valuesAllZeros = false;
+  }
+  
+  EXPECT_FALSE(keysAllZeros);
+  EXPECT_FALSE(valuesAllZeros);
 }
 
 // Test Flash Attention correctness compared to regular attention

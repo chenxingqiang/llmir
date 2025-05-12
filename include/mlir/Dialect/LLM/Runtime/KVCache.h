@@ -525,6 +525,19 @@ public:
   /// \param config Attention configuration parameters
   void configureAttentionOpt(const AttentionConfig& config);
   
+  /// Efficiently gather keys and values from KV cache for attention computation
+  /// \param outputKeys Output buffer for gathered keys [numLayers, numTokens, numHeads, headDim]
+  /// \param outputValues Output buffer for gathered values [numLayers, numTokens, numHeads, headDim]
+  /// \param seqId Sequence ID to gather from
+  /// \param startPos Starting position in the sequence
+  /// \param numTokens Number of tokens to gather
+  LogicalResult gatherKVForAttention(
+      void* outputKeys,
+      void* outputValues,
+      int32_t seqId,
+      int64_t startPos,
+      int64_t numTokens);
+  
   /// Compute optimized attention using the KV cache
   /// \param output Output tensor [batchSize, seqLen, numHeads, headDim]
   /// \param queries Query tensor [batchSize, seqLen, numHeads, headDim]

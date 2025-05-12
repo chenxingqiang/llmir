@@ -1595,8 +1595,31 @@ void PagedKVCache::configureAttentionOpt(const AttentionConfig& config) {
   attConfig.headDim = headDim;
   attConfig.setDefaultsFromHeadDim();
   
+  // Configure Flash Attention parameters for optimal performance with paged KV cache
+  if (attConfig.useFlashAttention) {
+    // Adjust block sizes based on the paged KV cache block size for optimal tiling
+    // The query block size (M) should be related to a multiple of query size in tokens
+    // The key block size (N) should be related to the KV cache block size
+    
+    // A good default block size for M is 64
+    if (attConfig.blockSizeM <= 0) {
+      attConfig.blockSizeM = 64;
+    }
+    
+    // For N, we want a value that's a multiple of the cache block size
+    // But capped to a reasonable maximum for memory efficiency
+    if (attConfig.blockSizeN <= 0) {
+      // Use the block size of the KV cache as a basis, but ensure at least 32
+      // and no more than 128 for good performance
+      attConfig.blockSizeN = std::min(128, std::max(32, static_cast<int>(blockSize)));
+    }
+    
+    // Enable prefetching by default for better memory access patterns
+    attConfig.usePrefetching = true;
+  }
+  
   // Create an appropriate attention implementation
-  attentionImpl = createAttentionImpl(attConfig, elementType);
+  attentionImpl = createAttentionImpl(attConfig, elementType, useGPU);
 }
 
 LogicalResult PagedKVCache::computeAttention(
@@ -1618,12 +1641,102 @@ LogicalResult PagedKVCache::computeAttention(
     defaultConfig.setDefaultsFromHeadDim();
     
     // Create attention implementation
-    attentionImpl = createAttentionImpl(defaultConfig, elementType);
+    attentionImpl = createAttentionImpl(defaultConfig, elementType, useGPU);
   }
   
   // Compute attention using the configured implementation
   attentionImpl->computePaged(
       output, queries, this, blockIndices, seqLens, batchSize, seqLen);
+  
+  return success();
+}
+
+// Efficiently gather keys and values from KV cache for attention computation
+LogicalResult PagedKVCache::gatherKVForAttention(
+    void* outputKeys,
+    void* outputValues,
+    int32_t seqId,
+    int64_t startPos,
+    int64_t numTokens) {
+  
+  // Check if sequence exists
+  if (layerSeqInfo.empty() || layerSeqInfo[0].count(seqId) == 0) {
+    return failure();
+  }
+  
+  // Check if start position and length are valid
+  int64_t seqLen = layerSeqInfo[0].at(seqId).currentPos;
+  if (startPos < 0 || startPos + numTokens > seqLen) {
+    return failure();
+  }
+  
+  // Gather keys and values from each layer and concatenate them
+  // This is more efficient than making separate lookupKV calls
+  int64_t elementTypeSize = getElementTypeSize();
+  int64_t tokensPerKey = numHeads * headDim;
+  int64_t tokenSizeInBytes = tokensPerKey * elementTypeSize;
+  
+  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
+    const auto& seqInfo = layerSeqInfo[layerIdx].at(seqId);
+    int64_t currentTokenOffset = 0;
+    
+    // Find the starting block position for this sequence
+    int64_t blockPos = 0;
+    while (blockPos < seqInfo.blockPositions.size() && currentTokenOffset + blockSize <= startPos) {
+      // Skip whole blocks that come before our start position
+      currentTokenOffset += blockSize;
+      blockPos++;
+    }
+    
+    // Now we're at the first block we need to read from
+    int64_t remainingTokens = numTokens;
+    int64_t outputOffset = 0;
+    
+    // Calculate layer offsets in the output
+    char* layerOutputKeys = static_cast<char*>(outputKeys) + layerIdx * numTokens * tokenSizeInBytes;
+    char* layerOutputValues = static_cast<char*>(outputValues) + layerIdx * numTokens * tokenSizeInBytes;
+    
+    // Keep copying until we've gathered all requested tokens
+    while (remainingTokens > 0 && blockPos < seqInfo.blockPositions.size()) {
+      auto [blockIdx, posInBlock] = seqInfo.blockPositions[blockPos];
+      
+      // If this sequence shares blocks, map to the actual block index
+      if (seqInfo.sharesBlocks && seqInfo.sharedBlockMapping.count(blockIdx) > 0) {
+        blockIdx = seqInfo.sharedBlockMapping.at(blockIdx);
+      }
+      
+      // Get block from allocator
+      KVBlock* block = blockAllocators[layerIdx]->getBlock(blockIdx);
+      if (!block) {
+        return failure();
+      }
+      
+      // Calculate position within block to start reading
+      int64_t inBlockOffset = startPos - currentTokenOffset + posInBlock;
+      
+      // Calculate how many tokens to read from this block
+      int64_t tokensInBlock = std::min(remainingTokens, blockSize - (inBlockOffset - posInBlock));
+      
+      // Copy keys and values from this block
+      if (failed(copyFromBlock(block, inBlockOffset, 
+                              layerOutputKeys + outputOffset * tokenSizeInBytes,
+                              layerOutputValues + outputOffset * tokenSizeInBytes,
+                              0, tokensInBlock))) {
+        return failure();
+      }
+      
+      // Update counters
+      remainingTokens -= tokensInBlock;
+      outputOffset += tokensInBlock;
+      currentTokenOffset += blockSize - posInBlock;
+      blockPos++;
+    }
+    
+    // Check if we gathered all tokens
+    if (remainingTokens > 0) {
+      return failure();
+    }
+  }
   
   return success();
 }
