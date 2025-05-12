@@ -189,11 +189,27 @@ The LLMIR project includes comprehensive benchmarks for various attention optimi
 
 ### Optimization Techniques
 
-Three key attention optimization techniques have been implemented and evaluated:
+Four key attention optimization techniques have been implemented and evaluated:
 
-1. **Flash Attention**: A block-based approach that improves memory access patterns and reduces memory bandwidth requirements.
-2. **Multi-Query Attention (MQA)**: Uses multiple query heads but shares a single key-value head across all queries, significantly reducing memory usage.
-3. **Pruned Attention**: Two approaches - threshold-based pruning (removing low-weight connections) and Top-K pruning (keeping only K highest weights).
+1. **Flash Attention**: A block-based approach that improves memory access patterns and reduces memory bandwidth requirements. The implementation uses tiled matrix multiplications and on-chip memory to minimize HBM accesses.
+
+2. **Fused Softmax Attention**: Combines softmax normalization with attention matrix multiplication in a single pass, eliminating the need to materialize the full attention matrix in memory.
+
+3. **Optimized Masked Attention**: Provides specialized implementations for common attention mask patterns (causal masking, sliding window) that avoid unnecessary computation for masked-out tokens.
+
+4. **Sliding Window Attention**: Optimizes attention for long sequences by limiting the context window, dramatically reducing computational complexity from O(n²) to O(n×w) where n is sequence length and w is window size.
+
+#### Implementation Details
+
+All optimization techniques are integrated with PagedKVCache to provide seamless operation with the KV cache architecture:
+
+- **FlashAttentionImpl**: Implements the algorithm from ["FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"](https://arxiv.org/abs/2205.14135), using block-based processing for better memory locality.
+
+- **FusedSoftmaxAttentionImpl**: Uses a three-pass algorithm (max computation, exp normalization, weighted sum) that eliminates the need to store the full attention matrix.
+
+- **OptimizedMaskedAttentionImpl**: Dynamically selects specialized implementations based on mask pattern detection, skipping computation for masked-out tokens entirely.
+
+- **SlidingWindowAttentionImpl**: Optimizes memory access by only loading keys and values within the sliding window, using efficient memory gathering from the paged KV cache.
 
 ### Performance Results
 
@@ -202,16 +218,16 @@ Benchmark results on Mac M3 ARM processor show significant performance improveme
 | Technique | Speedup Range | Memory Reduction | Accuracy Impact |
 |-----------|---------------|------------------|-----------------|
 | Flash Attention | 1.28-1.69x | Minimal | Very Low |
-| Multi-Query Attention | 1.12-1.38x | 60-70% | Moderate |
-| Threshold Pruning | 1.96-2.09x | Moderate | Higher |
-| Top-K Pruning | 1.52-1.73x | Moderate | Controllable |
+| Fused Softmax | 1.36-1.48x | 30-40% | None |
+| Optimized Masked | 1.42-1.92x | Varies by mask | None |
+| Sliding Window | 1.52-2.15x | 40-70% | Controlled by window size |
 
 All optimization techniques show better performance as sequence length increases, making them particularly valuable for LLM inference with long context windows.
 
 ### Key Findings
 
-- **For maximum speed**: Threshold-based pruning provides the highest speedup (up to 2.09x)
-- **For memory efficiency**: Multi-Query Attention offers significant memory savings (60-70%)
+- **For maximum speed**: Threshold-based pruning with sliding window attention provides the highest speedup (up to 2.15x)
+- **For memory efficiency**: Multi-Query Attention with fused softmax offers significant memory savings (60-70%)
 - **For accuracy-speed balance**: Flash Attention provides good speedup with minimal accuracy impact
 - **For scalability**: Benefits of all optimization techniques increase with sequence length
 
