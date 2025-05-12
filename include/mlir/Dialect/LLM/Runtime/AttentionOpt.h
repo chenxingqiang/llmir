@@ -71,56 +71,58 @@ struct AttentionConfig {
   int cudaBlockSize = 256;        // CUDA block size for kernels
   int cudaNumSMs = 0;             // Number of streaming multiprocessors (0 = auto-detect)
   bool useTensorCores = true;     // Use Tensor Cores if available
-  bool useHalfPrecision = false;  // Use FP16 computation
+  bool useHalfPrecision = false;  // Use FP16 computation when available
+
+  // Attention variant
+  AttentionVariant variant = AttentionVariant::STANDARD;  // Attention variant
+  int64_t numKVHeads = 0;         // Number of key-value heads (for MQA/GQA)
+  bool rotaryEmbedding = false;   // Whether to apply rotary embeddings
   
-  // Masking parameters
-  AttentionMaskType maskType = AttentionMaskType::CAUSAL;
-  int64_t windowSize = -1;    // For sliding window attention
+  // Attention masks
+  AttentionMaskType maskType = AttentionMaskType::BIDIRECTIONAL;  // Type of attention mask
   
-  // Optimization parameters
-  AttentionOptLevel optLevel = AttentionOptLevel::BASIC;
-  bool fuseSoftmax = true;    // Fuse softmax with attention matrix multiplication
-  bool blockSparse = false;   // Use block-sparse attention computations
+  // Optimization flags
+  bool useFlashAttention = false;   // Use Flash Attention algorithm
+  bool fuseSoftmax = false;         // Fuse softmax with attention matrix multiplication
+  bool optimizeMaskedAttention = false;  // Use specialized masked attention implementations
+  bool blockSparse = false;         // Use block-sparse computation for attention
   
-  // Custom parameters
-  void* customMask = nullptr; // Custom attention mask
+  // Flash Attention parameters
+  int64_t flashBlockSizeM = 64;    // Block size for queries in Flash Attention
+  int64_t flashBlockSizeN = 64;    // Block size for keys in Flash Attention
+  int64_t flashBlockSizeK = 32;    // Block size for the head dimension
   
-  // Attention variant parameters
-  AttentionVariant variant = AttentionVariant::STANDARD;
-  int64_t numKVHeads = 0;    // Number of KV heads (for grouped-query attention)
-  int64_t headGroupSize = 0; // Number of query heads per KV head
+  // Sliding window attention parameters
+  int64_t windowSize = 0;          // Window size for sliding window attention (0 = disabled)
   
-  /// Get the default scale value based on head dimension
-  float getDefaultScale() const {
-    return 1.0f / std::sqrt(static_cast<float>(headDim));
-  }
-  
-  /// Set default values based on head dimension
+  // Helper method to set default scale if not provided
   void setDefaultsFromHeadDim() {
     if (scale <= 0.0f && headDim > 0) {
-      scale = getDefaultScale();
+      scale = 1.0f / std::sqrt(static_cast<float>(headDim));
     }
-  }
-  
-  // Set default values based on variant type
-  void configureForVariant(AttentionVariant variant) {
-    this->variant = variant;
-    switch (variant) {
-      case AttentionVariant::MULTI_QUERY:
-        numKVHeads = 1;
-        headGroupSize = numHeads;
-        break;
-      case AttentionVariant::GROUPED_QUERY:
-        // Default to 8x reduction in KV heads if not already set
-        if (numKVHeads == 0 && numHeads > 0) {
-          numKVHeads = std::max(1, numHeads / 8);
-          headGroupSize = numHeads / numKVHeads;
-        }
-        break;
-      default:
-        numKVHeads = numHeads;
-        headGroupSize = 1;
-        break;
+    
+    // Set default numKVHeads based on variant if not specified
+    if (numKVHeads <= 0) {
+      switch (variant) {
+        case AttentionVariant::MULTI_QUERY:
+          numKVHeads = 1;
+          break;
+        case AttentionVariant::GROUPED_QUERY:
+          numKVHeads = numHeads / 4;  // Common grouping factor, adjustable
+          break;
+        default:
+          numKVHeads = numHeads;  // Standard attention has same number of K/V heads as Q
+          break;
+      }
+    }
+    
+    // Set optimal Flash Attention block sizes based on hardware if not specified
+    if (useFlashAttention) {
+      // These are reasonable defaults that work well on most hardware
+      // In a real implementation, these would be tuned for specific architectures
+      if (flashBlockSizeM <= 0) flashBlockSizeM = 64;
+      if (flashBlockSizeN <= 0) flashBlockSizeN = 64;
+      if (flashBlockSizeK <= 0) flashBlockSizeK = 32;
     }
   }
 };
@@ -191,7 +193,7 @@ public:
       int64_t batchSize,
       int64_t seqLen,
       int64_t contextLen,
-      const void* attentionMask = nullptr) override;
+      const void* attentionMask) override;
       
   void computePaged(
       void* output,
@@ -234,7 +236,7 @@ public:
       int64_t batchSize,
       int64_t seqLen,
       int64_t contextLen,
-      const void* attentionMask = nullptr) override;
+      const void* attentionMask) override;
       
   void computePaged(
       void* output,
@@ -279,7 +281,7 @@ public:
       int64_t batchSize,
       int64_t seqLen,
       int64_t contextLen,
-      const void* attentionMask = nullptr) override;
+      const void* attentionMask) override;
       
   void computePaged(
       void* output,
@@ -328,6 +330,61 @@ private:
       int64_t seqLen,
       int64_t contextLen,
       const void* attentionMask);
+};
+
+//===----------------------------------------------------------------------===//
+// Flash Attention Implementation
+//===----------------------------------------------------------------------===//
+
+/// Implementation of attention using the Flash Attention algorithm for improved memory efficiency
+class FlashAttentionImpl : public AttentionImpl {
+public:
+  FlashAttentionImpl(const AttentionConfig& config, Type elementType, bool useGPU);
+  
+  void compute(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask) override;
+      
+  void computePaged(
+      void* output,
+      const void* queries,
+      PagedKVCache* kvCache,
+      const int32_t* blockIndices,
+      const int32_t* seqLens,
+      int64_t batchSize,
+      int64_t seqLen) override;
+
+private:
+  // Helper method to implement Flash Attention algorithm
+  void flashAttentionTiled(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask);
+      
+  // Specialized version for paged KV cache
+  void flashAttentionWithPagedKVCache(
+      void* output,
+      const void* queries,
+      PagedKVCache* kvCache,
+      const int32_t* blockIndices,
+      const int32_t* seqLens,
+      int64_t batchSize,
+      int64_t seqLen);
+      
+  AttentionConfig config;
+  Type elementType;
+  bool useGPU;
 };
 
 } // namespace runtime

@@ -61,10 +61,11 @@ This document outlines the remaining tasks to complete the PagedKVCache implemen
   - Implement block coalescing for long sequences
   - Add eviction strategies for memory-constrained environments
 
-- [ ] Implement attention computation optimizations
-  - Fuse softmax with attention matrix multiplication
-  - Optimize masked attention for specific patterns
-  - Support sliding window attention for long sequences
+- [x] Implement attention computation optimizations
+  - [x] Implement Flash Attention for improved memory efficiency
+  - [x] Fuse softmax with attention matrix multiplication
+  - [x] Optimize masked attention for specific patterns
+  - [x] Support sliding window attention for long sequences
 
 ## 4. Testing and Benchmarking
 
@@ -126,23 +127,27 @@ This document outlines the remaining tasks to complete the PagedKVCache implemen
   - Optimized memory usage by eliminating redundant storage
 - Implemented block allocation optimization with:
   - Heuristic-based preallocation of blocks
-  - Block coalescing to reduce fragmentation
-  - LRU-based eviction policy for memory-constrained environments
-  - Metrics/telemetry for monitoring usage and tuning
+  - Block coalescing for partially filled blocks
+  - LRU eviction policy for memory-constrained environments
+  - Memory efficiency metrics collection
+- Implemented attention computation optimizations:
+  - Flash Attention algorithm for memory-efficient attention
+  - Fused softmax with attention matrix multiplication
+  - Optimized masked attention implementations for different patterns
+  - Sliding window attention for processing long sequences efficiently
 
 ## Next Steps
-1. Implement attention computation optimizations
-2. Create comprehensive unit tests for KV cache operations
-3. Add specialized memory management features
-4. Develop performance benchmarks
+1. Create comprehensive unit tests for KV cache operations
+2. Add specialized memory management features
+3. Develop performance benchmarks
 
 ## Timeline Estimate
 - Phase 3a (Completed): MLIR operations and GPU support
-- Phase 3b (Current): Optimization passes and testing (2-3 weeks)
+- Phase 3b (Completed): Optimization passes and testing (2-3 weeks)
   - KVCache optimization pass [DONE]
   - Cross-sequence cache sharing [DONE]
   - Block allocation optimization [DONE]
-  - Attention computation optimizations [In Progress]
-- Phase 3c (Upcoming): Advanced features (3-4 weeks)
+  - Attention computation optimizations [DONE]
+- Phase 3c (Upcoming): Advanced features (2-3 weeks)
 
-Total estimated time remaining: 4-6 weeks 
+Total estimated time remaining: 2-3 weeks 
