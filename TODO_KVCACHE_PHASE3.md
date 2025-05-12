@@ -17,10 +17,10 @@ This document outlines the remaining tasks to complete the PagedKVCache implemen
   - Consider using async copy operations where appropriate
   - Add support for CUDA streams for better concurrency
 
-- [ ] Add GPU-specific memory optimizations
-  - Implement pinned memory for host-device transfers
-  - Consider unified memory for small blocks
-  - Add memory pool implementation for GPU
+- [x] Add GPU-specific memory optimizations
+  - [x] Implement pinned memory for host-device transfers
+  - [x] Consider unified memory for small blocks
+  - [x] Add memory pool implementation for GPU
 
 ## 2. MLIR Operations Integration
 

@@ -553,6 +553,22 @@ public:
       int64_t batchSize,
       int64_t seqLen);
 
+  /// Configure GPU memory optimizations
+  /// @param enablePool Whether to enable the GPU memory pool
+  /// @param unifiedMemThreshold Size threshold for using unified memory (bytes)
+  /// @param initialPoolSize Initial size of the memory pool (bytes)
+  void configureGPUMemoryOptions(bool enablePool, 
+                               size_t unifiedMemThreshold,
+                               size_t initialPoolSize);
+  
+  /// Get GPU memory usage statistics
+  /// @return A string containing the GPU memory usage statistics
+  std::string getGPUMemoryStats() const;
+  
+  /// Clean up unused GPU memory
+  /// @param keepRatio Ratio of unused memory to keep (0.0-1.0)
+  void shrinkGPUMemory(float keepRatio = 0.5);
+
 private:
   int64_t numLayers;
   int64_t numHeads;

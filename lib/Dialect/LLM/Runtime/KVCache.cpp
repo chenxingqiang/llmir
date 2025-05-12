@@ -12,6 +12,7 @@
 
 #include "mlir/Dialect/LLM/Runtime/KVCache.h"
 #include "mlir/Dialect/LLM/Runtime/AttentionOpt.h"
+#include "mlir/Dialect/LLM/Runtime/GPUMemoryUtils.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -25,6 +26,7 @@
 #include <memory>
 #include <stdexcept>
 #include <cmath>
+#include <sstream> // for std::ostringstream
 
 // Include CUDA headers when GPU support is enabled
 #if defined(LLMIR_ENABLE_CUDA)
@@ -51,53 +53,37 @@ void* allocateMemory(int64_t sizeInBytes, bool useGPU) {
   void* ptr = nullptr;
   
   if (useGPU) {
-#if defined(LLMIR_ENABLE_CUDA)
-    // Use CUDA for memory allocation
-    cudaError_t error = cudaMalloc(&ptr, sizeInBytes);
-    if (error != cudaSuccess) {
-      std::cerr << "CUDA memory allocation failed: " 
-                << cudaGetErrorString(error) << std::endl;
-      return nullptr;
+    // First check if this block should use unified memory (for small blocks)
+    if (UnifiedMemoryManager::getInstance().shouldUseUnifiedMemory(sizeInBytes)) {
+      ptr = GPUMemoryUtils::allocateUnified(sizeInBytes);
+      if (ptr) return ptr;
+      // Fall back to regular device memory if unified allocation fails
     }
     
-    // Initialize memory to zeros
-    error = cudaMemset(ptr, 0, sizeInBytes);
-    if (error != cudaSuccess) {
-      std::cerr << "CUDA memory initialization failed: " 
-                << cudaGetErrorString(error) << std::endl;
-      cudaFree(ptr);
-      return nullptr;
-    }
-#elif defined(LLMIR_ENABLE_HIP)
-    // Use HIP for memory allocation (AMD GPUs)
-    hipError_t error = hipMalloc(&ptr, sizeInBytes);
-    if (error != hipSuccess) {
-      std::cerr << "HIP memory allocation failed: " 
-                << hipGetErrorString(error) << std::endl;
-      return nullptr;
+    // Try to allocate from the memory pool
+    ptr = GPUMemoryPool::getInstance().allocate(sizeInBytes);
+    if (!ptr) {
+      // Fall back to direct allocation if pool allocation fails
+      ptr = GPUMemoryUtils::allocateDevice(sizeInBytes);
     }
     
-    // Initialize memory to zeros
-    error = hipMemset(ptr, 0, sizeInBytes);
-    if (error != hipSuccess) {
-      std::cerr << "HIP memory initialization failed: " 
-                << hipGetErrorString(error) << std::endl;
-      hipFree(ptr);
-      return nullptr;
+    if (!ptr) {
+      // Last resort: fall back to CPU if GPU allocation fails
+      std::cerr << "GPU memory allocation failed, falling back to CPU" << std::endl;
+      ptr = std::malloc(sizeInBytes);
+      if (ptr) {
+        std::memset(ptr, 0, sizeInBytes);
+      }
     }
-#else
-    // Fallback to CPU if no GPU support is compiled in
-    std::cerr << "GPU support not enabled, falling back to CPU allocation" << std::endl;
-    ptr = std::malloc(sizeInBytes);
-    if (ptr) {
-      std::memset(ptr, 0, sizeInBytes);
-    }
-#endif
   } else {
-    // CPU memory allocation
-    ptr = std::malloc(sizeInBytes);
-    if (ptr) {
-      std::memset(ptr, 0, sizeInBytes);
+    // For host memory, use pinned memory for better GPU transfer performance
+    ptr = GPUMemoryUtils::allocateHostPinned(sizeInBytes);
+    if (!ptr) {
+      // Fall back to regular malloc if pinned allocation fails
+      ptr = std::malloc(sizeInBytes);
+      if (ptr) {
+        std::memset(ptr, 0, sizeInBytes);
+      }
     }
   }
   
@@ -106,59 +92,45 @@ void* allocateMemory(int64_t sizeInBytes, bool useGPU) {
 
 // Helper function to free memory (on CPU or GPU)
 void freeMemory(void* ptr, bool useGPU) {
-  if (ptr) {
-    if (useGPU) {
-#if defined(LLMIR_ENABLE_CUDA)
-      // Use CUDA for memory deallocation
-      cudaError_t error = cudaFree(ptr);
-      if (error != cudaSuccess) {
-        std::cerr << "CUDA memory free failed: " 
-                  << cudaGetErrorString(error) << std::endl;
-      }
-#elif defined(LLMIR_ENABLE_HIP)
-      // Use HIP for memory deallocation
-      hipError_t error = hipFree(ptr);
-      if (error != hipSuccess) {
-        std::cerr << "HIP memory free failed: " 
-                  << hipGetErrorString(error) << std::endl;
-      }
-#else
-      // Fallback to CPU if no GPU support is compiled in
-      std::free(ptr);
-#endif
-    } else {
-      // CPU memory deallocation
-      std::free(ptr);
-    }
+  if (!ptr) return;
+  
+  if (useGPU) {
+    // Try the memory pool first
+    GPUMemoryPool::getInstance().free(ptr);
+    
+    // Try unified memory manager
+    UnifiedMemoryManager::getInstance().free(ptr);
+    
+    // The above calls are no-ops if the ptr is not managed by them
+    // No need to explicitly call GPUMemoryUtils::freeDevice as
+    // the pool and unified memory manager will handle this correctly
+  } else {
+    // For host memory, try pinned memory manager first
+    PinnedMemoryManager::getInstance().free(ptr);
+    // No need to call std::free as pinned memory manager will handle it correctly
+    // if the ptr is not managed by it
   }
 }
 
 // Helper function to copy memory (on CPU or GPU)
 void copyMemory(void* dst, const void* src, int64_t sizeInBytes, bool useGPU) {
-  if (dst && src) {
-    if (useGPU) {
-#if defined(LLMIR_ENABLE_CUDA)
-      // Use CUDA for memory copying
-      cudaError_t error = cudaMemcpy(dst, src, sizeInBytes, cudaMemcpyDeviceToDevice);
-      if (error != cudaSuccess) {
-        std::cerr << "CUDA memory copy failed: " 
-                  << cudaGetErrorString(error) << std::endl;
-      }
-#elif defined(LLMIR_ENABLE_HIP)
-      // Use HIP for memory copying
-      hipError_t error = hipMemcpy(dst, src, sizeInBytes, hipMemcpyDeviceToDevice);
-      if (error != hipSuccess) {
-        std::cerr << "HIP memory copy failed: " 
-                  << hipGetErrorString(error) << std::endl;
-      }
-#else
-      // Fallback to CPU if no GPU support is compiled in
-      std::memcpy(dst, src, sizeInBytes);
-#endif
-    } else {
-      // CPU memory copy
-      std::memcpy(dst, src, sizeInBytes);
+  if (!dst || !src) return;
+  
+  if (useGPU) {
+    // Determine the type of memory for src and dst for correct copy
+    
+    // For simplicity, assume device-to-device copy
+    // In a more complex implementation, we would detect the memory type
+    // and use the appropriate copy function
+    LogicalResult result = GPUMemoryUtils::copyDeviceToDevice(
+        dst, src, sizeInBytes);
+    
+    if (failed(result)) {
+      std::cerr << "GPU memory copy failed" << std::endl;
     }
+  } else {
+    // CPU memory copy
+    std::memcpy(dst, src, sizeInBytes);
   }
 }
 
@@ -175,6 +147,22 @@ BlockAllocator::BlockAllocator(int64_t blockSize, int64_t numHeads,
   
   // Set default eviction policy to LRU if none provided
   evictionPolicy = std::make_unique<LRUEvictionPolicy>();
+  
+  // Initialize GPU memory optimizations if using GPU
+  if (useGPU) {
+    // Enable memory pool
+    GPUMemoryPool::getInstance().enable(true);
+    
+    // Set a reasonable size threshold for unified memory
+    // Small blocks (<=128KB) will use unified memory for better performance
+    UnifiedMemoryManager::getInstance().setThreshold(128 * 1024);
+    
+    // Preallocate some memory in the pool
+    // Calculate memory requirements for a single block
+    int64_t blockMemSize = blockSize * numHeads * headDim * getElementTypeSize() * 2;
+    // Preallocate enough for 16 blocks by default
+    GPUMemoryPool::getInstance().setInitialCapacity(blockMemSize * 16);
+  }
   
   // Pre-allocate some blocks to avoid frequent allocation
   preallocateBlocks(8);
@@ -1739,6 +1727,70 @@ LogicalResult PagedKVCache::gatherKVForAttention(
   }
   
   return success();
+}
+
+// Add implementation for the GPU memory configuration method
+void PagedKVCache::configureGPUMemoryOptions(bool enablePool, 
+                                          size_t unifiedMemThreshold,
+                                          size_t initialPoolSize) {
+  if (!useGPU) {
+    return;  // No-op for CPU-only mode
+  }
+
+  // Configure memory pool
+  GPUMemoryPool::getInstance().enable(enablePool);
+  
+  // Set unified memory threshold
+  UnifiedMemoryManager::getInstance().setThreshold(unifiedMemThreshold);
+  
+  // Set initial pool size if enabled
+  if (enablePool && initialPoolSize > 0) {
+    GPUMemoryPool::getInstance().setInitialCapacity(initialPoolSize);
+  }
+}
+
+// Add implementation for the GPU memory stats method
+std::string PagedKVCache::getGPUMemoryStats() const {
+  if (!useGPU) {
+    return "GPU not enabled";
+  }
+  
+  std::ostringstream oss;
+  
+  // Get pool stats
+  GPUMemoryPool::PoolStats poolStats = GPUMemoryPool::getInstance().getStats();
+  
+  oss << "GPU Memory Pool Stats:\n"
+      << "  Total memory: " << (poolStats.totalMemory / (1024.0 * 1024.0)) << " MB\n"
+      << "  Used memory: " << (poolStats.usedMemory / (1024.0 * 1024.0)) << " MB\n"
+      << "  Free memory: " << (poolStats.freeMemory / (1024.0 * 1024.0)) << " MB\n"
+      << "  Block count: " << poolStats.blockCount << "\n"
+      << "  Hit rate: " << (poolStats.hitCount + poolStats.missCount > 0 ? 
+                          100.0 * poolStats.hitCount / (poolStats.hitCount + poolStats.missCount) : 0.0)
+      << "%\n";
+  
+  // Try to get device properties
+  GPUMemoryUtils::GPUDeviceProperties props;
+  if (succeeded(GPUMemoryUtils::getDeviceProperties(props))) {
+    oss << "GPU Device Stats:\n"
+        << "  Device: " << props.name << " (ID: " << props.deviceId << ")\n"
+        << "  Total device memory: " << (props.totalMemory / (1024.0 * 1024.0)) << " MB\n"
+        << "  Free device memory: " << (props.freeMemory / (1024.0 * 1024.0)) << " MB\n"
+        << "  Compute capability: " << props.computeCapabilityMajor 
+        << "." << props.computeCapabilityMinor << "\n";
+  }
+  
+  return oss.str();
+}
+
+// Add implementation for the shrink GPU memory method
+void PagedKVCache::shrinkGPUMemory(float keepRatio) {
+  if (!useGPU) {
+    return;  // No-op for CPU-only mode
+  }
+  
+  // Shrink the memory pool
+  GPUMemoryPool::getInstance().shrink(keepRatio);
 }
 
 } // namespace runtime
