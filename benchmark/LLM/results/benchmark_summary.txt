@@ -1,0 +1,27 @@
+=== KVCache Benchmark Summary ===
+
+Overall Statistics:
+Total benchmarks: 42
+Average tokens/sec: 58498.98
+Max tokens/sec: 88250.10
+
+Block Size Performance:
+Block size 16: 43479.45 tokens/sec
+Block size 32: 43318.38 tokens/sec
+Block size 64: 41669.76 tokens/sec
+Block size 128: 42181.22 tokens/sec
+Block size 256: 48406.94 tokens/sec
+
+Memory Configuration Performance:
+No optimizations: 45934.67 tokens/sec
+Pool + Unified(128KB): 72945.62 tokens/sec
+Pool + Unified(256KB): 39913.42 tokens/sec
+Pool only: 41021.66 tokens/sec
+Unified(128KB) only: 48963.16 tokens/sec
+
+Batch Size Performance:
+Batch size 1: 78628.10 tokens/sec
+Batch size 2: 83765.07 tokens/sec
+Batch size 4: 84197.25 tokens/sec
+Batch size 8: 84403.07 tokens/sec
+

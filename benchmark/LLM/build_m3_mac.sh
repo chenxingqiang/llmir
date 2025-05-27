@@ -12,25 +12,43 @@ echo "Build directory: $BUILD_DIR"
 
 # Create build directory if it doesn't exist
 mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR" || exit 1
+mkdir -p "$BUILD_DIR/bin"
 
 # Check for required tools
-if ! command -v cmake &> /dev/null; then
-    echo "Error: cmake not found. Please install cmake first."
+if ! command -v clang++ &> /dev/null; then
+    echo "Error: clang++ not found. Please install Xcode command line tools."
     exit 1
 fi
 
-if ! command -v ninja &> /dev/null; then
-    echo "Error: ninja not found. Please install ninja first."
-    exit 1
+# Check for benchmark library
+if ! brew list --versions google-benchmark &> /dev/null; then
+    echo "Google Benchmark not found. Installing..."
+    brew install google-benchmark
 fi
 
-# Configure with Metal support
-echo "Configuring with Metal support..."
-cmake -G Ninja .. -DLLMIR_ENABLE_METAL=ON
+# Get library paths
+BENCHMARK_DIR=$(brew --prefix google-benchmark)
+echo "Found Google Benchmark at: $BENCHMARK_DIR"
 
-# Build
-echo "Building benchmark..."
-ninja llama3_kvcache_benchmark
+# Compile the benchmark
+echo "Compiling benchmark for Apple M3 Mac with Metal..."
+
+clang++ -std=c++17 -O3 \
+  -DLLMIR_ENABLE_METAL \
+  -framework Metal -framework Foundation \
+  -I$BENCHMARK_DIR/include \
+  -L$BENCHMARK_DIR/lib \
+  -lbenchmark -lbenchmark_main \
+  $SCRIPT_DIR/simple_mac_benchmark.mm \
+  -o $BUILD_DIR/bin/llama3_kvcache_benchmark
+
+# Check if build was successful
+if [ $? -eq 0 ] && [ -f "$BUILD_DIR/bin/llama3_kvcache_benchmark" ]; then
+    echo "Benchmark compiled successfully!"
+    chmod +x $BUILD_DIR/bin/llama3_kvcache_benchmark
+else
+    echo "Error: Failed to compile benchmark"
+    exit 1
+fi
 
 echo "Done. Run the benchmark with ./benchmark/LLM/run_kvcache_benchmark.sh" 

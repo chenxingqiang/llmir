@@ -29,7 +29,7 @@ LLMIR follows a layered architecture:
 ```
                        ┌─────────────────┐
                        │   Application   │
-                       │ vLLM / SGLang   │
+                       │  vLLM / SGLang  │
                        └────────┬────────┘
                                 │
                                 ▼
@@ -37,12 +37,12 @@ LLMIR follows a layered architecture:
 │                    LLMIR Compiler                │
 │                                                  │
 │  ┌──────────────┐    ┌───────────────────────┐   │
-│  │ Front-end    │ → │  MLIR Optimization     │   │
+│  │ Front-end    │ →  │  MLIR Optimization    │   │
 │  │ Converters   │    │  Pipeline             │   │
 │  └──────────────┘    └───────────┬───────────┘   │
 │                                  │               │
 │                      ┌───────────▼───────────┐   │
-│                      │    Backend Generators  │   │
+│                      │    Backend Generators │   │
 │                      └───────────────────────┘   │
 └──────────────────────────┬───────────────────────┘
                            │
@@ -232,6 +232,35 @@ All optimization techniques show better performance as sequence length increases
 - **For scalability**: Benefits of all optimization techniques increase with sequence length
 
 For detailed information, see the [attention optimization test procedure](docs/attention_optimization_test_procedure.md), [comprehensive benchmark report](docs/attention_optimization_test_report.md), and [benchmark source code](benchmark/attention/).
+
+## Benchmarks
+
+### KVCache Performance Benchmark
+
+The repository includes a benchmark for measuring the performance of the PagedKVCache implementation on different hardware backends:
+
+```bash
+cd benchmark/LLM
+./run_kvcache_benchmark.sh
+```
+
+This will run the benchmark with various configurations and generate performance reports.
+
+### Llama-3.1 Model Benchmark with LLMIR
+
+Benchmark the meta-llama/Llama-3.1-8B-Instruct model with LLMIR optimizations to measure performance improvements:
+
+```bash
+# Setup the environment
+cd benchmark/LLM
+./setup_llama31_benchmark.sh
+source venv/bin/activate_llmir
+
+# Run the benchmark
+./run_llama31_benchmark.sh
+```
+
+This compares the baseline vLLM performance with LLMIR-optimized performance across different batch sizes and sequence lengths. For more details, see [benchmark/LLM/README_LLAMA31.md](benchmark/LLM/README_LLAMA31.md).
 
 ## Contributing
 

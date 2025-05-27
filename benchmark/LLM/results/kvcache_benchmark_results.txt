@@ -1,0 +1,298 @@
+2025-05-12T23:56:01+08:00
+Running /Users/xingqiangchen/llmir/llmir/benchmark/LLM/../../build/bin/llama3_kvcache_benchmark
+Run on (14 X 24 MHz CPU s)
+CPU Caches:
+  L1 Data 64 KiB
+  L1 Instruction 128 KiB
+  L2 Unified 4096 KiB (x14)
+Load Average: 3.78, 4.37, 9.01
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Benchmark                                                                                                          Time             CPU   Iterations UserCounters...
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time                     8.97 ms         8.96 ms           10 MB/s=1.42721k/s Tokens/s=45.6708k/s
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time                     8.15 ms         8.14 ms           10 MB/s=1.56997k/s Tokens/s=50.2389k/s
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time                     8.03 ms         8.02 ms           10 MB/s=1.59408k/s Tokens/s=51.0105k/s
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time_mean                8.38 ms         8.37 ms            3 MB/s=1.53042k/s Tokens/s=48.9734k/s
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time_median              8.15 ms         8.14 ms            3 MB/s=1.56997k/s Tokens/s=50.2389k/s
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time_stddev             0.510 ms        0.510 ms            3 MB/s=90.1889/s Tokens/s=2.88604k/s
+KVCacheAppend/No optimizations/BlockSize=16/4/1024/16/0/iterations:10/repeats:3/manual_time_cv                  6.09 %          6.09 %             3 MB/s=5.89% Tokens/s=5.89%
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time                     8.43 ms         8.41 ms           10 MB/s=1.51828k/s Tokens/s=48.5849k/s
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time                     8.49 ms         8.48 ms           10 MB/s=1.50806k/s Tokens/s=48.258k/s
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time                     8.40 ms         8.39 ms           10 MB/s=1.52355k/s Tokens/s=48.7535k/s
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time_mean                8.44 ms         8.42 ms            3 MB/s=1.51663k/s Tokens/s=48.5321k/s
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time_median              8.43 ms         8.41 ms            3 MB/s=1.51828k/s Tokens/s=48.5849k/s
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time_stddev             0.044 ms        0.046 ms            3 MB/s=7.87341/s Tokens/s=251.949/s
+KVCacheAppend/No optimizations/BlockSize=32/4/1024/32/0/iterations:10/repeats:3/manual_time_cv                  0.52 %          0.55 %             3 MB/s=0.52% Tokens/s=0.52%
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time                     8.39 ms         8.38 ms           10 MB/s=1.52565k/s Tokens/s=48.8208k/s
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time                     8.41 ms         8.39 ms           10 MB/s=1.52254k/s Tokens/s=48.7214k/s
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time                     8.56 ms         8.55 ms           10 MB/s=1.49593k/s Tokens/s=47.8696k/s
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time_mean                8.45 ms         8.44 ms            3 MB/s=1.51471k/s Tokens/s=48.4706k/s
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time_median              8.41 ms         8.39 ms            3 MB/s=1.52254k/s Tokens/s=48.7214k/s
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time_stddev             0.092 ms        0.094 ms            3 MB/s=16.3384/s Tokens/s=522.829/s
+KVCacheAppend/No optimizations/BlockSize=64/4/1024/64/0/iterations:10/repeats:3/manual_time_cv                  1.09 %          1.11 %             3 MB/s=1.08% Tokens/s=1.08%
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time                   8.60 ms         8.56 ms           10 MB/s=1.48833k/s Tokens/s=47.6264k/s
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time                   9.82 ms         9.81 ms           10 MB/s=1.30323k/s Tokens/s=41.7034k/s
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time                   9.35 ms         9.33 ms           10 MB/s=1.36867k/s Tokens/s=43.7976k/s
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time_mean              9.26 ms         9.23 ms            3 MB/s=1.38674k/s Tokens/s=44.3758k/s
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time_median            9.35 ms         9.33 ms            3 MB/s=1.36867k/s Tokens/s=43.7976k/s
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time_stddev           0.616 ms        0.630 ms            3 MB/s=93.8603/s Tokens/s=3.00353k/s
+KVCacheAppend/No optimizations/BlockSize=128/4/1024/128/0/iterations:10/repeats:3/manual_time_cv                6.66 %          6.83 %             3 MB/s=6.77% Tokens/s=6.77%
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time                  10.00 ms         9.98 ms           10 MB/s=1.28006k/s Tokens/s=40.9618k/s
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time                   9.48 ms         9.47 ms           10 MB/s=1.34983k/s Tokens/s=43.1947k/s
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time                   9.44 ms         9.43 ms           10 MB/s=1.35561k/s Tokens/s=43.3796k/s
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time_mean              9.64 ms         9.63 ms            3 MB/s=1.3285k/s Tokens/s=42.512k/s
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time_median            9.48 ms         9.47 ms            3 MB/s=1.34983k/s Tokens/s=43.1947k/s
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time_stddev           0.311 ms        0.310 ms            3 MB/s=42.0533/s Tokens/s=1.34571k/s
+KVCacheAppend/No optimizations/BlockSize=256/4/1024/256/0/iterations:10/repeats:3/manual_time_cv                3.22 %          3.22 %             3 MB/s=3.17% Tokens/s=3.17%
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time                9.41 ms         9.40 ms           10 MB/s=1.35993k/s Tokens/s=43.5178k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time                9.45 ms         9.44 ms           10 MB/s=1.35425k/s Tokens/s=43.336k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time                9.90 ms         9.88 ms           10 MB/s=1.29308k/s Tokens/s=41.3786k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time_mean           9.59 ms         9.57 ms            3 MB/s=1.33575k/s Tokens/s=42.7441k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time_median         9.45 ms         9.44 ms            3 MB/s=1.35425k/s Tokens/s=43.336k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time_stddev        0.270 ms        0.267 ms            3 MB/s=37.0641/s Tokens/s=1.18605k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=16/4/1024/16/1/iterations:10/repeats:3/manual_time_cv             2.82 %          2.79 %             3 MB/s=2.77% Tokens/s=2.77%
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time                9.62 ms         9.59 ms           10 MB/s=1.33098k/s Tokens/s=42.5914k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time                9.38 ms         9.36 ms           10 MB/s=1.36533k/s Tokens/s=43.6905k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time                9.09 ms         9.08 ms           10 MB/s=1.40755k/s Tokens/s=45.0415k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time_mean           9.36 ms         9.35 ms            3 MB/s=1.36795k/s Tokens/s=43.7745k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time_median         9.38 ms         9.36 ms            3 MB/s=1.36533k/s Tokens/s=43.6905k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time_stddev        0.262 ms        0.257 ms            3 MB/s=38.3502/s Tokens/s=1.22721k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=32/4/1024/32/1/iterations:10/repeats:3/manual_time_cv             2.80 %          2.75 %             3 MB/s=2.80% Tokens/s=2.80%
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time                9.28 ms         9.26 ms           10 MB/s=1.37973k/s Tokens/s=44.1514k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time                9.26 ms         9.24 ms           10 MB/s=1.38271k/s Tokens/s=44.2466k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time                9.70 ms         9.69 ms           10 MB/s=1.31925k/s Tokens/s=42.2159k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time_mean           9.41 ms         9.40 ms            3 MB/s=1.36056k/s Tokens/s=43.538k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time_median         9.28 ms         9.26 ms            3 MB/s=1.37973k/s Tokens/s=44.1514k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time_stddev        0.252 ms        0.252 ms            3 MB/s=35.8095/s Tokens/s=1.1459k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=64/4/1024/64/1/iterations:10/repeats:3/manual_time_cv             2.67 %          2.68 %             3 MB/s=2.63% Tokens/s=2.63%
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time              11.1 ms         11.1 ms           10 MB/s=1.14886k/s Tokens/s=36.7634k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time              9.76 ms         9.74 ms           10 MB/s=1.31113k/s Tokens/s=41.956k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time              9.68 ms         9.66 ms           10 MB/s=1.32243k/s Tokens/s=42.3176k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time_mean         10.2 ms         10.2 ms            3 MB/s=1.2608k/s Tokens/s=40.3457k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time_median       9.76 ms         9.74 ms            3 MB/s=1.31113k/s Tokens/s=41.956k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time_stddev      0.821 ms        0.817 ms            3 MB/s=97.1127/s Tokens/s=3.10761k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=128/4/1024/128/1/iterations:10/repeats:3/manual_time_cv           8.06 %          8.04 %             3 MB/s=7.70% Tokens/s=7.70%
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time              9.29 ms         9.28 ms           10 MB/s=1.37711k/s Tokens/s=44.0677k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time              9.29 ms         9.27 ms           10 MB/s=1.37799k/s Tokens/s=44.0956k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time              10.1 ms         10.1 ms           10 MB/s=1.26757k/s Tokens/s=40.5623k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time_mean         9.56 ms         9.54 ms            3 MB/s=1.34089k/s Tokens/s=42.9085k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time_median       9.29 ms         9.28 ms            3 MB/s=1.37711k/s Tokens/s=44.0677k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time_stddev      0.465 ms        0.463 ms            3 MB/s=63.4987/s Tokens/s=2.03196k/s
+KVCacheAppend/Pool + Unified(128KB)/BlockSize=256/4/1024/256/1/iterations:10/repeats:3/manual_time_cv           4.87 %          4.85 %             3 MB/s=4.74% Tokens/s=4.74%
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time                9.48 ms         9.47 ms           10 MB/s=1.35005k/s Tokens/s=43.2015k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time                9.48 ms         9.46 ms           10 MB/s=1.35089k/s Tokens/s=43.2286k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time                9.56 ms         9.55 ms           10 MB/s=1.33897k/s Tokens/s=42.8469k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time_mean           9.51 ms         9.49 ms            3 MB/s=1.34664k/s Tokens/s=43.0923k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time_median         9.48 ms         9.47 ms            3 MB/s=1.35005k/s Tokens/s=43.2015k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time_stddev        0.047 ms        0.049 ms            3 MB/s=6.65567/s Tokens/s=212.982/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=16/4/1024/16/2/iterations:10/repeats:3/manual_time_cv             0.50 %          0.51 %             3 MB/s=0.49% Tokens/s=0.49%
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time                9.68 ms         9.66 ms           10 MB/s=1.32224k/s Tokens/s=42.3115k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time                11.7 ms         11.5 ms           10 MB/s=1.09647k/s Tokens/s=35.087k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time                10.6 ms         10.6 ms           10 MB/s=1.20866k/s Tokens/s=38.6772k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time_mean           10.6 ms         10.6 ms            3 MB/s=1.20912k/s Tokens/s=38.6919k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time_median         10.6 ms         10.6 ms            3 MB/s=1.20866k/s Tokens/s=38.6772k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time_stddev        0.998 ms        0.931 ms            3 MB/s=112.885/s Tokens/s=3.61231k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=32/4/1024/32/2/iterations:10/repeats:3/manual_time_cv             9.37 %          8.80 %             3 MB/s=9.34% Tokens/s=9.34%
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time                9.83 ms         9.81 ms           10 MB/s=1.30234k/s Tokens/s=41.675k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time                10.1 ms         10.0 ms           10 MB/s=1.27169k/s Tokens/s=40.694k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time                9.71 ms         9.70 ms           10 MB/s=1.31783k/s Tokens/s=42.1707k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time_mean           9.87 ms         9.85 ms            3 MB/s=1.29729k/s Tokens/s=41.5132k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time_median         9.83 ms         9.81 ms            3 MB/s=1.30234k/s Tokens/s=41.675k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time_stddev        0.180 ms        0.172 ms            3 MB/s=23.485/s Tokens/s=751.521/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=64/4/1024/64/2/iterations:10/repeats:3/manual_time_cv             1.82 %          1.75 %             3 MB/s=1.81% Tokens/s=1.81%
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time              10.2 ms         10.2 ms           10 MB/s=1.25803k/s Tokens/s=40.257k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time              9.68 ms         9.66 ms           10 MB/s=1.32166k/s Tokens/s=42.293k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time              9.79 ms         9.77 ms           10 MB/s=1.30691k/s Tokens/s=41.8211k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time_mean         9.88 ms         9.86 ms            3 MB/s=1.29553k/s Tokens/s=41.457k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time_median       9.79 ms         9.77 ms            3 MB/s=1.30691k/s Tokens/s=41.8211k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time_stddev      0.257 ms        0.259 ms            3 MB/s=33.3041/s Tokens/s=1.06573k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=128/4/1024/128/2/iterations:10/repeats:3/manual_time_cv           2.60 %          2.63 %             3 MB/s=2.57% Tokens/s=2.57%
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time              11.4 ms         11.4 ms           10 MB/s=1.12121k/s Tokens/s=35.8788k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time              9.77 ms         9.74 ms           10 MB/s=1.31074k/s Tokens/s=41.9436k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time              10.6 ms         10.6 ms           10 MB/s=1.2064k/s Tokens/s=38.6049k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time_mean         10.6 ms         10.6 ms            3 MB/s=1.21278k/s Tokens/s=38.8091k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time_median       10.6 ms         10.6 ms            3 MB/s=1.2064k/s Tokens/s=38.6049k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time_stddev      0.825 ms        0.823 ms            3 MB/s=94.9236/s Tokens/s=3.03755k/s
+KVCacheAppend/Pool + Unified(256KB)/BlockSize=256/4/1024/256/2/iterations:10/repeats:3/manual_time_cv           7.79 %          7.78 %             3 MB/s=7.83% Tokens/s=7.83%
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time                            11.8 ms         11.8 ms           10 MB/s=1.08657k/s Tokens/s=34.7702k/s
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time                            10.1 ms         10.0 ms           10 MB/s=1.27359k/s Tokens/s=40.7549k/s
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time                            9.81 ms         9.79 ms           10 MB/s=1.30508k/s Tokens/s=41.7627k/s
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time_mean                       10.5 ms         10.5 ms            3 MB/s=1.22175k/s Tokens/s=39.0959k/s
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time_median                     10.1 ms         10.0 ms            3 MB/s=1.27359k/s Tokens/s=40.7549k/s
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time_stddev                     1.08 ms         1.07 ms            3 MB/s=118.123/s Tokens/s=3.77993k/s
+KVCacheAppend/Pool only/BlockSize=16/4/1024/16/3/iterations:10/repeats:3/manual_time_cv                        10.20 %         10.18 %             3 MB/s=9.67% Tokens/s=9.67%
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time                            10.8 ms         10.8 ms           10 MB/s=1.18547k/s Tokens/s=37.9351k/s
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time                            9.89 ms         9.87 ms           10 MB/s=1.29458k/s Tokens/s=41.4266k/s
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time                            10.4 ms         10.4 ms           10 MB/s=1.23212k/s Tokens/s=39.4279k/s
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time_mean                       10.4 ms         10.3 ms            3 MB/s=1.23739k/s Tokens/s=39.5966k/s
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time_median                     10.4 ms         10.4 ms            3 MB/s=1.23212k/s Tokens/s=39.4279k/s
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time_stddev                    0.456 ms        0.455 ms            3 MB/s=54.7452/s Tokens/s=1.75184k/s
+KVCacheAppend/Pool only/BlockSize=32/4/1024/32/3/iterations:10/repeats:3/manual_time_cv                         4.40 %          4.40 %             3 MB/s=4.42% Tokens/s=4.42%
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time                            10.5 ms         10.4 ms           10 MB/s=1.22209k/s Tokens/s=39.1068k/s
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time                            10.7 ms         10.7 ms           10 MB/s=1.19498k/s Tokens/s=38.2392k/s
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time                            9.55 ms         9.53 ms           10 MB/s=1.34012k/s Tokens/s=42.8838k/s
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time_mean                       10.2 ms         10.2 ms            3 MB/s=1.25239k/s Tokens/s=40.0766k/s
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time_median                     10.5 ms         10.4 ms            3 MB/s=1.22209k/s Tokens/s=39.1068k/s
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time_stddev                    0.613 ms        0.607 ms            3 MB/s=77.1715/s Tokens/s=2.46949k/s
+KVCacheAppend/Pool only/BlockSize=64/4/1024/64/3/iterations:10/repeats:3/manual_time_cv                         5.98 %          5.94 %             3 MB/s=6.16% Tokens/s=6.16%
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time                          9.84 ms         9.82 ms           10 MB/s=1.30063k/s Tokens/s=41.62k/s
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time                          11.5 ms         11.3 ms           10 MB/s=1.11226k/s Tokens/s=35.5924k/s
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time                          9.71 ms         9.69 ms           10 MB/s=1.3181k/s Tokens/s=42.1791k/s
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time_mean                     10.4 ms         10.3 ms            3 MB/s=1.24366k/s Tokens/s=39.7972k/s
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time_median                   9.84 ms         9.82 ms            3 MB/s=1.30063k/s Tokens/s=41.62k/s
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time_stddev                   1.00 ms        0.888 ms            3 MB/s=114.129/s Tokens/s=3.65213k/s
+KVCacheAppend/Pool only/BlockSize=128/4/1024/128/3/iterations:10/repeats:3/manual_time_cv                       9.68 %          8.65 %             3 MB/s=9.18% Tokens/s=9.18%
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time                          9.51 ms         9.50 ms           10 MB/s=1.34574k/s Tokens/s=43.0638k/s
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time                          9.62 ms         9.60 ms           10 MB/s=1.33112k/s Tokens/s=42.5957k/s
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time                          9.28 ms         9.27 ms           10 MB/s=1.37865k/s Tokens/s=44.1168k/s
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time_mean                     9.47 ms         9.46 ms            3 MB/s=1.35184k/s Tokens/s=43.2588k/s
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time_median                   9.51 ms         9.50 ms            3 MB/s=1.34574k/s Tokens/s=43.0638k/s
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time_stddev                  0.169 ms        0.167 ms            3 MB/s=24.3449/s Tokens/s=779.037/s
+KVCacheAppend/Pool only/BlockSize=256/4/1024/256/3/iterations:10/repeats:3/manual_time_cv                       1.79 %          1.77 %             3 MB/s=1.80% Tokens/s=1.80%
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time                  9.48 ms         9.47 ms           10 MB/s=1.35047k/s Tokens/s=43.215k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time                  9.79 ms         9.77 ms           10 MB/s=1.30768k/s Tokens/s=41.8457k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time                  9.73 ms         9.72 ms           10 MB/s=1.31489k/s Tokens/s=42.0765k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time_mean             9.67 ms         9.65 ms            3 MB/s=1.32435k/s Tokens/s=42.3791k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time_median           9.73 ms         9.72 ms            3 MB/s=1.31489k/s Tokens/s=42.0765k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time_stddev          0.166 ms        0.164 ms            3 MB/s=22.9089/s Tokens/s=733.085/s
+KVCacheAppend/Unified(128KB) only/BlockSize=16/4/1024/16/4/iterations:10/repeats:3/manual_time_cv               1.71 %          1.70 %             3 MB/s=1.73% Tokens/s=1.73%
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time                  9.82 ms         9.80 ms           10 MB/s=1.30399k/s Tokens/s=41.7276k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time                  10.0 ms         9.98 ms           10 MB/s=1.27967k/s Tokens/s=40.9495k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time                  9.93 ms         9.91 ms           10 MB/s=1.28899k/s Tokens/s=41.2475k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time_mean             9.92 ms         9.90 ms            3 MB/s=1.29088k/s Tokens/s=41.3082k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time_median           9.93 ms         9.91 ms            3 MB/s=1.28899k/s Tokens/s=41.2475k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time_stddev          0.094 ms        0.091 ms            3 MB/s=12.2686/s Tokens/s=392.596/s
+KVCacheAppend/Unified(128KB) only/BlockSize=32/4/1024/32/4/iterations:10/repeats:3/manual_time_cv               0.95 %          0.92 %             3 MB/s=0.95% Tokens/s=0.95%
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time                  9.59 ms         9.58 ms           10 MB/s=1.33441k/s Tokens/s=42.701k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time                  9.58 ms         9.56 ms           10 MB/s=1.33671k/s Tokens/s=42.7748k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time                  9.42 ms         9.40 ms           10 MB/s=1.35952k/s Tokens/s=43.5048k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time_mean             9.53 ms         9.51 ms            3 MB/s=1.34355k/s Tokens/s=42.9935k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time_median           9.58 ms         9.56 ms            3 MB/s=1.33671k/s Tokens/s=42.7748k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time_stddev          0.098 ms        0.097 ms            3 MB/s=13.8844/s Tokens/s=444.3/s
+KVCacheAppend/Unified(128KB) only/BlockSize=64/4/1024/64/4/iterations:10/repeats:3/manual_time_cv               1.03 %          1.02 %             3 MB/s=1.03% Tokens/s=1.03%
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time                9.54 ms         9.53 ms           10 MB/s=1.34141k/s Tokens/s=42.9251k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time                9.85 ms         9.83 ms           10 MB/s=1.29922k/s Tokens/s=41.575k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time                9.61 ms         9.60 ms           10 MB/s=1.33185k/s Tokens/s=42.6192k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time_mean           9.67 ms         9.65 ms            3 MB/s=1.32416k/s Tokens/s=42.3731k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time_median         9.61 ms         9.60 ms            3 MB/s=1.33185k/s Tokens/s=42.6192k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time_stddev        0.163 ms        0.161 ms            3 MB/s=22.1213/s Tokens/s=707.882/s
+KVCacheAppend/Unified(128KB) only/BlockSize=128/4/1024/128/4/iterations:10/repeats:3/manual_time_cv             1.68 %          1.67 %             3 MB/s=1.67% Tokens/s=1.67%
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time                9.36 ms         9.34 ms           10 MB/s=1.36744k/s Tokens/s=43.7581k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time                9.39 ms         9.37 ms           10 MB/s=1.36368k/s Tokens/s=43.6379k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time                9.56 ms         9.54 ms           10 MB/s=1.33929k/s Tokens/s=42.8571k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time_mean           9.43 ms         9.42 ms            3 MB/s=1.3568k/s Tokens/s=43.4177k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time_median         9.39 ms         9.37 ms            3 MB/s=1.36368k/s Tokens/s=43.6379k/s
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time_stddev        0.107 ms        0.107 ms            3 MB/s=15.2864/s Tokens/s=489.164/s
+KVCacheAppend/Unified(128KB) only/BlockSize=256/4/1024/256/4/iterations:10/repeats:3/manual_time_cv             1.13 %          1.14 %             3 MB/s=1.13% Tokens/s=1.13%
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time                             0.654 ms        0.648 ms            5 MB/s=2.44465k/s Tokens/s=78.2287k/s
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time                             0.669 ms        0.655 ms            5 MB/s=2.39288k/s Tokens/s=76.5722k/s
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time                             0.738 ms        0.733 ms            5 MB/s=2.16778k/s Tokens/s=69.3689k/s
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time_mean                        0.687 ms        0.678 ms            3 MB/s=2.3351k/s Tokens/s=74.7233k/s
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time_median                      0.669 ms        0.655 ms            3 MB/s=2.39288k/s Tokens/s=76.5722k/s
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time_stddev                      0.045 ms        0.047 ms            3 MB/s=147.201/s Tokens/s=4.71042k/s
+KVCacheAppend/BatchSize=1/SeqLen=256/1/256/64/1/iterations:5/repeats:3/manual_time_cv                           6.51 %          6.99 %             3 MB/s=6.30% Tokens/s=6.30%
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time                              1.29 ms         1.27 ms            5 MB/s=2.48716k/s Tokens/s=79.5891k/s
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time                              1.32 ms         1.31 ms            5 MB/s=2.42924k/s Tokens/s=77.7358k/s
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time                              1.28 ms         1.27 ms            5 MB/s=2.50488k/s Tokens/s=80.156k/s
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time_mean                         1.29 ms         1.28 ms            3 MB/s=2.47376k/s Tokens/s=79.1603k/s
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time_median                       1.29 ms         1.27 ms            3 MB/s=2.48716k/s Tokens/s=79.5891k/s
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time_stddev                      0.021 ms        0.024 ms            3 MB/s=39.5575/s Tokens/s=1.26584k/s
+KVCacheAppend/BatchSize=1/SeqLen=512/1/512/64/1/iterations:5/repeats:3/manual_time_cv                           1.61 %          1.87 %             3 MB/s=1.60% Tokens/s=1.60%
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time                            2.57 ms         2.56 ms            5 MB/s=2.49011k/s Tokens/s=79.6835k/s
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time                            2.48 ms         2.47 ms            5 MB/s=2.58009k/s Tokens/s=82.5629k/s
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time                            2.40 ms         2.39 ms            5 MB/s=2.66556k/s Tokens/s=85.2978k/s
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time_mean                       2.48 ms         2.48 ms            3 MB/s=2.57859k/s Tokens/s=82.5147k/s
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time_median                     2.48 ms         2.47 ms            3 MB/s=2.58009k/s Tokens/s=82.5629k/s
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time_stddev                    0.085 ms        0.086 ms            3 MB/s=87.7321/s Tokens/s=2.80743k/s
+KVCacheAppend/BatchSize=1/SeqLen=1024/1/1024/64/1/iterations:5/repeats:3/manual_time_cv                         3.41 %          3.45 %             3 MB/s=3.40% Tokens/s=3.40%
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time                            4.85 ms         4.84 ms            5 MB/s=2.63879k/s Tokens/s=84.4411k/s
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time                            4.93 ms         4.93 ms            5 MB/s=2.59505k/s Tokens/s=83.0416k/s
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time                            4.78 ms         4.77 ms            5 MB/s=2.67922k/s Tokens/s=85.7351k/s
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time_mean                       4.85 ms         4.85 ms            3 MB/s=2.63769k/s Tokens/s=84.4059k/s
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time_median                     4.85 ms         4.84 ms            3 MB/s=2.63879k/s Tokens/s=84.4411k/s
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time_stddev                    0.078 ms        0.078 ms            3 MB/s=42.0959/s Tokens/s=1.34707k/s
+KVCacheAppend/BatchSize=1/SeqLen=2048/1/2048/64/1/iterations:5/repeats:3/manual_time_cv                         1.60 %          1.62 %             3 MB/s=1.60% Tokens/s=1.60%
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time                              1.41 ms         1.40 ms            5 MB/s=2.26944k/s Tokens/s=72.622k/s
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time                              1.42 ms         1.42 ms            5 MB/s=2.24906k/s Tokens/s=71.9699k/s
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time                              1.41 ms         1.41 ms            5 MB/s=2.26303k/s Tokens/s=72.417k/s
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time_mean                         1.42 ms         1.41 ms            3 MB/s=2.26051k/s Tokens/s=72.3363k/s
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time_median                       1.41 ms         1.41 ms            3 MB/s=2.26303k/s Tokens/s=72.417k/s
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time_stddev                      0.007 ms        0.008 ms            3 MB/s=10.4194/s Tokens/s=333.422/s
+KVCacheAppend/BatchSize=2/SeqLen=256/2/256/64/1/iterations:5/repeats:3/manual_time_cv                           0.46 %          0.59 %             3 MB/s=0.46% Tokens/s=0.46%
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time                              2.66 ms         2.65 ms            5 MB/s=2.40684k/s Tokens/s=77.0188k/s
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time                              2.66 ms         2.65 ms            5 MB/s=2.41039k/s Tokens/s=77.1324k/s
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time                              2.47 ms         2.46 ms            5 MB/s=2.58845k/s Tokens/s=82.8303k/s
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time_mean                         2.60 ms         2.59 ms            3 MB/s=2.46856k/s Tokens/s=78.9938k/s
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time_median                       2.66 ms         2.65 ms            3 MB/s=2.41039k/s Tokens/s=77.1324k/s
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time_stddev                      0.107 ms        0.107 ms            3 MB/s=103.843/s Tokens/s=3.32297k/s
+KVCacheAppend/BatchSize=2/SeqLen=512/2/512/64/1/iterations:5/repeats:3/manual_time_cv                           4.11 %          4.15 %             3 MB/s=4.21% Tokens/s=4.21%
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time                            4.82 ms         4.82 ms            5 MB/s=2.65312k/s Tokens/s=84.8997k/s
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time                            4.80 ms         4.79 ms            5 MB/s=2.66833k/s Tokens/s=85.3867k/s
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time                            4.76 ms         4.75 ms            5 MB/s=2.69079k/s Tokens/s=86.1053k/s
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time_mean                       4.79 ms         4.78 ms            3 MB/s=2.67075k/s Tokens/s=85.4639k/s
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time_median                     4.80 ms         4.79 ms            3 MB/s=2.66833k/s Tokens/s=85.3867k/s
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time_stddev                    0.034 ms        0.033 ms            3 MB/s=18.9529/s Tokens/s=606.493/s
+KVCacheAppend/BatchSize=2/SeqLen=1024/2/1024/64/1/iterations:5/repeats:3/manual_time_cv                         0.71 %          0.69 %             3 MB/s=0.71% Tokens/s=0.71%
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time                            9.42 ms         9.40 ms            5 MB/s=2.71802k/s Tokens/s=86.9765k/s
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time                            9.42 ms         9.40 ms            5 MB/s=2.71785k/s Tokens/s=86.9711k/s
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time                            9.25 ms         9.24 ms            5 MB/s=2.76762k/s Tokens/s=88.5639k/s
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time_mean                       9.36 ms         9.35 ms            3 MB/s=2.7345k/s Tokens/s=87.5039k/s
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time_median                     9.42 ms         9.40 ms            3 MB/s=2.71802k/s Tokens/s=86.9765k/s
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time_stddev                    0.098 ms        0.097 ms            3 MB/s=28.6888/s Tokens/s=918.041/s
+KVCacheAppend/BatchSize=2/SeqLen=2048/2/2048/64/1/iterations:5/repeats:3/manual_time_cv                         1.04 %          1.04 %             3 MB/s=1.05% Tokens/s=1.05%
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time                              2.35 ms         2.35 ms            5 MB/s=2.71813k/s Tokens/s=86.9802k/s
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time                              2.51 ms         2.51 ms            5 MB/s=2.54485k/s Tokens/s=81.4352k/s
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time                              2.53 ms         2.53 ms            5 MB/s=2.52752k/s Tokens/s=80.8807k/s
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time_mean                         2.47 ms         2.46 ms            3 MB/s=2.59683k/s Tokens/s=83.0987k/s
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time_median                       2.51 ms         2.51 ms            3 MB/s=2.54485k/s Tokens/s=81.4352k/s
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time_stddev                      0.098 ms        0.098 ms            3 MB/s=105.403/s Tokens/s=3.37291k/s
+KVCacheAppend/BatchSize=4/SeqLen=256/4/256/64/1/iterations:5/repeats:3/manual_time_cv                           3.97 %          3.99 %             3 MB/s=4.06% Tokens/s=4.06%
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time                              4.69 ms         4.68 ms            5 MB/s=2.73023k/s Tokens/s=87.3674k/s
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time                              4.59 ms         4.58 ms            5 MB/s=2.78764k/s Tokens/s=89.2044k/s
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time                              4.65 ms         4.64 ms            5 MB/s=2.75558k/s Tokens/s=88.1786k/s
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time_mean                         4.64 ms         4.63 ms            3 MB/s=2.75782k/s Tokens/s=88.2501k/s
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time_median                       4.65 ms         4.64 ms            3 MB/s=2.75558k/s Tokens/s=88.1786k/s
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time_stddev                      0.048 ms        0.048 ms            3 MB/s=28.7695/s Tokens/s=920.623/s
+KVCacheAppend/BatchSize=4/SeqLen=512/4/512/64/1/iterations:5/repeats:3/manual_time_cv                           1.04 %          1.03 %             3 MB/s=1.04% Tokens/s=1.04%
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time                            9.79 ms         9.78 ms            5 MB/s=2.61399k/s Tokens/s=83.6477k/s
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time                            9.38 ms         9.36 ms            5 MB/s=2.73024k/s Tokens/s=87.3678k/s
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time                            9.37 ms         9.36 ms            5 MB/s=2.73084k/s Tokens/s=87.3868k/s
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time_mean                       9.51 ms         9.50 ms            3 MB/s=2.69169k/s Tokens/s=86.1341k/s
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time_median                     9.38 ms         9.36 ms            3 MB/s=2.73024k/s Tokens/s=87.3678k/s
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time_stddev                    0.241 ms        0.239 ms            3 MB/s=67.2906/s Tokens/s=2.1533k/s
+KVCacheAppend/BatchSize=4/SeqLen=1024/4/1024/64/1/iterations:5/repeats:3/manual_time_cv                         2.54 %          2.52 %             3 MB/s=2.50% Tokens/s=2.50%
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time                            21.1 ms         21.1 ms            5 MB/s=2.42128k/s Tokens/s=77.4811k/s
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time                            19.5 ms         19.5 ms            5 MB/s=2.62532k/s Tokens/s=84.0102k/s
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time                            18.9 ms         18.9 ms            5 MB/s=2.7082k/s Tokens/s=86.6623k/s
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time_mean                       19.9 ms         19.8 ms            3 MB/s=2.58493k/s Tokens/s=82.7179k/s
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time_median                     19.5 ms         19.5 ms            3 MB/s=2.62532k/s Tokens/s=84.0102k/s
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time_stddev                     1.16 ms         1.16 ms            3 MB/s=147.659/s Tokens/s=4.72508k/s
+KVCacheAppend/BatchSize=4/SeqLen=2048/4/2048/64/1/iterations:5/repeats:3/manual_time_cv                         5.84 %          5.84 %             3 MB/s=5.71% Tokens/s=5.71%
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time                              5.43 ms         5.43 ms            5 MB/s=2.35517k/s Tokens/s=75.3653k/s
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time                              4.72 ms         4.71 ms            5 MB/s=2.71388k/s Tokens/s=86.8442k/s
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time                              5.33 ms         5.32 ms            5 MB/s=2.4016k/s Tokens/s=76.8512k/s
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time_mean                         5.16 ms         5.15 ms            3 MB/s=2.49022k/s Tokens/s=79.6869k/s
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time_median                       5.33 ms         5.32 ms            3 MB/s=2.4016k/s Tokens/s=76.8512k/s
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time_stddev                      0.388 ms        0.386 ms            3 MB/s=195.087/s Tokens/s=6.24277k/s
+KVCacheAppend/BatchSize=8/SeqLen=256/8/256/64/1/iterations:5/repeats:3/manual_time_cv                           7.52 %          7.50 %             3 MB/s=7.83% Tokens/s=7.83%
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time                              9.67 ms         9.66 ms            5 MB/s=2.64669k/s Tokens/s=84.6939k/s
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time                              9.55 ms         9.54 ms            5 MB/s=2.67991k/s Tokens/s=85.7571k/s
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time                              9.59 ms         9.57 ms            5 MB/s=2.67026k/s Tokens/s=85.4484k/s
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time_mean                         9.60 ms         9.59 ms            3 MB/s=2.66562k/s Tokens/s=85.2998k/s
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time_median                       9.59 ms         9.57 ms            3 MB/s=2.67026k/s Tokens/s=85.4484k/s
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time_stddev                      0.062 ms        0.061 ms            3 MB/s=17.092/s Tokens/s=546.945/s
+KVCacheAppend/BatchSize=8/SeqLen=512/8/512/64/1/iterations:5/repeats:3/manual_time_cv                           0.64 %          0.63 %             3 MB/s=0.64% Tokens/s=0.64%
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time                            18.9 ms         18.8 ms            5 MB/s=2.71376k/s Tokens/s=86.8404k/s
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time                            19.5 ms         19.5 ms            5 MB/s=2.62225k/s Tokens/s=83.912k/s
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time                            18.2 ms         18.2 ms            5 MB/s=2.81307k/s Tokens/s=90.0183k/s
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time_mean                       18.9 ms         18.8 ms            3 MB/s=2.71636k/s Tokens/s=86.9236k/s
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time_median                     18.9 ms         18.8 ms            3 MB/s=2.71376k/s Tokens/s=86.8404k/s
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time_stddev                    0.662 ms        0.645 ms            3 MB/s=95.4375/s Tokens/s=3.054k/s
+KVCacheAppend/BatchSize=8/SeqLen=1024/8/1024/64/1/iterations:5/repeats:3/manual_time_cv                         3.51 %          3.43 %             3 MB/s=3.51% Tokens/s=3.51%
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time                            39.1 ms         39.0 ms            5 MB/s=2.62108k/s Tokens/s=83.8747k/s
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time                            43.3 ms         43.3 ms            5 MB/s=2.36305k/s Tokens/s=75.6177k/s
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time                            39.3 ms         39.2 ms            5 MB/s=2.60828k/s Tokens/s=83.4649k/s
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time_mean                       40.6 ms         40.5 ms            3 MB/s=2.53081k/s Tokens/s=80.9858k/s
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time_median                     39.3 ms         39.2 ms            3 MB/s=2.60828k/s Tokens/s=83.4649k/s
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time_stddev                     2.41 ms         2.40 ms            3 MB/s=145.417/s Tokens/s=4.65336k/s
+KVCacheAppend/BatchSize=8/SeqLen=2048/8/2048/64/1/iterations:5/repeats:3/manual_time_cv                         5.94 %          5.93 %             3 MB/s=5.75% Tokens/s=5.75%

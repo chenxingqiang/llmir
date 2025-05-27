@@ -650,10 +650,6 @@ std::vector<int32_t> LRUEvictionPolicy::selectBlocksForEviction(
   return blocksToEvict;
 }
 
-std::unique_ptr<EvictionPolicy> LRUEvictionPolicy::clone() const {
-  return std::make_unique<LRUEvictionPolicy>(*this);
-}
-
 //===----------------------------------------------------------------------===//
 // PagedKVCache Implementation
 //===----------------------------------------------------------------------===//
@@ -1320,16 +1316,8 @@ void PagedKVCache::configureBlockAllocators(int64_t initialBlocksPerLayer, bool 
 void PagedKVCache::setEvictionPolicy(std::unique_ptr<EvictionPolicy> policy) {
   for (auto& allocator : blockAllocators) {
     if (policy) {
-      // Clone the policy for each allocator
-      // Use the clone method directly instead of dynamic_cast
-      void* clonedPtr = policy->clone();
-      if (clonedPtr) {
-        allocator->setEvictionPolicy(
-            std::unique_ptr<EvictionPolicy>(static_cast<EvictionPolicy*>(clonedPtr)));
-      } else {
-        // Fallback to LRU if clone fails
-        allocator->setEvictionPolicy(std::make_unique<LRUEvictionPolicy>());
-      }
+      // Clone the policy for each allocator using the proper std::unique_ptr return
+      allocator->setEvictionPolicy(policy->clone());
     } else {
       // Default to LRU if no policy provided
       allocator->setEvictionPolicy(std::make_unique<LRUEvictionPolicy>());
@@ -1354,9 +1342,68 @@ std::vector<BlockMetrics> PagedKVCache::getAllBlockMetrics() const {
   return allMetrics;
 }
 
-// We need to add the clone method to EvictionPolicy interface
-void* EvictionPolicy::clone() const {
-  return nullptr; // Base implementation returns nullptr
+// Add implementation for the GPU memory configuration method
+void PagedKVCache::configureGPUMemoryOptions(bool enablePool, 
+                                          size_t unifiedMemThreshold,
+                                          size_t initialPoolSize) {
+  if (!useGPU) {
+    return;  // No-op for CPU-only mode
+  }
+
+  // Configure memory pool
+  GPUMemoryPool::getInstance().enable(enablePool);
+  
+  // Set unified memory threshold
+  UnifiedMemoryManager::getInstance().setThreshold(unifiedMemThreshold);
+  
+  // Set initial pool size if enabled
+  if (enablePool && initialPoolSize > 0) {
+    GPUMemoryPool::getInstance().setInitialCapacity(initialPoolSize);
+  }
+}
+
+// Add implementation for the GPU memory stats method
+std::string PagedKVCache::getGPUMemoryStats() const {
+  if (!useGPU) {
+    return "GPU not enabled";
+  }
+  
+  std::ostringstream oss;
+  
+  // Get pool stats
+  GPUMemoryPool::PoolStats poolStats = GPUMemoryPool::getInstance().getStats();
+  
+  oss << "GPU Memory Pool Stats:\n"
+      << "  Total memory: " << (poolStats.totalMemory / (1024.0 * 1024.0)) << " MB\n"
+      << "  Used memory: " << (poolStats.usedMemory / (1024.0 * 1024.0)) << " MB\n"
+      << "  Free memory: " << (poolStats.freeMemory / (1024.0 * 1024.0)) << " MB\n"
+      << "  Block count: " << poolStats.blockCount << "\n"
+      << "  Hit rate: " << (poolStats.hitCount + poolStats.missCount > 0 ? 
+                          100.0 * poolStats.hitCount / (poolStats.hitCount + poolStats.missCount) : 0.0)
+      << "%\n";
+  
+  // Try to get device properties
+  GPUMemoryUtils::GPUDeviceProperties props;
+  if (succeeded(GPUMemoryUtils::getDeviceProperties(props))) {
+    oss << "GPU Device Stats:\n"
+        << "  Device: " << props.name << " (ID: " << props.deviceId << ")\n"
+        << "  Total device memory: " << (props.totalMemory / (1024.0 * 1024.0)) << " MB\n"
+        << "  Free device memory: " << (props.freeMemory / (1024.0 * 1024.0)) << " MB\n"
+        << "  Compute capability: " << props.computeCapabilityMajor 
+        << "." << props.computeCapabilityMinor << "\n";
+  }
+  
+  return oss.str();
+}
+
+// Add implementation for the shrink GPU memory method
+void PagedKVCache::shrinkGPUMemory(float keepRatio) {
+  if (!useGPU) {
+    return;  // No-op for CPU-only mode
+  }
+  
+  // Shrink the memory pool
+  GPUMemoryPool::getInstance().shrink(keepRatio);
 }
 
 // LRUEvictionPolicy implementation of clone
@@ -1364,6 +1411,7 @@ std::unique_ptr<EvictionPolicy> LRUEvictionPolicy::clone() const {
   return std::make_unique<LRUEvictionPolicy>(*this);
 }
 
+// Implementation of FragmentationAwareLRUPolicy's selectBlocksForEviction method
 std::vector<int32_t> FragmentationAwareLRUPolicy::selectBlocksForEviction(
     const BlockAllocator& allocator, int64_t numBlocksNeeded) const {
   std::vector<int32_t> blocksToEvict;
@@ -1446,8 +1494,8 @@ void BlockAllocator::updateSeqLengthStats(int64_t seqLen) {
 }
 
 int64_t PagedKVCache::runAdvancedBlockCoalescing(double fragmentationThreshold,
-                                         int64_t maxBlocksToCoalesce,
-                                         bool preserveOrder) {
+                                       int64_t maxBlocksToCoalesce,
+                                       bool preserveOrder) {
   int64_t totalCoalesced = 0;
   
   for (auto& allocator : blockAllocators) {
@@ -1469,7 +1517,7 @@ void PagedKVCache::disableAutoCoalescing() {
 }
 
 void PagedKVCache::configureBlockAllocatorsAdvanced(int64_t avgSeqLen, int64_t maxConcurrentSeqs,
-                                                 bool enableMetrics, int preallocationStrategy) {
+                                               bool enableMetrics, int preallocationStrategy) {
   // Determine base number of blocks to preallocate per layer based on strategy
   int64_t baseBlocksPerLayer;
   switch (preallocationStrategy) {
@@ -1574,223 +1622,6 @@ void PagedKVCache::getSequenceLengthStats(int64_t& minSeqLen, int64_t& maxSeqLen
       minSeqLen = 0;
     }
   }
-}
-
-void PagedKVCache::configureAttentionOpt(const AttentionConfig& config) {
-  // Create a copy of the config and ensure it has the correct parameters
-  AttentionConfig attConfig = config;
-  attConfig.numHeads = numHeads;
-  attConfig.headDim = headDim;
-  attConfig.setDefaultsFromHeadDim();
-  
-  // Configure Flash Attention parameters for optimal performance with paged KV cache
-  if (attConfig.useFlashAttention) {
-    // Adjust block sizes based on the paged KV cache block size for optimal tiling
-    // The query block size (M) should be related to a multiple of query size in tokens
-    // The key block size (N) should be related to the KV cache block size
-    
-    // A good default block size for M is 64
-    if (attConfig.blockSizeM <= 0) {
-      attConfig.blockSizeM = 64;
-    }
-    
-    // For N, we want a value that's a multiple of the cache block size
-    // But capped to a reasonable maximum for memory efficiency
-    if (attConfig.blockSizeN <= 0) {
-      // Use the block size of the KV cache as a basis, but ensure at least 32
-      // and no more than 128 for good performance
-      attConfig.blockSizeN = std::min(128, std::max(32, static_cast<int>(blockSize)));
-    }
-    
-    // Enable prefetching by default for better memory access patterns
-    attConfig.usePrefetching = true;
-  }
-  
-  // Create an appropriate attention implementation
-  attentionImpl = createAttentionImpl(attConfig, elementType, useGPU);
-}
-
-LogicalResult PagedKVCache::computeAttention(
-    void* output,
-    const void* queries,
-    const int32_t* blockIndices,
-    const int32_t* seqLens,
-    int64_t batchSize,
-    int64_t seqLen) {
-  
-  // Check if attention implementation is configured
-  if (!attentionImpl) {
-    // Create a default attention configuration
-    AttentionConfig defaultConfig;
-    defaultConfig.numHeads = numHeads;
-    defaultConfig.headDim = headDim;
-    defaultConfig.maskType = AttentionMaskType::CAUSAL;
-    defaultConfig.optLevel = AttentionOptLevel::BASIC;
-    defaultConfig.setDefaultsFromHeadDim();
-    
-    // Create attention implementation
-    attentionImpl = createAttentionImpl(defaultConfig, elementType, useGPU);
-  }
-  
-  // Compute attention using the configured implementation
-  attentionImpl->computePaged(
-      output, queries, this, blockIndices, seqLens, batchSize, seqLen);
-  
-  return success();
-}
-
-// Efficiently gather keys and values from KV cache for attention computation
-LogicalResult PagedKVCache::gatherKVForAttention(
-    void* outputKeys,
-    void* outputValues,
-    int32_t seqId,
-    int64_t startPos,
-    int64_t numTokens) {
-  
-  // Check if sequence exists
-  if (layerSeqInfo.empty() || layerSeqInfo[0].count(seqId) == 0) {
-    return failure();
-  }
-  
-  // Check if start position and length are valid
-  int64_t seqLen = layerSeqInfo[0].at(seqId).currentPos;
-  if (startPos < 0 || startPos + numTokens > seqLen) {
-    return failure();
-  }
-  
-  // Gather keys and values from each layer and concatenate them
-  // This is more efficient than making separate lookupKV calls
-  int64_t elementTypeSize = getElementTypeSize();
-  int64_t tokensPerKey = numHeads * headDim;
-  int64_t tokenSizeInBytes = tokensPerKey * elementTypeSize;
-  
-  for (int64_t layerIdx = 0; layerIdx < numLayers; layerIdx++) {
-    const auto& seqInfo = layerSeqInfo[layerIdx].at(seqId);
-    int64_t currentTokenOffset = 0;
-    
-    // Find the starting block position for this sequence
-    int64_t blockPos = 0;
-    while (blockPos < seqInfo.blockPositions.size() && currentTokenOffset + blockSize <= startPos) {
-      // Skip whole blocks that come before our start position
-      currentTokenOffset += blockSize;
-      blockPos++;
-    }
-    
-    // Now we're at the first block we need to read from
-    int64_t remainingTokens = numTokens;
-    int64_t outputOffset = 0;
-    
-    // Calculate layer offsets in the output
-    char* layerOutputKeys = static_cast<char*>(outputKeys) + layerIdx * numTokens * tokenSizeInBytes;
-    char* layerOutputValues = static_cast<char*>(outputValues) + layerIdx * numTokens * tokenSizeInBytes;
-    
-    // Keep copying until we've gathered all requested tokens
-    while (remainingTokens > 0 && blockPos < seqInfo.blockPositions.size()) {
-      auto [blockIdx, posInBlock] = seqInfo.blockPositions[blockPos];
-      
-      // If this sequence shares blocks, map to the actual block index
-      if (seqInfo.sharesBlocks && seqInfo.sharedBlockMapping.count(blockIdx) > 0) {
-        blockIdx = seqInfo.sharedBlockMapping.at(blockIdx);
-      }
-      
-      // Get block from allocator
-      KVBlock* block = blockAllocators[layerIdx]->getBlock(blockIdx);
-      if (!block) {
-        return failure();
-      }
-      
-      // Calculate position within block to start reading
-      int64_t inBlockOffset = startPos - currentTokenOffset + posInBlock;
-      
-      // Calculate how many tokens to read from this block
-      int64_t tokensInBlock = std::min(remainingTokens, blockSize - (inBlockOffset - posInBlock));
-      
-      // Copy keys and values from this block
-      if (failed(copyFromBlock(block, inBlockOffset, 
-                              layerOutputKeys + outputOffset * tokenSizeInBytes,
-                              layerOutputValues + outputOffset * tokenSizeInBytes,
-                              0, tokensInBlock))) {
-        return failure();
-      }
-      
-      // Update counters
-      remainingTokens -= tokensInBlock;
-      outputOffset += tokensInBlock;
-      currentTokenOffset += blockSize - posInBlock;
-      blockPos++;
-    }
-    
-    // Check if we gathered all tokens
-    if (remainingTokens > 0) {
-      return failure();
-    }
-  }
-  
-  return success();
-}
-
-// Add implementation for the GPU memory configuration method
-void PagedKVCache::configureGPUMemoryOptions(bool enablePool, 
-                                          size_t unifiedMemThreshold,
-                                          size_t initialPoolSize) {
-  if (!useGPU) {
-    return;  // No-op for CPU-only mode
-  }
-
-  // Configure memory pool
-  GPUMemoryPool::getInstance().enable(enablePool);
-  
-  // Set unified memory threshold
-  UnifiedMemoryManager::getInstance().setThreshold(unifiedMemThreshold);
-  
-  // Set initial pool size if enabled
-  if (enablePool && initialPoolSize > 0) {
-    GPUMemoryPool::getInstance().setInitialCapacity(initialPoolSize);
-  }
-}
-
-// Add implementation for the GPU memory stats method
-std::string PagedKVCache::getGPUMemoryStats() const {
-  if (!useGPU) {
-    return "GPU not enabled";
-  }
-  
-  std::ostringstream oss;
-  
-  // Get pool stats
-  GPUMemoryPool::PoolStats poolStats = GPUMemoryPool::getInstance().getStats();
-  
-  oss << "GPU Memory Pool Stats:\n"
-      << "  Total memory: " << (poolStats.totalMemory / (1024.0 * 1024.0)) << " MB\n"
-      << "  Used memory: " << (poolStats.usedMemory / (1024.0 * 1024.0)) << " MB\n"
-      << "  Free memory: " << (poolStats.freeMemory / (1024.0 * 1024.0)) << " MB\n"
-      << "  Block count: " << poolStats.blockCount << "\n"
-      << "  Hit rate: " << (poolStats.hitCount + poolStats.missCount > 0 ? 
-                          100.0 * poolStats.hitCount / (poolStats.hitCount + poolStats.missCount) : 0.0)
-      << "%\n";
-  
-  // Try to get device properties
-  GPUMemoryUtils::GPUDeviceProperties props;
-  if (succeeded(GPUMemoryUtils::getDeviceProperties(props))) {
-    oss << "GPU Device Stats:\n"
-        << "  Device: " << props.name << " (ID: " << props.deviceId << ")\n"
-        << "  Total device memory: " << (props.totalMemory / (1024.0 * 1024.0)) << " MB\n"
-        << "  Free device memory: " << (props.freeMemory / (1024.0 * 1024.0)) << " MB\n"
-        << "  Compute capability: " << props.computeCapabilityMajor 
-        << "." << props.computeCapabilityMinor << "\n";
-  }
-  
-  return oss.str();
-}
-
-// Add implementation for the shrink GPU memory method
-void PagedKVCache::shrinkGPUMemory(float keepRatio) {
-  if (!useGPU) {
-    return;  // No-op for CPU-only mode
-  }
-  
-  // Shrink the memory pool
-  GPUMemoryPool::getInstance().shrink(keepRatio);
 }
 
 } // namespace runtime
