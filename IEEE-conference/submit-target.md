@@ -1,7 +1,7 @@
 IMPORTANT DATES:
 
 Paper submission deadline FINAL EXTENSION May 11, 2025, 11:59pm AOE May 25, 2025, 11:59pm AOE
-Notification of Acceptance:   August 01, 2025
+Notification of Acceptance:  August 01, 2025
 
 ICCD encompasses a wide range of topics in the research, design, and implementation of computer systems and their components. ICCD's multi-disciplinary emphasis provides an ideal environment for developers and researchers to discuss practical and theoretical work covering systems and applications, computer architecture, verification and test, design tools and methodologies, circuit design, and technology. We especially encourage submissions that look forward to future systems and technologies in one of the following tracks:
 
@@ -24,4 +24,3 @@ The list of authors, paper title, and abstract must be registered in the Easycha
 The full paper must be submitted by the paper submission deadline.
 
 Any questions about submission should be directed to the Program Chairs, Fei Yao and Wei Zhang. Please consult the ICCD 2025 website for additional information about the conference and submission details.
- 
