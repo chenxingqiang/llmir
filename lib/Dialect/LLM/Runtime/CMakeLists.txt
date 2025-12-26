@@ -3,6 +3,12 @@ add_mlir_dialect_library(MLIRLLMRuntime
   KVCacheRuntime.cpp
   RuntimeInterfaces.cpp
   GPUMemoryUtils.cpp
+  AttentionOpt.cpp
+  MultiQueryAttention.cpp
+  PrunedAttention.cpp
+  QuantizedKVCache.cpp
+  KVCacheSerialization.cpp
+  DistributedKVCache.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Dialect/LLM/Runtime
@@ -41,4 +47,13 @@ if(LLMIR_ENABLE_METAL AND APPLE)
   target_link_libraries(MLIRLLMRuntime PRIVATE ${METAL_LIBRARY} ${FOUNDATION_LIBRARY})
   target_compile_definitions(MLIRLLMRuntime PRIVATE LLMIR_ENABLE_METAL)
   message(STATUS "Building MLIRLLMRuntime with Metal support")
+endif()
+
+# Check for NCCL support (for distributed KV cache)
+if(LLMIR_ENABLE_NCCL)
+  find_package(NCCL REQUIRED)
+  target_include_directories(MLIRLLMRuntime PRIVATE ${NCCL_INCLUDE_DIRS})
+  target_link_libraries(MLIRLLMRuntime PRIVATE ${NCCL_LIBRARIES})
+  target_compile_definitions(MLIRLLMRuntime PRIVATE LLMIR_ENABLE_NCCL)
+  message(STATUS "Building MLIRLLMRuntime with NCCL support for distributed cache")
 endif() 

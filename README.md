@@ -21,6 +21,9 @@ Key objectives:
 - **Memory Optimizations**: Block-based memory management for efficient, low-fragmentation memory usage
 - **Multi-sequence Support**: Handle multiple concurrent sequences with varying lengths
 - **Multi-layer Management**: Efficiently manage KV cache for all layers in transformer models
+- **Quantized KV Cache**: INT8/INT4 quantization support for 4-8x memory reduction
+- **Multi-GPU Sharding**: Distributed KV cache with layer-wise, head-wise, and sequence-wise sharding
+- **Checkpoint Support**: Serialization/deserialization for long-running sessions
 
 ## Architecture
 
@@ -144,6 +147,55 @@ cache.appendKV(keyPtr, valuePtr, batchSize, seqLen, seqIds, blockIndices);
 cache.lookupKV(blockIndices, seqLens, batchSize, outputKeys, outputValues);
 ```
 
+### Quantized KV Cache
+
+```cpp
+// Create a quantized KV cache with INT8 quantization
+QuantizationConfig config(QuantizationType::INT8, 
+                          QuantizationStrategy::PER_TENSOR);
+QuantizedPagedKVCache qCache(numLayers, numHeads, headDim, blockSize, 
+                             maxSeqLen, config, elementType);
+
+// Use the quantized cache (automatic quantization/dequantization)
+qCache.appendKV(keyPtr, valuePtr, batchSize, seqLen, seqIds, blockIndices);
+
+// Get compression ratio
+float ratio = qCache.getCompressionRatio();  // ~4x for INT8, ~8x for INT4
+```
+
+### Multi-GPU Distributed KV Cache
+
+```cpp
+// Configure sharding across 4 GPUs
+ShardingConfig config;
+config.strategy = ShardingStrategy::LAYER_WISE;
+config.numDevices = 4;
+config.deviceIds = {0, 1, 2, 3};
+
+// Create distributed cache
+DistributedPagedKVCache distCache(numLayers, numHeads, headDim, blockSize,
+                                   maxSeqLen, elementType, config);
+
+// Operations are automatically distributed
+distCache.appendKV(keyPtr, valuePtr, batchSize, seqLen, seqIds, blockIndices);
+```
+
+### Checkpointing
+
+```cpp
+// Create checkpoint manager
+CheckpointManager manager("/path/to/checkpoints");
+
+// Save checkpoint
+manager.createCheckpoint(cache, "checkpoint_001");
+
+// Load checkpoint
+manager.loadCheckpoint(cache, "checkpoint_001");
+
+// Auto-cleanup old checkpoints (keep 5 most recent)
+manager.cleanupCheckpoints(5);
+```
+
 ## Project Structure
 
 ```
@@ -167,21 +219,28 @@ examples/                       # Example applications
 
 LLMIR follows a phased development approach:
 
-1. **Phase 1**: Basic infrastructure
+1. **Phase 1**: Basic infrastructure ✅
    - LLM dialect design and implementation
    - Basic type system
    - Core operations
 
-2. **Phase 2**: Core optimizations
-   - KV cache management (current focus)
+2. **Phase 2**: Core optimizations ✅
+   - KV cache management
    - Attention computation optimizations
    - Memory management
 
-3. **Phase 3**: Advanced features
-   - Quantization support
+3. **Phase 3**: Advanced features ✅
+   - Quantization support (INT8/INT4)
    - Tensor parallelism
    - Pipeline parallelism
-   - Backend code generation
+   - Multi-GPU sharding
+   - Checkpoint/serialization support
+
+4. **Phase 4**: Production & Integration (Current)
+   - Framework integration (HuggingFace, vLLM)
+   - Speculative decoding support
+   - Prefix caching optimization
+   - Performance tuning and benchmarks
 
 ## Attention Optimization Benchmarks
 
