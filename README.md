@@ -29,6 +29,9 @@ Key objectives:
 - **Adaptive Block Management**: Dynamic block size adjustment based on workload patterns
 - **Continuous Batching**: vLLM-style dynamic batch management for production serving
 - **vLLM Integration**: Drop-in compatibility layer for vLLM-based applications
+- **Python Bindings**: Full Python API for KV cache, profiling, and engine management
+- **Model Optimizations**: Pre-configured optimizations for Llama, Mistral, Phi models
+- **Performance Profiling**: Comprehensive profiling with latency, memory, and throughput tracking
 
 ## Architecture
 
@@ -331,6 +334,89 @@ engine.setOutputCallback([](int32_t groupId, const std::vector<int32_t>& tokens,
 });
 ```
 
+### Python Bindings
+
+```python
+from mlir.dialects.llm import (
+    PagedKVCache, QuantizedKVCache, KVCacheConfig, 
+    QuantizationConfig, QuantizationType,
+    LLMEngine, SamplingParams, ContinuousBatchingEngine,
+    Profiler, LatencyProfiler, ThroughputMonitor
+)
+
+# Create KV cache
+config = KVCacheConfig(num_layers=32, num_heads=32, head_dim=128)
+cache = PagedKVCache(config)
+
+# Use quantized cache for memory efficiency
+quant_config = QuantizationConfig(quant_type=QuantizationType.INT8)
+quant_cache = QuantizedKVCache(config, quant_config)
+print(f"Compression ratio: {quant_cache.get_compression_ratio()}x")
+
+# High-level LLM engine with vLLM-compatible API
+engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")
+outputs = engine.generate(
+    ["Hello, world!", "What is LLMIR?"],
+    SamplingParams(max_tokens=100, temperature=0.7)
+)
+
+# Performance profiling
+profiler = Profiler()
+profiler.start()
+
+with profiler.trace("attention"):
+    # Run attention computation
+    pass
+
+profiler.stop()
+profiler.get_report().print_summary()
+```
+
+### Model-Specific Optimizations (C++)
+
+```cpp
+// Use model-specific optimizer for Llama 3.1 70B
+auto optimizer = LlamaOptimizer::forLlama31_70B();
+
+// Get optimized configuration
+auto kvConfig = optimizer.getOptimizedKVCacheConfig();
+auto quantConfig = optimizer.getRecommendedQuantConfig();
+int64_t blockSize = optimizer.getOptimizedBlockSize();
+
+// Create optimized cache
+auto cache = optimizer.createOptimizedKVCache(/*enableGPU=*/true);
+
+// Estimate memory usage
+size_t memUsage = optimizer.estimateMemoryUsage(batchSize, seqLen);
+
+// For Mistral with sliding window
+auto mistralOptimizer = MistralOptimizer::forMistral7B();
+auto windowCache = mistralOptimizer.createSlidingWindowCache(
+    mistralOptimizer.getSlidingWindowSize());
+
+// Use model registry for any model
+auto& registry = ModelRegistry::getInstance();
+auto modelOptimizer = registry.createOptimizer("llama3.1-8b");
+auto config = registry.getConfig("mixtral-8x7b");
+```
+
+### Memory Estimation
+
+```cpp
+// Estimate memory requirements before deployment
+ModelMemoryEstimator estimator(LlamaOptimizer::forLlama31_70B().config_);
+
+// Memory breakdown
+estimator.printMemoryBreakdown(batchSize, seqLen);
+
+// Find optimal batch size for available memory
+size_t gpuMemory = 80ULL * 1024 * 1024 * 1024;  // 80 GB
+int64_t maxBatch = estimator.findMaxBatchSize(gpuMemory, maxSeqLen);
+
+// Find maximum sequence length for given batch
+int64_t maxSeq = estimator.findMaxSeqLen(gpuMemory, batchSize);
+```
+
 ## Project Structure
 
 ```
@@ -383,11 +469,17 @@ LLMIR follows a phased development approach:
    - vLLM integration layer with full API compatibility
    - Memory pressure monitoring and preemption
 
-6. **Phase 6**: Future Enhancements (Planned)
+6. **Phase 6**: Developer Tools & Model Support ✅
+   - Python bindings for runtime
+   - Performance profiling tools
+   - Model-specific optimizations (Llama, Mistral, Phi)
+   - Model registry with presets
+   - Memory estimation utilities
+
+7. **Phase 7**: Future Enhancements (Planned)
    - HuggingFace Transformers integration
-   - Model-specific optimizations (Llama, Mistral, Qwen)
-   - Advanced observability and monitoring
-   - Auto-scaling support
+   - Distributed training support
+   - Auto-scaling and Kubernetes support
 
 ## Attention Optimization Benchmarks
 
