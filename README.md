@@ -24,6 +24,9 @@ Key objectives:
 - **Quantized KV Cache**: INT8/INT4 quantization support for 4-8x memory reduction
 - **Multi-GPU Sharding**: Distributed KV cache with layer-wise, head-wise, and sequence-wise sharding
 - **Checkpoint Support**: Serialization/deserialization for long-running sessions
+- **Speculative Decoding**: KV cache branching and rollback for draft token verification
+- **Prefix Caching**: Efficient reuse of common prompt prefixes across sequences
+- **Adaptive Block Management**: Dynamic block size adjustment based on workload patterns
 
 ## Architecture
 
@@ -194,6 +197,78 @@ manager.loadCheckpoint(cache, "checkpoint_001");
 
 // Auto-cleanup old checkpoints (keep 5 most recent)
 manager.cleanupCheckpoints(5);
+```
+
+### Speculative Decoding
+
+```cpp
+// Create speculative KV cache
+SpeculativeConfig specConfig;
+specConfig.maxDraftTokens = 8;
+specConfig.enableTreeAttention = true;
+
+SpeculativeKVCache specCache(numLayers, numHeads, headDim, blockSize,
+                              maxSeqLen, elementType, specConfig);
+
+// Create a branch for speculation
+int32_t branchId;
+specCache.createBranch(sequenceId, branchId);
+
+// Append speculative (draft) KV
+specCache.appendSpeculativeKV(keyData, valueData, sequenceId, numDraftTokens, branchId);
+
+// Verify and commit accepted tokens
+VerificationResult result;
+specCache.verifySpeculation(sequenceId, branchId, targetLogProbs, numTokens, result);
+specCache.commitSpeculation(sequenceId, branchId, result.acceptedCount);
+```
+
+### Prefix Caching
+
+```cpp
+// Create prefix-aware KV cache
+PrefixCacheConfig prefixConfig;
+prefixConfig.maxCachedPrefixes = 1000;
+prefixConfig.enableRadixTree = true;
+
+PrefixAwareKVCache prefixCache(numLayers, numHeads, headDim, blockSize,
+                                maxSeqLen, elementType, prefixConfig);
+
+// Initialize sequence with automatic prefix reuse
+int64_t cachedLength = prefixCache.initializeSequence(sequenceId, 
+                                                       promptTokens, promptLength);
+// cachedLength tokens loaded from cache, only need to compute remaining
+
+// Cache system prompts
+SystemPromptCache systemCache(prefixCache.getPrefixCache());
+systemCache.registerSystemPrompt("assistant", systemTokens, systemLength);
+```
+
+### Adaptive Block Management
+
+```cpp
+// Create adaptive block manager
+BlockSizeConfig blockConfig;
+blockConfig.primaryBlockSize = 16;
+blockConfig.smallBlockSize = 4;
+blockConfig.largeBlockSize = 64;
+
+AdaptationConfig adaptConfig;
+adaptConfig.policy = AdaptationPolicy::PREDICTIVE;
+adaptConfig.enableAutoTuning = true;
+
+AdaptiveBlockManager manager(numLayers, numHeads, headDim,
+                              blockConfig, adaptConfig);
+
+// Allocate blocks with automatic size selection
+std::vector<KVBlock*> blocks;
+manager.allocateBlocksForSequence(sequenceId, expectedLength, blocks);
+
+// Record workload for adaptation
+manager.recordSequenceComplete(sequenceId, finalLength);
+
+// Get recommended configuration based on workload
+BlockSizeConfig recommended = manager.getRecommendedConfig();
 ```
 
 ## Project Structure

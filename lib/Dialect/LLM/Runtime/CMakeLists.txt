@@ -9,6 +9,9 @@ add_mlir_dialect_library(MLIRLLMRuntime
   QuantizedKVCache.cpp
   KVCacheSerialization.cpp
   DistributedKVCache.cpp
+  SpeculativeKVCache.cpp
+  PrefixCache.cpp
+  AdaptiveBlockManager.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Dialect/LLM/Runtime
