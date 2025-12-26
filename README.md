@@ -27,6 +27,8 @@ Key objectives:
 - **Speculative Decoding**: KV cache branching and rollback for draft token verification
 - **Prefix Caching**: Efficient reuse of common prompt prefixes across sequences
 - **Adaptive Block Management**: Dynamic block size adjustment based on workload patterns
+- **Continuous Batching**: vLLM-style dynamic batch management for production serving
+- **vLLM Integration**: Drop-in compatibility layer for vLLM-based applications
 
 ## Architecture
 
@@ -271,6 +273,64 @@ manager.recordSequenceComplete(sequenceId, finalLength);
 BlockSizeConfig recommended = manager.getRecommendedConfig();
 ```
 
+### vLLM Integration
+
+```cpp
+// Create vLLM-compatible engine
+vllm::LLMEngineAdapter::EngineConfig config;
+config.maxNumSeqs = 256;
+config.maxNumBatchedTokens = 8192;
+config.blockSize = 16;
+config.gpuMemoryUtilization = 0.9f;
+
+vllm::LLMEngineAdapter engine(config);
+engine.initialize();
+
+// Submit request with vLLM-style parameters
+vllm::SamplingParams params;
+params.maxTokens = 256;
+params.temperature = 0.7f;
+params.topP = 0.9f;
+
+std::string requestId = engine.addRequest("What is LLMIR?", params);
+
+// Process requests
+while (engine.hasPendingRequests()) {
+    auto outputs = engine.step();
+    for (const auto& output : outputs) {
+        if (output.finished) {
+            std::cout << output.outputs[0].text << std::endl;
+        }
+    }
+}
+```
+
+### Continuous Batching
+
+```cpp
+// Create continuous batching engine
+SchedulerConfig schedConfig;
+schedConfig.maxBatchSize = 256;
+schedConfig.maxBatchTokens = 8192;
+schedConfig.enablePreemption = true;
+schedConfig.policy = SchedulingPolicy::ADAPTIVE;
+
+ContinuousBatchingEngine engine(cache, schedConfig);
+engine.start();
+
+// Submit multiple requests
+for (const auto& prompt : prompts) {
+    engine.submitRequest(tokenize(prompt), genConfig, RequestPriority::NORMAL);
+}
+
+// Engine runs in background, outputs delivered via callback
+engine.setOutputCallback([](int32_t groupId, const std::vector<int32_t>& tokens, 
+                            bool isFinished) {
+    std::cout << "Request " << groupId << ": " << tokens.size() << " tokens"
+              << (isFinished ? " [DONE]" : "") << std::endl;
+});
+```
+
 ## Project Structure
 
 ```
@@ -311,11 +371,23 @@ LLMIR follows a phased development approach:
    - Multi-GPU sharding
    - Checkpoint/serialization support
 
-4. **Phase 4**: Production & Integration (Current)
-   - Framework integration (HuggingFace, vLLM)
-   - Speculative decoding support
-   - Prefix caching optimization
-   - Performance tuning and benchmarks
+4. **Phase 4**: Advanced Optimizations ✅
+   - Speculative decoding with KV cache branching
+   - Prefix caching with radix tree
+   - Dynamic block size adjustment
+   - Adaptive block management
+
+5. **Phase 5**: Production & Integration ✅
+   - Comprehensive benchmark suite
+   - Continuous batching for production serving
+   - vLLM integration layer with full API compatibility
+   - Memory pressure monitoring and preemption
+
+6. **Phase 6**: Future Enhancements (Planned)
+   - HuggingFace Transformers integration
+   - Model-specific optimizations (Llama, Mistral, Qwen)
+   - Advanced observability and monitoring
+   - Auto-scaling support
 
 ## Attention Optimization Benchmarks
 
