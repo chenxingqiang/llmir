@@ -19,6 +19,8 @@
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <functional>
+#include <unordered_map>
 
 namespace mlir {
 namespace llm {
@@ -76,6 +78,7 @@ struct AttentionConfig {
   // Attention variant
   AttentionVariant variant = AttentionVariant::STANDARD;  // Attention variant
   int64_t numKVHeads = 0;         // Number of key-value heads (for MQA/GQA)
+  int64_t headGroupSize = 0;      // Number of query heads per KV head (for GQA)
   bool rotaryEmbedding = false;   // Whether to apply rotary embeddings
   
   // Attention masks
@@ -87,13 +90,23 @@ struct AttentionConfig {
   bool optimizeMaskedAttention = false;  // Use specialized masked attention implementations
   bool blockSparse = false;         // Use block-sparse computation for attention
   
-  // Flash Attention parameters
+  // Flash Attention parameters (aliased with block size params)
   int64_t flashBlockSizeM = 64;    // Block size for queries in Flash Attention
   int64_t flashBlockSizeN = 64;    // Block size for keys in Flash Attention
   int64_t flashBlockSizeK = 32;    // Block size for the head dimension
+  int64_t blockSizeM = 64;         // Block size M (alias for flashBlockSizeM)
+  int64_t blockSizeN = 64;         // Block size N (alias for flashBlockSizeN)
   
   // Sliding window attention parameters
   int64_t windowSize = 0;          // Window size for sliding window attention (0 = disabled)
+  
+  // Pruning strategy and parameters
+  AttentionPruningStrategy pruningStrategy = AttentionPruningStrategy::NONE;
+  float pruningThreshold = 0.01f;   // Threshold for THRESHOLD pruning strategy
+  int64_t pruningTopK = 0;          // K value for TOP_K pruning (0 = auto: 20% of context)
+  int64_t pruningBlockSize = 32;    // Block size for BLOCK_SPARSE pruning
+  float pruningRatio = 0.5f;        // Ratio of blocks to prune (for BLOCK_SPARSE)
+  const void* staticPruningMask = nullptr;  // Static mask for STATIC_PATTERN pruning
   
   // Helper method to set default scale if not provided
   void setDefaultsFromHeadDim() {
@@ -116,6 +129,15 @@ struct AttentionConfig {
       }
     }
     
+    // Set headGroupSize for GQA/MQA
+    if (headGroupSize <= 0 && numKVHeads > 0) {
+      headGroupSize = numHeads / numKVHeads;
+    }
+    
+    // Sync block size aliases
+    blockSizeM = flashBlockSizeM;
+    blockSizeN = flashBlockSizeN;
+    
     // Set optimal Flash Attention block sizes based on hardware if not specified
     if (useFlashAttention) {
       // These are reasonable defaults that work well on most hardware
@@ -123,6 +145,8 @@ struct AttentionConfig {
       if (flashBlockSizeM <= 0) flashBlockSizeM = 64;
       if (flashBlockSizeN <= 0) flashBlockSizeN = 64;
       if (flashBlockSizeK <= 0) flashBlockSizeK = 32;
+      blockSizeM = flashBlockSizeM;
+      blockSizeN = flashBlockSizeN;
     }
   }
 };
@@ -320,6 +344,18 @@ private:
       int64_t seqLen,
       int64_t contextLen);
       
+  void applyLocalitySensitivePruning(
+      void* attentionScores,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  void applyStaticPatternPruning(
+      void* attentionScores,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
   // Helper for computing attention with pruning
   void computeWithPruning(
       void* output,
@@ -330,6 +366,49 @@ private:
       int64_t seqLen,
       int64_t contextLen,
       const void* attentionMask);
+      
+  // Helper for computing attention scores
+  void calculateAttentionScores(
+      void* attentionScores,
+      const void* queries,
+      const void* keys,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  // Helper for applying standard masks
+  void applyStandardMask(
+      void* attentionScores,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  // Helper for applying custom masks
+  void applyCustomMask(
+      void* attentionScores,
+      const void* attentionMask,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  // Helper for softmax with pruning mask
+  void applySoftmaxWithPruning(
+      const void* attentionScores,
+      void* attentionProbs,
+      const char* pruningMask,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  // Helper for computing attention output
+  void computeAttentionOutput(
+      void* output,
+      const void* attentionProbs,
+      const void* values,
+      const char* pruningMask,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
 };
 
 //===----------------------------------------------------------------------===//
@@ -372,6 +451,22 @@ private:
       int64_t contextLen,
       const void* attentionMask);
       
+  // Helper method to process a single block of Flash Attention
+  void processFlashAttentionBlock(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchIdx,
+      int64_t headIdx,
+      int64_t queryStart,
+      int64_t queryEnd,
+      int64_t keyStart,
+      int64_t keyEnd,
+      const void* attentionMask,
+      void* blockAccumulatorsPtr,
+      void* blockMaxValuesPtr);
+      
   // Specialized version for paged KV cache
   void flashAttentionWithPagedKVCache(
       void* output,
@@ -386,6 +481,229 @@ private:
   Type elementType;
   bool useGPU;
 };
+
+//===----------------------------------------------------------------------===//
+// Standard Attention Implementation
+//===----------------------------------------------------------------------===//
+
+/// Standard multi-head attention implementation
+class StandardAttentionImpl : public AttentionImpl {
+public:
+  StandardAttentionImpl(const AttentionConfig& config, Type elementType, bool useGPU);
+  
+  void compute(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask) override;
+      
+  void computePaged(
+      void* output,
+      const void* queries,
+      PagedKVCache* kvCache,
+      const int32_t* blockIndices,
+      const int32_t* seqLens,
+      int64_t batchSize,
+      int64_t seqLen) override;
+
+private:
+  AttentionConfig config;
+  Type elementType;
+  bool useGPU;
+};
+
+//===----------------------------------------------------------------------===//
+// Multi-Query Attention Implementation
+//===----------------------------------------------------------------------===//
+
+/// Multi-Query Attention (MQA): Shared K,V across all query heads
+class MultiQueryAttentionImpl : public AttentionImpl {
+public:
+  MultiQueryAttentionImpl(const AttentionConfig& config, Type elementType, bool useGPU);
+  
+  void compute(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask) override;
+      
+  void computePaged(
+      void* output,
+      const void* queries,
+      PagedKVCache* kvCache,
+      const int32_t* blockIndices,
+      const int32_t* seqLens,
+      int64_t batchSize,
+      int64_t seqLen) override;
+
+private:
+  AttentionConfig config;
+  Type elementType;
+  bool useGPU;
+  
+  // CPU implementation
+  void computeMultiQueryAttentionCPU(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask);
+      
+  // CUDA implementation
+  void computeMultiQueryAttentionCUDA(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask);
+};
+
+//===----------------------------------------------------------------------===//
+// Grouped-Query Attention Implementation
+//===----------------------------------------------------------------------===//
+
+/// Grouped-Query Attention (GQA): K,V shared within head groups
+class GroupedQueryAttentionImpl : public AttentionImpl {
+public:
+  GroupedQueryAttentionImpl(const AttentionConfig& config, Type elementType, bool useGPU);
+  
+  void compute(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask) override;
+      
+  void computePaged(
+      void* output,
+      const void* queries,
+      PagedKVCache* kvCache,
+      const int32_t* blockIndices,
+      const int32_t* seqLens,
+      int64_t batchSize,
+      int64_t seqLen) override;
+
+private:
+  AttentionConfig config;
+  Type elementType;
+  bool useGPU;
+};
+
+//===----------------------------------------------------------------------===//
+// Optimized Masked Attention Implementation
+//===----------------------------------------------------------------------===//
+
+/// Optimized attention for specific mask patterns (causal, sliding window, etc.)
+class OptimizedMaskedAttentionImpl : public AttentionImpl {
+public:
+  OptimizedMaskedAttentionImpl(const AttentionConfig& config, Type elementType, bool useGPU);
+  
+  void compute(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask) override;
+      
+  void computePaged(
+      void* output,
+      const void* queries,
+      PagedKVCache* kvCache,
+      const int32_t* blockIndices,
+      const int32_t* seqLens,
+      int64_t batchSize,
+      int64_t seqLen) override;
+
+private:
+  AttentionConfig config;
+  Type elementType;
+  bool useGPU;
+  
+  // Specialized implementations for different mask types
+  void computeCausalMaskedAttention(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  void computeWindowedAttention(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      int64_t windowSize);
+      
+  void computeBidirectionalAttention(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen);
+      
+  void computeBlockDiagonalAttention(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask);
+      
+  void computeGeneralMaskedAttention(
+      void* output,
+      const void* queries,
+      const void* keys,
+      const void* values,
+      int64_t batchSize,
+      int64_t seqLen,
+      int64_t contextLen,
+      const void* attentionMask);
+      
+  // Mask pattern detection helpers
+  bool isBlockDiagonalMask(const void* mask, int64_t batchSize, int64_t seqLen, int64_t contextLen);
+  bool isLocalMask(const void* mask, int64_t batchSize, int64_t seqLen, int64_t contextLen);
+  int64_t detectWindowSize(const void* mask, int64_t batchSize, int64_t seqLen, int64_t contextLen);
+};
+
+//===----------------------------------------------------------------------===//
+// Attention Variant Factory Registration
+//===----------------------------------------------------------------------===//
+
+/// Function type for attention variant factories
+using AttentionVariantFactory = std::function<std::unique_ptr<AttentionImpl>(
+    const AttentionConfig&, Type, bool)>;
+
+/// Register an attention variant factory
+void registerAttentionVariant(AttentionVariant variant, AttentionVariantFactory factory);
 
 } // namespace runtime
 } // namespace llm
