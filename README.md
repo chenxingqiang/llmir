@@ -420,20 +420,36 @@ int64_t maxSeq = estimator.findMaxSeqLen(gpuMemory, batchSize);
 ## Project Structure
 
 ```
-include/mlir/Dialect/LLM/       # MLIR dialect definitions
-  ├── IR/                       # MLIR operations and types
-  └── Runtime/                  # Runtime support headers
-
-lib/Dialect/LLM/                # Implementation
-  ├── IR/                       # MLIR operation implementations
-  └── Runtime/                  # Runtime library implementations
-
-test/Dialect/LLM/               # Tests
-  ├── IR/                       # MLIR operation tests
-  └── Runtime/                  # Runtime tests
-
-examples/                       # Example applications
-  └── kv_cache_example.cpp      # KV cache example
+├── include/mlir/Dialect/LLM/   # MLIR dialect definitions
+│   ├── IR/                     # MLIR operations and types
+│   └── Runtime/                # Runtime support headers
+│       ├── PagedKVCache.h      # Core KV cache implementation
+│       ├── QuantizedKVCache.h  # INT8/INT4 quantization
+│       ├── DistributedKVCache.h # Multi-GPU sharding
+│       ├── SpeculativeKVCache.h # Speculative decoding
+│       ├── PrefixCache.h       # Prefix caching
+│       ├── ContinuousBatching.h # Production serving
+│       ├── VLLMIntegration.h   # vLLM compatibility
+│       └── ModelOptimizations.h # Model-specific optimizations
+│
+├── lib/Dialect/LLM/            # Implementation
+│   ├── IR/                     # MLIR operation implementations
+│   └── Runtime/                # Runtime library implementations
+│
+├── python/mlir/dialects/llm/   # Python bindings
+│   ├── __init__.py             # Main Python API
+│   ├── native.py               # C++ bindings via ctypes
+│   ├── profiling.py            # Performance profiling tools
+│   └── compat.py               # Legacy compatibility functions
+│
+├── benchmark/LLM/              # Performance benchmarks
+├── test/Dialect/LLM/           # Tests
+├── docs/                       # Documentation
+│   ├── design/                 # Design documents
+│   └── DEVELOPMENT_STATUS.md   # Development progress
+├── patches/                    # Integration patches
+├── IEEE-conference/            # Academic paper
+└── examples/                   # Example applications
 ```
 
 ## Development Roadmap

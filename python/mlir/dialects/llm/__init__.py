@@ -13,6 +13,17 @@ from enum import Enum, auto
 import os
 import json
 
+# Import legacy compatibility functions
+try:
+    from .compat import (
+        attention_forward,
+        kv_cache_append,
+        optimize_model,
+        set_debug,
+    )
+except ImportError:
+    pass  # compat module may not be available
+
 __all__ = [
     # Core classes
     'PagedKVCache',
