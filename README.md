@@ -24,6 +24,14 @@ Key objectives:
 - **Quantized KV Cache**: INT8/INT4 quantization support for 4-8x memory reduction
 - **Multi-GPU Sharding**: Distributed KV cache with layer-wise, head-wise, and sequence-wise sharding
 - **Checkpoint Support**: Serialization/deserialization for long-running sessions
+- **Speculative Decoding**: KV cache branching and rollback for draft token verification
+- **Prefix Caching**: Efficient reuse of common prompt prefixes across sequences
+- **Adaptive Block Management**: Dynamic block size adjustment based on workload patterns
+- **Continuous Batching**: vLLM-style dynamic batch management for production serving
+- **vLLM Integration**: Drop-in compatibility layer for vLLM-based applications
+- **Python Bindings**: Full Python API for KV cache, profiling, and engine management
+- **Model Optimizations**: Pre-configured optimizations for Llama, Mistral, Phi models
+- **Performance Profiling**: Comprehensive profiling with latency, memory, and throughput tracking
 
 ## Architecture
 
@@ -196,6 +204,219 @@ manager.loadCheckpoint(cache, "checkpoint_001");
 manager.cleanupCheckpoints(5);
 ```
 
+### Speculative Decoding
+
+```cpp
+// Create speculative KV cache
+SpeculativeConfig specConfig;
+specConfig.maxDraftTokens = 8;
+specConfig.enableTreeAttention = true;
+
+SpeculativeKVCache specCache(numLayers, numHeads, headDim, blockSize,
+                              maxSeqLen, elementType, specConfig);
+
+// Create a branch for speculation
+int32_t branchId;
+specCache.createBranch(sequenceId, branchId);
+
+// Append speculative (draft) KV
+specCache.appendSpeculativeKV(keyData, valueData, sequenceId, numDraftTokens, branchId);
+
+// Verify and commit accepted tokens
+VerificationResult result;
+specCache.verifySpeculation(sequenceId, branchId, targetLogProbs, numTokens, result);
+specCache.commitSpeculation(sequenceId, branchId, result.acceptedCount);
+```
+
+### Prefix Caching
+
+```cpp
+// Create prefix-aware KV cache
+PrefixCacheConfig prefixConfig;
+prefixConfig.maxCachedPrefixes = 1000;
+prefixConfig.enableRadixTree = true;
+
+PrefixAwareKVCache prefixCache(numLayers, numHeads, headDim, blockSize,
+                                maxSeqLen, elementType, prefixConfig);
+
+// Initialize sequence with automatic prefix reuse
+int64_t cachedLength = prefixCache.initializeSequence(sequenceId, 
+                                                       promptTokens, promptLength);
+// cachedLength tokens loaded from cache, only need to compute remaining
+
+// Cache system prompts
+SystemPromptCache systemCache(prefixCache.getPrefixCache());
+systemCache.registerSystemPrompt("assistant", systemTokens, systemLength);
+```
+
+### Adaptive Block Management
+
+```cpp
+// Create adaptive block manager
+BlockSizeConfig blockConfig;
+blockConfig.primaryBlockSize = 16;
+blockConfig.smallBlockSize = 4;
+blockConfig.largeBlockSize = 64;
+
+AdaptationConfig adaptConfig;
+adaptConfig.policy = AdaptationPolicy::PREDICTIVE;
+adaptConfig.enableAutoTuning = true;
+
+AdaptiveBlockManager manager(numLayers, numHeads, headDim,
+                              blockConfig, adaptConfig);
+
+// Allocate blocks with automatic size selection
+std::vector<KVBlock*> blocks;
+manager.allocateBlocksForSequence(sequenceId, expectedLength, blocks);
+
+// Record workload for adaptation
+manager.recordSequenceComplete(sequenceId, finalLength);
+
+// Get recommended configuration based on workload
+BlockSizeConfig recommended = manager.getRecommendedConfig();
+```
+
+### vLLM Integration
+
+```cpp
+// Create vLLM-compatible engine
+vllm::LLMEngineAdapter::EngineConfig config;
+config.maxNumSeqs = 256;
+config.maxNumBatchedTokens = 8192;
+config.blockSize = 16;
+config.gpuMemoryUtilization = 0.9f;
+
+vllm::LLMEngineAdapter engine(config);
+engine.initialize();
+
+// Submit request with vLLM-style parameters
+vllm::SamplingParams params;
+params.maxTokens = 256;
+params.temperature = 0.7f;
+params.topP = 0.9f;
+
+std::string requestId = engine.addRequest("What is LLMIR?", params);
+
+// Process requests
+while (engine.hasPendingRequests()) {
+    auto outputs = engine.step();
+    for (const auto& output : outputs) {
+        if (output.finished) {
+            std::cout << output.outputs[0].text << std::endl;
+        }
+    }
+}
+```
+
+### Continuous Batching
+
+```cpp
+// Create continuous batching engine
+SchedulerConfig schedConfig;
+schedConfig.maxBatchSize = 256;
+schedConfig.maxBatchTokens = 8192;
+schedConfig.enablePreemption = true;
+schedConfig.policy = SchedulingPolicy::ADAPTIVE;
+
+ContinuousBatchingEngine engine(cache, schedConfig);
+engine.start();
+
+// Submit multiple requests
+for (const auto& prompt : prompts) {
+    engine.submitRequest(tokenize(prompt), genConfig, RequestPriority::NORMAL);
+}
+
+// Engine runs in background, outputs delivered via callback
+engine.setOutputCallback([](int32_t groupId, const std::vector<int32_t>& tokens, 
+                            bool isFinished) {
+    std::cout << "Request " << groupId << ": " << tokens.size() << " tokens"
+              << (isFinished ? " [DONE]" : "") << std::endl;
+});
+```
+
+### Python Bindings
+
+```python
+from mlir.dialects.llm import (
+    PagedKVCache, QuantizedKVCache, KVCacheConfig, 
+    QuantizationConfig, QuantizationType,
+    LLMEngine, SamplingParams, ContinuousBatchingEngine,
+    Profiler, LatencyProfiler, ThroughputMonitor
+)
+
+# Create KV cache
+config = KVCacheConfig(num_layers=32, num_heads=32, head_dim=128)
+cache = PagedKVCache(config)
+
+# Use quantized cache for memory efficiency
+quant_config = QuantizationConfig(quant_type=QuantizationType.INT8)
+quant_cache = QuantizedKVCache(config, quant_config)
+print(f"Compression ratio: {quant_cache.get_compression_ratio()}x")
+
+# High-level LLM engine with vLLM-compatible API
+engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")
+outputs = engine.generate(
+    ["Hello, world!", "What is LLMIR?"],
+    SamplingParams(max_tokens=100, temperature=0.7)
+)
+
+# Performance profiling
+profiler = Profiler()
+profiler.start()
+
+with profiler.trace("attention"):
+    # Run attention computation
+    pass
+
+profiler.stop()
+profiler.get_report().print_summary()
+```
+
+### Model-Specific Optimizations (C++)
+
+```cpp
+// Use model-specific optimizer for Llama 3.1 70B
+auto optimizer = LlamaOptimizer::forLlama31_70B();
+
+// Get optimized configuration
+auto kvConfig = optimizer.getOptimizedKVCacheConfig();
+auto quantConfig = optimizer.getRecommendedQuantConfig();
+int64_t blockSize = optimizer.getOptimizedBlockSize();
+
+// Create optimized cache
+auto cache = optimizer.createOptimizedKVCache(/*enableGPU=*/true);
+
+// Estimate memory usage
+size_t memUsage = optimizer.estimateMemoryUsage(batchSize, seqLen);
+
+// For Mistral with sliding window
+auto mistralOptimizer = MistralOptimizer::forMistral7B();
+auto windowCache = mistralOptimizer.createSlidingWindowCache(
+    mistralOptimizer.getSlidingWindowSize());
+
+// Use model registry for any model
+auto& registry = ModelRegistry::getInstance();
+auto modelOptimizer = registry.createOptimizer("llama3.1-8b");
+auto config = registry.getConfig("mixtral-8x7b");
+```
+
+### Memory Estimation
+
+```cpp
+// Estimate memory requirements before deployment
+ModelMemoryEstimator estimator(LlamaOptimizer::forLlama31_70B().config_);
+
+// Memory breakdown
+estimator.printMemoryBreakdown(batchSize, seqLen);
+
+// Find optimal batch size for available memory
+size_t gpuMemory = 80ULL * 1024 * 1024 * 1024;  // 80 GB
+int64_t maxBatch = estimator.findMaxBatchSize(gpuMemory, maxSeqLen);
+
+// Find maximum sequence length for given batch
+int64_t maxSeq = estimator.findMaxSeqLen(gpuMemory, batchSize);
+```
+
 ## Project Structure
 
 ```
@@ -236,11 +457,29 @@ LLMIR follows a phased development approach:
    - Multi-GPU sharding
    - Checkpoint/serialization support
 
-4. **Phase 4**: Production & Integration (Current)
-   - Framework integration (HuggingFace, vLLM)
-   - Speculative decoding support
-   - Prefix caching optimization
-   - Performance tuning and benchmarks
+4. **Phase 4**: Advanced Optimizations ✅
+   - Speculative decoding with KV cache branching
+   - Prefix caching with radix tree
+   - Dynamic block size adjustment
+   - Adaptive block management
+
+5. **Phase 5**: Production & Integration ✅
+   - Comprehensive benchmark suite
+   - Continuous batching for production serving
+   - vLLM integration layer with full API compatibility
+   - Memory pressure monitoring and preemption
+
+6. **Phase 6**: Developer Tools & Model Support ✅
+   - Python bindings for runtime
+   - Performance profiling tools
+   - Model-specific optimizations (Llama, Mistral, Phi)
+   - Model registry with presets
+   - Memory estimation utilities
+
+7. **Phase 7**: Future Enhancements (Planned)
+   - HuggingFace Transformers integration
+   - Distributed training support
+   - Auto-scaling and Kubernetes support
 
 ## Attention Optimization Benchmarks
 
