@@ -1,0 +1,141 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llmir"
+version = "0.1.0"
+description = "LLMIR - Large Language Model Intermediate Representation for optimizing LLM inference"
+readme = "README.md"
+license = {text = "Apache-2.0 WITH LLVM-exception"}
+authors = [
+    {name = "Xingqiang Chen", email = "chenxingqiang@turingai.cc"}
+]
+maintainers = [
+    {name = "Xingqiang Chen", email = "chenxingqiang@turingai.cc"}
+]
+keywords = [
+    "llm",
+    "mlir",
+    "compiler",
+    "inference",
+    "optimization",
+    "kv-cache",
+    "attention",
+    "transformer",
+    "vllm",
+    "deep-learning",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+torch = [
+    "torch>=2.0.0",
+]
+full = [
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "accelerate>=0.20.0",
+]
+docs = [
+    "sphinx>=6.0.0",
+    "sphinx-rtd-theme>=1.2.0",
+    "myst-parser>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://chenxingqiang.github.io/llmir-www/"
+Documentation = "https://chenxingqiang.github.io/llmir-www/"
+Repository = "https://github.com/chenxingqiang/llmir"
+Issues = "https://github.com/chenxingqiang/llmir/issues"
+Changelog = "https://github.com/chenxingqiang/llmir/blob/main/CHANGELOG.md"
+
+[project.scripts]
+llmir-profile = "llmir.cli:profile_main"
+llmir-benchmark = "llmir.cli:benchmark_main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models"]
+
+[tool.setuptools.package-data]
+llmir = ["py.typed"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["llmir"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # Pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

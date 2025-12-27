@@ -89,14 +89,55 @@ LLMIR follows a layered architecture:
   - Forums: LLVM forums LLMIR section
   - Chat: LLVM Discord server (LLMIR channel)
 
-## Getting Started
+## Installation
 
-### Prerequisites
+### PyPI Installation (Recommended for Python users)
+
+Install the LLMIR Python package from PyPI:
+
+```bash
+pip install llmir
+```
+
+For development features:
+
+```bash
+pip install llmir[dev]    # Development tools (pytest, black, mypy)
+pip install llmir[full]   # Full stack with torch and transformers
+```
+
+### Quick Start with Python
+
+```python
+import llmir
+
+# Create a PagedKVCache
+config = llmir.KVCacheConfig(num_layers=32, num_heads=32, head_dim=128)
+cache = llmir.PagedKVCache(config)
+
+# Use model-specific optimizations
+optimizer = llmir.LlamaOptimizer.for_llama3_8b()
+kv_config = optimizer.get_optimized_kv_cache_config()
+
+# Profile performance
+profiler = llmir.Profiler()
+profiler.start()
+with profiler.trace("attention"):
+    # Your code here
+    pass
+profiler.stop()
+report = profiler.get_report()
+report.print_summary()
+```
+
+### Building from Source
+
+#### Prerequisites
 
 - LLVM/MLIR development environment
 - CMake 3.13.4 or higher
 - C++17 compatible compiler
-- Python 3.7 or higher (for Python bindings)
+- Python 3.8 or higher (for Python bindings)
 
 ### Building from Source
 

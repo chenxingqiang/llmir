@@ -84,3 +84,11 @@ test-results/
 # Benchmark results (optional - uncomment if you want to ignore)
 # benchmark/*/results/
 # benchmark/*/plots/ 
+# PyPI dist
+dist/
+build/
+*.egg-info/
+.eggs/
+__pycache__/
+*.pyc
+.pytest_cache/
