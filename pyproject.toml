@@ -83,7 +83,7 @@ llmir-benchmark = "llmir.cli:benchmark_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models"]
+packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli"]
 
 [tool.setuptools.package-data]
 llmir = ["py.typed"]
