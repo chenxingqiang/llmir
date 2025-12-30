@@ -78,6 +78,7 @@ from llmir.models import (
     MistralOptimizer,
     PhiOptimizer,
     ModelRegistry,
+    ModelMemoryEstimator,
 )
 
 __all__ = [
@@ -120,4 +121,5 @@ __all__ = [
     "MistralOptimizer",
     "PhiOptimizer",
     "ModelRegistry",
+    "ModelMemoryEstimator",
 ]
