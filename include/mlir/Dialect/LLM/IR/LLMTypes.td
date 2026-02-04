@@ -111,7 +111,7 @@ def LLM_QuantizedTensorType : LLM_Type<"QuantizedTensor", "quantized_tensor"> {
   
   let parameters = (ins
     "mlir::Type":$elementType,
-    "mlir::ArrayRef<int64_t>":$shape,
+    ArrayRefParameter<"int64_t", "shape">:$shape,
     "bool":$isSymmetric,
     "bool":$isPerChannel,
     "int64_t":$quantAxis,
@@ -119,9 +119,8 @@ def LLM_QuantizedTensorType : LLM_Type<"QuantizedTensor", "quantized_tensor"> {
     "int64_t":$numBits
   );
   
-  let assemblyFormat = "`<` $elementType `,` custom<DimensionList>($shape) `,` "
-                       "$isSymmetric `,` $isPerChannel `,` $quantAxis `,` "
-                       "$groupSize `,` $numBits `>`";
+  // Use hasCustomAssemblyFormat for complex shape printing
+  let hasCustomAssemblyFormat = 1;
 }
 
 #endif // LLM_TYPES 

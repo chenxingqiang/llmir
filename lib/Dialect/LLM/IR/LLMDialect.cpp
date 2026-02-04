@@ -21,13 +21,23 @@ using namespace mlir;
 using namespace mlir::llm;
 
 //===----------------------------------------------------------------------===//
+// Include type storage definitions (must come before dialect initialization)
+//===----------------------------------------------------------------------===//
+
+#define GET_TYPEDEF_CLASSES
+#include "mlir/Dialect/LLM/IR/LLMTypes.cpp.inc"
+
+//===----------------------------------------------------------------------===//
 // LLM Dialect
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/LLM/IR/LLMOpsDialect.cpp.inc"
 
 void LLMDialect::initialize() {
-  addTypes<PagedKVCacheType, ShardedTensorType, QuantizedTensorType>();
+  addTypes<
+#define GET_TYPEDEF_LIST
+#include "mlir/Dialect/LLM/IR/LLMTypes.cpp.inc"
+      >();
   addOperations<
 #define GET_OP_LIST
 #include "mlir/Dialect/LLM/IR/LLMOps.cpp.inc"
@@ -35,29 +45,16 @@ void LLMDialect::initialize() {
 }
 
 //===----------------------------------------------------------------------===//
-// Type Parsing and Printing
+// Attribute Parsing and Printing
 //===----------------------------------------------------------------------===//
 
-// Parse: !llm.paged_kv_cache<elementType, numLayers, numHeads, headDim, blockSize, maxSeqLen>
-Type LLMDialect::parseType(DialectAsmParser &parser) const {
-  StringRef keyword;
-  if (parser.parseKeyword(&keyword))
-    return Type();
-
-  Type type;
-  OptionalParseResult result =
-      generatedTypeParser(parser, keyword, type);
-  if (result.has_value())
-    return result.value() ? type : Type();
-
-  parser.emitError(parser.getNameLoc(), "unknown type: ") << keyword;
-  return Type();
+Attribute LLMDialect::parseAttribute(DialectAsmParser &parser, Type type) const {
+  // Currently, no custom attributes defined for LLM dialect
+  parser.emitError(parser.getCurrentLocation(), "unknown LLM attribute");
+  return Attribute();
 }
 
-// Print: !llm.paged_kv_cache<elementType, numLayers, numHeads, headDim, blockSize, maxSeqLen>
-void LLMDialect::printType(Type type, DialectAsmPrinter &os) const {
-  if (succeeded(generatedTypePrinter(type, os)))
-    return;
-
-  llvm_unreachable("unexpected LLM type");
-} 
+void LLMDialect::printAttribute(Attribute attr, DialectAsmPrinter &printer) const {
+  // Currently, no custom attributes defined for LLM dialect
+  llvm_unreachable("unexpected LLM attribute");
+}

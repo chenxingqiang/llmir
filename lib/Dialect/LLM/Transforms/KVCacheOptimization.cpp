@@ -10,89 +10,26 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mlir/Dialect/LLM/IR/LLMKVCacheOps.h"
+#include "mlir/Dialect/LLM/IR/LLM.h"
 #include "mlir/Dialect/LLM/Transforms/Passes.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/Dialect/Math/IR/Math.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "mlir/Analysis/SliceAnalysis.h"
 #include "llvm/ADT/TypeSwitch.h"
 
 using namespace mlir;
 using namespace mlir::llm;
 
-#define GEN_PASS_DEF_KVCACHEOPTIMIZATION
-#include "mlir/Dialect/LLM/Transforms/Passes.h.inc"
+//===----------------------------------------------------------------------===//
+// Pattern Implementations
+//===----------------------------------------------------------------------===//
 
 namespace {
-
-// Helper function to check if a block size is optimal for a given sequence length
-// Returns an optimal block size based on the sequence length and head dim
-int64_t getOptimalBlockSize(int64_t seqLen, int64_t headDim) {
-  // If sequence length is very small, use a smaller block size
-  if (seqLen <= 32) {
-    return 16;
-  } 
-  // For medium sequences
-  else if (seqLen <= 256) {
-    return 32;
-  }
-  // For large sequences
-  else if (seqLen <= 1024) {
-    return 64;
-  }
-  // For very large sequences
-  else {
-    return 128;
-  }
-}
-
-// Pattern to optimize block size in AppendKVOp
-struct OptimizeAppendKVBlockSize : public OpRewritePattern<AppendKVOp> {
-  using OpRewritePattern<AppendKVOp>::OpRewritePattern;
-
-  LogicalResult matchAndRewrite(AppendKVOp op,
-                               PatternRewriter &rewriter) const override {
-    // Only optimize if we have a block size attribute
-    if (!op.getBlockSize())
-      return failure();
-    
-    // Get the keys tensor type
-    auto keysType = op.getKeys().getType().cast<ShapedType>();
-    if (!keysType.hasStaticShape())
-      return failure();
-      
-    // Extract the sequence length and head dimension
-    int64_t seqLen = keysType.getDimSize(1);
-    int64_t headDim = keysType.getDimSize(3);
-    
-    // Get the current block size
-    int64_t currentBlockSize = op.getBlockSize().value();
-    
-    // Calculate optimal block size
-    int64_t optimalBlockSize = getOptimalBlockSize(seqLen, headDim);
-    
-    // If current block size is already optimal, return failure
-    if (currentBlockSize == optimalBlockSize)
-      return failure();
-    
-    // Create a new operation with the optimal block size
-    auto newOp = rewriter.create<AppendKVOp>(
-        op.getLoc(),
-        op.getKVCache() ? op.getKVCache() : nullptr,
-        op.getKeys(),
-        op.getValues(),
-        op.getSeqIds(),
-        optimalBlockSize,
-        op.getMaxSeqLen());
-    
-    // Replace the old operation with the new one
-    rewriter.replaceOp(op, newOp.getResults());
-    
-    return success();
-  }
-};
 
 // Pattern to identify and fuse duplicate KV cache operations
 struct FuseDuplicateKVCacheOps : public OpRewritePattern<AppendKVOp> {
@@ -100,21 +37,14 @@ struct FuseDuplicateKVCacheOps : public OpRewritePattern<AppendKVOp> {
 
   LogicalResult matchAndRewrite(AppendKVOp op,
                                PatternRewriter &rewriter) const override {
-    // Get the parent block
     Block *parentBlock = op->getBlock();
-    
-    // Look for another AppendKVOp in the same block with the same KV cache
     AppendKVOp duplicateOp = nullptr;
     
     for (auto &nextOp : *parentBlock) {
       if (auto appendOp = dyn_cast<AppendKVOp>(&nextOp)) {
-        // Skip the current operation
         if (appendOp == op)
           continue;
-          
-        // Check if they operate on the same KV cache
-        if (appendOp.getKVCache() && op.getKVCache() && 
-            appendOp.getKVCache() == op.getKVCache()) {
+        if (appendOp.getKvCache() == op.getKvCache()) {
           duplicateOp = appendOp;
           break;
         }
@@ -124,23 +54,7 @@ struct FuseDuplicateKVCacheOps : public OpRewritePattern<AppendKVOp> {
     if (!duplicateOp)
       return failure();
       
-    // For simplicity in this implementation, we'll just reuse the most optimal
-    // of the two operations based on block size
-    
-    // Get block sizes
-    int64_t blockSize1 = op.getBlockSize() ? op.getBlockSize().value() : 0;
-    int64_t blockSize2 = duplicateOp.getBlockSize() ? duplicateOp.getBlockSize().value() : 0;
-    
-    // Use the operation with the larger block size or the first one if equal
-    bool useFirstOp = blockSize1 >= blockSize2;
-    
-    // Replace with the better operation
-    if (useFirstOp) {
-      rewriter.replaceOp(duplicateOp, op.getResults());
-    } else {
-      rewriter.replaceOp(op, duplicateOp.getResults());
-    }
-    
+    rewriter.replaceOp(duplicateOp, op.getResults());
     return success();
   }
 };
@@ -151,75 +65,47 @@ struct OptimizeCrossSequenceSharing : public OpRewritePattern<AppendKVOp> {
   
   LogicalResult matchAndRewrite(AppendKVOp op,
                                PatternRewriter &rewriter) const override {
-    // We need a KV cache and sequence IDs to optimize
-    if (!op.getKVCache() || !op.getSeqIds())
-      return failure();
-      
-    // We're looking for multiple AppendKVOp operations with similar content
-    // but different sequence IDs
-    
-    // Get the current function
     auto func = op->getParentOfType<func::FuncOp>();
     if (!func)
       return failure();
       
-    // Find other AppendKVOp operations in the function
     SmallVector<AppendKVOp, 4> appendOps;
     func.walk([&](AppendKVOp otherOp) {
-      // Skip self
       if (otherOp == op)
         return;
-        
-      // Only consider ops with the same KV cache
-      if (!otherOp.getKVCache() || otherOp.getKVCache() != op.getKVCache())
+      if (otherOp.getKvCache() != op.getKvCache())
         return;
-        
       appendOps.push_back(otherOp);
     });
     
-    // If no other ops found, nothing to optimize
     if (appendOps.empty())
       return failure();
       
-    // For each operation found, check if the content is similar
     bool madeChanges = false;
+    Value keys = op.getKey();
     
-    // Get the keys and values from the current operation
-    Value keys = op.getKeys();
-    Value values = op.getValues();
-    
-    // Get the shape of the keys tensor
-    auto keysType = keys.getType().dyn_cast<ShapedType>();
+    auto keysType = dyn_cast<ShapedType>(keys.getType());
     if (!keysType || !keysType.hasStaticShape())
       return failure();
       
     int64_t seqLen = keysType.getDimSize(1);
     
-    // Add a runtime call attribute to trigger cross-sequence sharing
-    // This will be a hint to the runtime that it should look for sharing
-    // opportunities at runtime
     rewriter.modifyOpInPlace(op, [&]() {
       op->setAttr("enable_sharing", rewriter.getBoolAttr(true));
     });
     
-    // For each other AppendKVOp, add the same attribute
     for (auto otherOp : appendOps) {
-      // Get the shape of the other keys tensor
-      auto otherKeysType = otherOp.getKeys().getType().dyn_cast<ShapedType>();
+      auto otherKeysType = dyn_cast<ShapedType>(otherOp.getKey().getType());
       if (!otherKeysType || !otherKeysType.hasStaticShape())
         continue;
         
       int64_t otherSeqLen = otherKeysType.getDimSize(1);
-      
-      // Only consider operations with same sequence length for simplicity
       if (seqLen != otherSeqLen)
         continue;
         
-      // Add sharing attribute
       rewriter.modifyOpInPlace(otherOp, [&]() {
         otherOp->setAttr("enable_sharing", rewriter.getBoolAttr(true));
       });
-      
       madeChanges = true;
     }
     
@@ -233,50 +119,45 @@ struct OptimizePagedAttention : public OpRewritePattern<PagedAttentionOp> {
 
   LogicalResult matchAndRewrite(PagedAttentionOp op,
                                PatternRewriter &rewriter) const override {
-    // Get query tensor type
-    auto queryType = op.getQuery().getType().dyn_cast<ShapedType>();
+    auto queryType = dyn_cast<ShapedType>(op.getQuery().getType());
     if (!queryType || !queryType.hasStaticShape())
       return failure();
     
-    // Extract dimensions
-    int64_t batchSize = queryType.getDimSize(0);
-    int64_t seqLen = queryType.getDimSize(1);
+    float scale = op.getScale().convertToFloat();
+    if (scale != 0.0f)
+      return failure();
     
-    // If we have a small batch size and sequence length, we can optimize by
-    // ensuring we have an optimal scale value for numerical stability
+    if (queryType.getRank() < 4)
+      return failure();
     
-    // Check if we need to optimize the scale value
-    if (!op.getScale()) {
-      // No scale specified, add a scale attribute
-      // Scale = 1.0 / sqrt(head_dim)
-      int64_t headDim;
-      if (queryType.getRank() >= 4) {
-        headDim = queryType.getDimSize(3);
-      } else {
-        // If no head dimension in the type, use the attribute
-        if (!op.getHeadDim())
-          return failure();
-        headDim = op.getHeadDim().value();
-      }
-      
-      // Calculate optimal scale
-      float scale = 1.0 / std::sqrt(static_cast<float>(headDim));
-      
-      // Create a new operation with the optimal scale
-      auto newOp = rewriter.create<PagedAttentionOp>(
-          op.getLoc(),
-          op.getAttentionOutput().getType(),
-          op.getQuery(),
-          op.getBlockIndices(),
-          op.getSeqLens(),
-          op.getKVCache(),
-          op.getNumHeads(),
-          op.getHeadDim(),
-          scale);
-      
-      // Replace the old operation with the new one
-      rewriter.replaceOp(op, newOp.getResult());
-      
+    int64_t headDim = queryType.getDimSize(3);
+    float optimalScale = 1.0f / std::sqrt(static_cast<float>(headDim));
+    
+    rewriter.modifyOpInPlace(op, [&]() {
+      op.setScaleAttr(rewriter.getF32FloatAttr(optimalScale));
+    });
+    
+    return success();
+  }
+};
+
+// Pattern to optimize LookupKVOp by adding caching hints
+struct OptimizeLookupKV : public OpRewritePattern<LookupKVOp> {
+  using OpRewritePattern<LookupKVOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(LookupKVOp op,
+                               PatternRewriter &rewriter) const override {
+    if (op->hasAttr("optimized"))
+      return failure();
+    
+    auto kvCacheType = cast<PagedKVCacheType>(op.getKvCache().getType());
+    int64_t blockSize = kvCacheType.getBlockSize();
+    
+    if (blockSize >= 64) {
+      rewriter.modifyOpInPlace(op, [&]() {
+        op->setAttr("prefetch", rewriter.getBoolAttr(true));
+        op->setAttr("optimized", rewriter.getUnitAttr());
+      });
       return success();
     }
     
@@ -284,23 +165,31 @@ struct OptimizePagedAttention : public OpRewritePattern<PagedAttentionOp> {
   }
 };
 
-// Optimization pass that optimizes KV cache operations
+} // end anonymous namespace
+
+//===----------------------------------------------------------------------===//
+// Pass Implementation (using deprecated GEN_PASS_CLASSES for compatibility)
+//===----------------------------------------------------------------------===//
+
+#define GEN_PASS_CLASSES
+#include "mlir/Dialect/LLM/Transforms/Passes.h.inc"
+
+namespace {
+
 struct KVCacheOptimizationPass
-    : public impl::KVCacheOptimizationBase<KVCacheOptimizationPass> {
+    : public KVCacheOptimizationBase<KVCacheOptimizationPass> {
+
   void runOnOperation() override {
     auto func = getOperation();
     auto context = &getContext();
 
-    // Set up patterns
     RewritePatternSet patterns(context);
     
-    // Add optimization patterns
-    patterns.add<OptimizeAppendKVBlockSize>(context);
     patterns.add<FuseDuplicateKVCacheOps>(context);
     patterns.add<OptimizeCrossSequenceSharing>(context);
     patterns.add<OptimizePagedAttention>(context);
+    patterns.add<OptimizeLookupKV>(context);
     
-    // Apply patterns using the greedy rewrite driver
     if (failed(applyPatternsAndFoldGreedily(func, std::move(patterns)))) {
       signalPassFailure();
     }
@@ -312,4 +201,4 @@ struct KVCacheOptimizationPass
 /// Create a pass to optimize KV cache operations
 std::unique_ptr<Pass> mlir::llm::createKVCacheOptimizationPass() {
   return std::make_unique<KVCacheOptimizationPass>();
-} 
+}

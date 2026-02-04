@@ -20,269 +20,135 @@ using namespace mlir;
 using namespace mlir::llm;
 
 //===----------------------------------------------------------------------===//
-// Type Storage Classes
+// QuantizedTensorType Custom Parsing/Printing
 //===----------------------------------------------------------------------===//
 
-namespace mlir {
-namespace llm {
-namespace detail {
-
-struct PagedKVCacheTypeStorage : public TypeStorage {
-  using KeyTy = std::tuple<Type, int64_t, int64_t, int64_t, int64_t, int64_t>;
-
-  PagedKVCacheTypeStorage(Type elementType, int64_t numLayers, int64_t numHeads,
-                      int64_t headDim, int64_t blockSize, int64_t maxSeqLen)
-      : elementType(elementType), numLayers(numLayers), numHeads(numHeads),
-        headDim(headDim), blockSize(blockSize), maxSeqLen(maxSeqLen) {}
-
-  bool operator==(const KeyTy &key) const {
-    return key == KeyTy(elementType, numLayers, numHeads, headDim, blockSize, maxSeqLen);
-  }
-
-  static llvm::hash_code hashKey(const KeyTy &key) {
-    return llvm::hash_combine(std::get<0>(key), std::get<1>(key), std::get<2>(key),
-                              std::get<3>(key), std::get<4>(key), std::get<5>(key));
-  }
-
-  static PagedKVCacheTypeStorage *construct(TypeStorageAllocator &allocator,
-                                       const KeyTy &key) {
-    return new (allocator.allocate<PagedKVCacheTypeStorage>())
-        PagedKVCacheTypeStorage(std::get<0>(key), std::get<1>(key), std::get<2>(key),
-                           std::get<3>(key), std::get<4>(key), std::get<5>(key));
-  }
-
+Type QuantizedTensorType::parse(AsmParser &parser) {
+  if (parser.parseLess())
+    return {};
+  
+  // Parse element type
   Type elementType;
-  int64_t numLayers;
-  int64_t numHeads;
-  int64_t headDim;
-  int64_t blockSize;
-  int64_t maxSeqLen;
-};
-
-struct ShardedTensorTypeStorage : public TypeStorage {
-  using KeyTy = std::tuple<TensorType, int64_t, int64_t, int64_t>;
-
-  ShardedTensorTypeStorage(TensorType originalType, int64_t shardDim,
-                       int64_t numShards, int64_t shardIndex)
-      : originalType(originalType), shardDim(shardDim), numShards(numShards),
-        shardIndex(shardIndex) {}
-
-  bool operator==(const KeyTy &key) const {
-    return key == KeyTy(originalType, shardDim, numShards, shardIndex);
+  if (parser.parseType(elementType))
+    return {};
+  
+  if (parser.parseComma())
+    return {};
+  
+  // Parse shape as [d0 x d1 x ... x dn]
+  if (parser.parseLSquare())
+    return {};
+  
+  SmallVector<int64_t, 4> shape;
+  
+  // Check for empty shape
+  if (succeeded(parser.parseOptionalRSquare())) {
+    // Empty shape, continue
+  } else {
+    // Parse dimensions
+    int64_t dim;
+    if (parser.parseInteger(dim))
+      return {};
+    shape.push_back(dim);
+    
+    while (succeeded(parser.parseOptionalKeyword("x"))) {
+      if (parser.parseInteger(dim))
+        return {};
+      shape.push_back(dim);
+    }
+    
+    if (parser.parseRSquare())
+      return {};
   }
-
-  static llvm::hash_code hashKey(const KeyTy &key) {
-    return llvm::hash_combine(std::get<0>(key), std::get<1>(key), std::get<2>(key),
-                              std::get<3>(key));
+  
+  if (parser.parseComma())
+    return {};
+  
+  // Parse boolean for isSymmetric
+  bool isSymmetric = false;
+  if (succeeded(parser.parseOptionalKeyword("symmetric"))) {
+    isSymmetric = true;
+  } else if (failed(parser.parseKeyword("asymmetric"))) {
+    return {};
   }
-
-  static ShardedTensorTypeStorage *construct(TypeStorageAllocator &allocator,
-                                        const KeyTy &key) {
-    return new (allocator.allocate<ShardedTensorTypeStorage>())
-        ShardedTensorTypeStorage(std::get<0>(key), std::get<1>(key), std::get<2>(key),
-                            std::get<3>(key));
+  
+  if (parser.parseComma())
+    return {};
+  
+  // Parse boolean for isPerChannel
+  bool isPerChannel = false;
+  if (succeeded(parser.parseOptionalKeyword("per_channel"))) {
+    isPerChannel = true;
+  } else if (failed(parser.parseKeyword("per_tensor"))) {
+    return {};
   }
-
-  TensorType originalType;
-  int64_t shardDim;
-  int64_t numShards;
-  int64_t shardIndex;
-};
-
-struct QuantizedTensorTypeStorage : public TypeStorage {
-  using KeyTy = std::tuple<Type, ArrayRef<int64_t>, bool, bool, int64_t, int64_t, int64_t>;
-
-  QuantizedTensorTypeStorage(Type elementType, ArrayRef<int64_t> shape,
-                         bool isSymmetric, bool isPerChannel,
-                         int64_t quantAxis, int64_t groupSize, int64_t numBits)
-      : elementType(elementType), shape(shape), isSymmetric(isSymmetric),
-        isPerChannel(isPerChannel), quantAxis(quantAxis), groupSize(groupSize),
-        numBits(numBits) {}
-
-  bool operator==(const KeyTy &key) const {
-    return key == KeyTy(elementType, shape, isSymmetric, isPerChannel,
-                       quantAxis, groupSize, numBits);
-  }
-
-  static llvm::hash_code hashKey(const KeyTy &key) {
-    return llvm::hash_combine(
-        std::get<0>(key), llvm::hash_combine_range(std::get<1>(key).begin(), std::get<1>(key).end()),
-        std::get<2>(key), std::get<3>(key), std::get<4>(key),
-        std::get<5>(key), std::get<6>(key));
-  }
-
-  static QuantizedTensorTypeStorage *construct(TypeStorageAllocator &allocator,
-                                          const KeyTy &key) {
-    auto shape = allocator.copyInto(std::get<1>(key));
-    return new (allocator.allocate<QuantizedTensorTypeStorage>())
-        QuantizedTensorTypeStorage(std::get<0>(key), shape, std::get<2>(key),
-                              std::get<3>(key), std::get<4>(key),
-                              std::get<5>(key), std::get<6>(key));
-  }
-
-  Type elementType;
-  ArrayRef<int64_t> shape;
-  bool isSymmetric;
-  bool isPerChannel;
+  
+  if (parser.parseComma())
+    return {};
+  
+  // Parse quantAxis
   int64_t quantAxis;
+  if (parser.parseInteger(quantAxis))
+    return {};
+  
+  if (parser.parseComma())
+    return {};
+  
+  // Parse groupSize
   int64_t groupSize;
+  if (parser.parseInteger(groupSize))
+    return {};
+  
+  if (parser.parseComma())
+    return {};
+  
+  // Parse numBits
   int64_t numBits;
-};
-
-} // namespace detail
-} // namespace llm
-} // namespace mlir
-
-//===----------------------------------------------------------------------===//
-// PagedKVCache Type
-//===----------------------------------------------------------------------===//
-
-PagedKVCacheType PagedKVCacheType::get(Type elementType, int64_t numLayers,
-                                  int64_t numHeads, int64_t headDim,
-                                  int64_t blockSize, int64_t maxSeqLen) {
-  return Base::get(elementType.getContext(), elementType, numLayers, numHeads,
-                  headDim, blockSize, maxSeqLen);
+  if (parser.parseInteger(numBits))
+    return {};
+  
+  if (parser.parseGreater())
+    return {};
+  
+  return QuantizedTensorType::get(parser.getContext(), elementType, shape,
+                                  isSymmetric, isPerChannel, quantAxis,
+                                  groupSize, numBits);
 }
 
-Type PagedKVCacheType::getElementType() {
-  return getImpl()->elementType;
-}
-
-int64_t PagedKVCacheType::getNumLayers() {
-  return getImpl()->numLayers;
-}
-
-int64_t PagedKVCacheType::getNumHeads() {
-  return getImpl()->numHeads;
-}
-
-int64_t PagedKVCacheType::getHeadDim() {
-  return getImpl()->headDim;
-}
-
-int64_t PagedKVCacheType::getBlockSize() {
-  return getImpl()->blockSize;
-}
-
-int64_t PagedKVCacheType::getMaxSeqLen() {
-  return getImpl()->maxSeqLen;
-}
-
-//===----------------------------------------------------------------------===//
-// ShardedTensor Type
-//===----------------------------------------------------------------------===//
-
-ShardedTensorType ShardedTensorType::get(TensorType originalType, int64_t shardDim,
-                                    int64_t numShards, int64_t shardIndex) {
-  return Base::get(originalType.getContext(), originalType, shardDim, numShards,
-                  shardIndex);
-}
-
-TensorType ShardedTensorType::getOriginalType() {
-  return getImpl()->originalType;
-}
-
-int64_t ShardedTensorType::getShardDim() {
-  return getImpl()->shardDim;
-}
-
-int64_t ShardedTensorType::getNumShards() {
-  return getImpl()->numShards;
-}
-
-int64_t ShardedTensorType::getShardIndex() {
-  return getImpl()->shardIndex;
-}
-
-//===----------------------------------------------------------------------===//
-// QuantizedTensor Type
-//===----------------------------------------------------------------------===//
-
-QuantizedTensorType QuantizedTensorType::get(Type elementType, ArrayRef<int64_t> shape,
-                                        bool isSymmetric, bool isPerChannel,
-                                        int64_t quantAxis, int64_t groupSize,
-                                        int64_t numBits) {
-  return Base::get(elementType.getContext(), elementType, shape, isSymmetric,
-                  isPerChannel, quantAxis, groupSize, numBits);
-}
-
-Type QuantizedTensorType::getElementType() {
-  return getImpl()->elementType;
-}
-
-ArrayRef<int64_t> QuantizedTensorType::getShape() {
-  return getImpl()->shape;
-}
-
-bool QuantizedTensorType::isSymmetric() {
-  return getImpl()->isSymmetric;
-}
-
-bool QuantizedTensorType::isPerChannel() {
-  return getImpl()->isPerChannel;
-}
-
-int64_t QuantizedTensorType::getQuantAxis() {
-  return getImpl()->quantAxis;
-}
-
-int64_t QuantizedTensorType::getGroupSize() {
-  return getImpl()->groupSize;
-}
-
-int64_t QuantizedTensorType::getNumBits() {
-  return getImpl()->numBits;
-}
-
-//===----------------------------------------------------------------------===//
-// Generated Type Definitions
-//===----------------------------------------------------------------------===//
-
-#define GET_TYPEDEF_CLASSES
-#include "mlir/Dialect/LLM/IR/LLMTypes.cpp.inc"
-
-//===----------------------------------------------------------------------===//
-// KVCacheType
-//===----------------------------------------------------------------------===//
-
-KVCacheType KVCacheType::get(MLIRContext *context) {
-  return Base::get(context);
-}
-
-bool KVCacheType::classof(Type type) {
-  return type.isa<KVCacheType>();
+void QuantizedTensorType::print(AsmPrinter &printer) const {
+  printer << "<";
+  printer.printType(getElementType());
+  printer << ", [";
+  
+  auto shape = getShape();
+  for (size_t i = 0; i < shape.size(); ++i) {
+    if (i > 0)
+      printer << " x ";
+    printer << shape[i];
+  }
+  printer << "], ";
+  
+  printer << (getIsSymmetric() ? "symmetric" : "asymmetric");
+  printer << ", ";
+  printer << (getIsPerChannel() ? "per_channel" : "per_tensor");
+  printer << ", ";
+  printer << getQuantAxis() << ", ";
+  printer << getGroupSize() << ", ";
+  printer << getNumBits();
+  
+  printer << ">";
 }
 
 //===----------------------------------------------------------------------===//
 // Helper methods
 //===----------------------------------------------------------------------===//
 
-bool mlir::llm::isLLMDialectType(Type type) {
+namespace mlir {
+namespace llm {
+
+bool isLLMDialectType(Type type) {
   return type.getDialect().getNamespace() == LLMDialect::getDialectNamespace();
 }
 
-//===----------------------------------------------------------------------===//
-// Type parsers and printers
-//===----------------------------------------------------------------------===//
-
-// Called from LLMDialect::parseType to parse an LLM type
-Type LLMDialect::parseType(DialectAsmParser &parser) const {
-  StringRef keyword;
-  if (parser.parseKeyword(&keyword))
-    return Type();
-    
-  MLIRContext *context = getContext();
-  
-  if (keyword == "kvcache")
-    return KVCacheType::get(context);
-    
-  parser.emitError(parser.getNameLoc(), "unknown LLM type: ") << keyword;
-  return Type();
-}
-
-// Called from LLMDialect::printType to print an LLM type
-void LLMDialect::printType(Type type, DialectAsmPrinter &printer) const {
-  TypeSwitch<Type>(type)
-      .Case<KVCacheType>([&](Type) { printer << "kvcache"; })
-      .Default([](Type) { llvm_unreachable("unexpected 'llm' type"); });
-} 
+} // namespace llm
+} // namespace mlir
