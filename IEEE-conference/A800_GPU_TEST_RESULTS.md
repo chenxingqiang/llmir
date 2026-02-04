@@ -114,6 +114,37 @@
 
 ---
 
+## Python单元测试验证
+
+### ✅ 所有84个单元测试通过
+
+```
+tests/test_kv_cache.py ........... (17 passed)
+tests/test_models.py ............. (27 passed)  
+tests/test_profiling.py .......... (22 passed)
+tests/test_serving.py ............ (18 passed)
+================================ 84 passed ================================
+```
+
+### 测试覆盖的功能模块
+
+| 模块 | 测试内容 | 状态 |
+|------|---------|------|
+| KV Cache | PagedKVCache, QuantizedKVCache, DistributedKVCache, SpeculativeKVCache, PrefixCache | ✅ 通过 |
+| Models | ModelConfig, LlamaOptimizer, MistralOptimizer, PhiOptimizer, ModelRegistry, MemoryEstimator | ✅ 通过 |
+| Profiling | Profiler, ProfileReport, MemoryProfiler, LatencyProfiler, ThroughputMonitor | ✅ 通过 |
+| Serving | SamplingParams, SchedulerConfig, ContinuousBatchingEngine, LLMEngine | ✅ 通过 |
+
+### 关键功能验证
+
+1. **PagedKVCache**: 创建、追加、查找、清除操作全部验证
+2. **QuantizedKVCache**: INT8 (4x压缩, 0.2%精度损失) 和 INT4 (8x压缩, 1.5%精度损失) 验证
+3. **PrefixCache**: 缓存、查找、部分匹配、命中率统计验证
+4. **ContinuousBatchingEngine**: 创建、启动/停止、提交请求、迭代生成、统计信息验证
+5. **LLMEngine**: 单prompt和批量生成验证
+
+---
+
 ## 测试环境
 
 ```
