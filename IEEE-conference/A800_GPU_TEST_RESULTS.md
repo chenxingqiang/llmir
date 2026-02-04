@@ -181,6 +181,52 @@ tests/test_serving.py ............ (18 passed)
 
 ---
 
+## C++ MLIR Dialect 构建验证
+
+### ✅ 使用MLIR 18成功构建
+
+**构建环境**:
+- LLVM/MLIR: 18.1.3
+- GCC: 13.3.0
+- CMake: 3.28
+
+**构建产物**:
+- `libMLIRLLMIR.a` (1.2 MB) - LLM Dialect IR库
+- `libMLIRLLMTransforms.a` (85 KB) - LLM Transforms库
+
+### LLM Dialect 操作 (10个)
+
+| 操作 | 功能描述 | MLIR Traits |
+|------|---------|-------------|
+| `llm.attention` | 标准Attention | InferTypeOpInterface, Pure |
+| `llm.paged_attention` | PagedAttention | InferTypeOpInterface, Pure |
+| `llm.append_kv` | KV缓存追加 | InferTypeOpInterface, OpAsmOpInterface |
+| `llm.lookup_kv` | KV缓存查找 | InferTypeOpInterface, Pure |
+| `llm.quantize` | 张量量化 | InferTypeOpInterface, Pure |
+| `llm.dequantize` | 张量反量化 | InferTypeOpInterface, Pure |
+| `llm.quantized_matmul` | 量化矩阵乘法 | InferTypeOpInterface, Pure |
+| `llm.sharded_linear` | 分片线性层 | InferTypeOpInterface, Pure |
+| `llm.all_gather` | 并行All-Gather | InferTypeOpInterface, Pure |
+| `llm.reduce_scatter` | 并行Reduce-Scatter | InferTypeOpInterface, Pure |
+
+### LLM Dialect 类型 (3个)
+
+| 类型 | 参数 | 用途 |
+|------|------|------|
+| `llm.paged_kv_cache` | elementType, numLayers, numHeads, headDim, blockSize, maxSeqLen | PagedAttention的KV缓存 |
+| `llm.sharded_tensor` | originalType, shardDim, numShards, shardIndex | 张量并行分片 |
+| `llm.quantized_tensor` | elementType, shape, isSymmetric, isPerChannel, quantAxis, groupSize, numBits | 量化权重 |
+
+### LLM Optimization Passes (3个)
+
+| Pass | 命令行参数 | 功能 |
+|------|-----------|------|
+| KVCacheOptimization | `--llm-optimize-kv-cache` | 优化KV缓存操作 |
+| LLMLowering | `--llm-lowering` | 将高级LLM操作lowering |
+| LowerKVCacheOps | `--llm-lower-kv-cache-ops` | 将KV缓存操作lowering到运行时调用 |
+
+---
+
 ## 测试环境
 
 ```
@@ -188,5 +234,6 @@ GPU: NVIDIA A800 80GB PCIe
 Driver: 580.82.07
 CUDA: 13.0
 PyTorch: 2.8.0+cu128
+LLVM/MLIR: 18.1.3
 Platform: AutoDL Cloud
 ```
