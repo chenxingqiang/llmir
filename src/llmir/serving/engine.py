@@ -275,25 +275,35 @@ class LLMEngine:
         self._cache = PagedKVCache(self.cache_config)
         self._engine = ContinuousBatchingEngine(self._cache, self.scheduler_config)
         self._tokenizer = None
+        self._tokenizer_attempted = False
+        self._hf_token: Optional[str] = None
         self._initialized = False
     
     @classmethod
-    def from_pretrained(cls, 
+    def from_pretrained(cls,
                         model_name_or_path: str,
                         tensor_parallel_size: int = 1,
                         dtype: str = "float16",
                         gpu_memory_utilization: float = 0.9,
+                        cache_config: Optional[KVCacheConfig] = None,
+                        token: Optional[str] = None,
                         **kwargs) -> 'LLMEngine':
         """
         Load engine from a pretrained model.
-        
+
+        When model_name_or_path is a HuggingFace model ID (e.g. meta-llama/Llama-3.1-8B),
+        KV cache config is auto-configured from the model (requires llmir[full]).
+        Pass cache_config to override.
+
         Args:
-            model_name_or_path: Model name or path
+            model_name_or_path: Model name, registry key, or HuggingFace model ID
             tensor_parallel_size: Number of GPUs
             dtype: Data type
             gpu_memory_utilization: GPU memory utilization
-            **kwargs: Additional arguments
-            
+            cache_config: Optional KV cache config (auto-detected from HF if omitted)
+            token: HuggingFace token for gated models (optional)
+            **kwargs: Additional arguments (scheduler_config, etc.)
+
         Returns:
             Initialized LLMEngine
         """
@@ -303,7 +313,25 @@ class LLMEngine:
             dtype=dtype,
             gpu_memory_utilization=gpu_memory_utilization,
         )
-        return cls(model_name_or_path, engine_config, **kwargs)
+
+        # Auto-configure KV cache from HuggingFace when not provided
+        if cache_config is None:
+            try:
+                from llmir import from_pretrained as hf_from_pretrained
+                if hf_from_pretrained:
+                    optimizer = hf_from_pretrained(model_name_or_path, token=token)
+                    cache_config = optimizer.get_optimized_kv_cache_config()
+            except (ImportError, Exception):
+                pass  # Use default KVCacheConfig
+
+        engine = cls(
+            model_name_or_path,
+            engine_config,
+            cache_config=cache_config,
+            scheduler_config=kwargs.pop("scheduler_config", None),
+        )
+        engine._hf_token = token
+        return engine
     
     def generate(self,
                  prompts: Union[str, List[str]],
@@ -352,14 +380,32 @@ class LLMEngine:
         
         return outputs
     
+    def _ensure_tokenizer(self) -> None:
+        """Load HuggingFace tokenizer if available (llmir[full])."""
+        if self._tokenizer_attempted:
+            return
+        self._tokenizer_attempted = True
+        try:
+            from transformers import AutoTokenizer
+            kw: Dict[str, Any] = {}
+            if self._hf_token:
+                kw["token"] = self._hf_token
+            self._tokenizer = AutoTokenizer.from_pretrained(self.model_path, **kw)
+        except (ImportError, Exception):
+            pass
+
     def _tokenize(self, text: str) -> List[int]:
-        """Tokenize text (placeholder)."""
-        # Would use actual tokenizer
+        """Tokenize text. Uses HuggingFace tokenizer when available."""
+        self._ensure_tokenizer()
+        if self._tokenizer is not None:
+            return self._tokenizer.encode(text, add_special_tokens=True)
         return list(range(len(text.split())))
-    
+
     def _detokenize(self, token_ids: List[int]) -> str:
-        """Detokenize token IDs (placeholder)."""
-        # Would use actual tokenizer
+        """Detokenize token IDs. Uses HuggingFace tokenizer when available."""
+        self._ensure_tokenizer()
+        if self._tokenizer is not None:
+            return self._tokenizer.decode(token_ids, skip_special_tokens=True)
         return f"Generated {len(token_ids)} tokens"
     
     def get_stats(self) -> Dict[str, Any]:

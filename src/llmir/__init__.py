@@ -15,10 +15,10 @@ Example:
     >>> from llmir import PagedKVCache, KVCacheConfig
     >>> config = KVCacheConfig(num_layers=32, num_heads=32, head_dim=128)
     >>> cache = PagedKVCache(config)
-    >>> 
+    >>>
     >>> # Append KV pairs
     >>> block_indices = cache.append(keys, values, seq_ids)
-    >>> 
+    >>>
     >>> # Lookup KV pairs
     >>> k, v = cache.lookup(block_indices, seq_lens)
 
@@ -27,6 +27,12 @@ For serving:
     >>> engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")
     >>> outputs = engine.generate(["Hello!"], SamplingParams(max_tokens=100))
 """
+
+# Disable TensorFlow in transformers to avoid protobuf/tensorflow dependency conflict.
+# Must be set before any transformers import. See: transformers.utils.import_utils
+import os
+
+os.environ.setdefault("USE_TORCH", "1")
 
 __version__ = "0.1.0"
 __author__ = "Xingqiang Chen"
@@ -81,26 +87,32 @@ from llmir.models import (
     ModelMemoryEstimator,
 )
 
+# HuggingFace integration (optional; requires transformers)
+try:
+    from llmir.integration.huggingface import from_pretrained
+except ImportError:
+    from_pretrained = None  # type: ignore[misc, assignment]
+
 __all__ = [
     # Version info
     "__version__",
     "__author__",
     "__email__",
-    
+
     # KV Cache
     "PagedKVCache",
     "QuantizedKVCache",
     "DistributedKVCache",
     "SpeculativeKVCache",
     "PrefixCache",
-    
+
     # Configuration
     "KVCacheConfig",
     "QuantizationConfig",
     "QuantizationType",
     "ShardingStrategy",
     "SpeculativeConfig",
-    
+
     # Serving
     "LLMEngine",
     "ContinuousBatchingEngine",
@@ -108,13 +120,13 @@ __all__ = [
     "SchedulerConfig",
     "SchedulingPolicy",
     "RequestPriority",
-    
+
     # Profiling
     "Profiler",
     "MemoryProfiler",
     "LatencyProfiler",
     "ThroughputMonitor",
-    
+
     # Models
     "ModelOptimizer",
     "LlamaOptimizer",
@@ -122,4 +134,5 @@ __all__ = [
     "PhiOptimizer",
     "ModelRegistry",
     "ModelMemoryEstimator",
+    "from_pretrained",
 ]

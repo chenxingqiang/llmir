@@ -11,7 +11,7 @@ services:
     environment:
       - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
     command: -c "./run_llama31_benchmark.sh --batch-sizes 1 --seq-lens 128 --repetitions 2"
-    platform: linux/amd64  # 使用x86_64模拟，因为某些CUDA库在ARM上不可用
+    platform: linux/amd64
     deploy:
       resources:
         reservations:

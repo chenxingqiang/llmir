@@ -45,6 +45,19 @@ class TestModelConfig:
         assert gqa_config.is_gqa() is True
         assert mha_config.is_gqa() is False
     
+    def test_to_dict_from_dict_roundtrip(self):
+        """Test ModelConfig serialization round-trip."""
+        config = ModelConfig(
+            architecture=ModelArchitecture.LLAMA3,
+            num_layers=32,
+            hidden_size=4096,
+            num_key_value_heads=8,
+        )
+        d = config.to_dict()
+        config2 = ModelConfig.from_dict(d)
+        assert config2.num_layers == config.num_layers
+        assert config2.architecture == config.architecture
+
     def test_queries_per_kv(self):
         """Test queries per KV head calculation."""
         config = ModelConfig(

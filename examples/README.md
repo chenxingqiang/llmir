@@ -54,6 +54,10 @@ This example shows the runtime implementation of features exposed through MLIR o
 
 For examples of these operations in MLIR, see the tests in `test/Dialect/LLM/`.
 
+## C++ Runtime Algorithm Test
+
+The files `test_llmir_cpp.cpp` and `test_llmir_runtime.exp` provide standalone C++ tests for LLMIR runtime algorithms (attention, KV cache) without MLIR dependencies. Use with your build system or compile manually.
+
 ## Other Examples
 
 More examples demonstrating other aspects of LLMIR will be added in the future, including:

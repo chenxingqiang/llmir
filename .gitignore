@@ -81,9 +81,13 @@ docs/latex/
 test-results/
 *.xml
 
-# Benchmark results (optional - uncomment if you want to ignore)
-# benchmark/*/results/
-# benchmark/*/plots/ 
+# Benchmark results
+benchmark_results.json
+results/
+
+# C++ test binary (build artifact)
+test_llmir_cpp
+
 # PyPI dist
 dist/
 build/
@@ -92,3 +96,4 @@ build/
 __pycache__/
 *.pyc
 .pytest_cache/
+.memory.md

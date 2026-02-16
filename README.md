@@ -4,6 +4,39 @@ LLMIR is a compiler infrastructure for large language models based on MLIR (Mult
 
 **Project Website**: [https://chenxingqiang.github.io/llmir-www/](https://chenxingqiang.github.io/llmir-www/)
 
+---
+
+## Quick Start
+
+```bash
+# Install
+pip install llmir
+# or for HuggingFace support: pip install llmir[full]
+
+# Try it
+python -c "from llmir import PagedKVCache, KVCacheConfig; c = KVCacheConfig(num_layers=8, num_heads=8, head_dim=64); print(PagedKVCache(c))"
+
+# Benchmark KV cache (registry or HuggingFace model ID)
+llmir-benchmark --model llama3-8b --batch-sizes 1,4
+llmir-benchmark --model Qwen/Qwen2-0.5B
+
+# List supported models
+llmir-list-models
+
+# Run tests
+pytest tests/ -v
+```
+
+| What | Where |
+|------|-------|
+| Python package | `src/llmir/` |
+| MLIR dialect (C++) | `include/mlir/Dialect/LLM/`, `lib/Dialect/LLM/` |
+| Benchmarks | `benchmark/`, `scripts/` |
+| Docs | `docs/` |
+| Tests | `tests/` (Python), `test/` (MLIR lit) |
+
+---
+
 ## Overview
 
 LLMIR provides a unified intermediate representation layer for large language models, enhancing inference performance through specialized optimizations. It integrates capabilities from high-performance inference frameworks like vLLM and SGLang with MLIR's compilation infrastructure.
@@ -30,7 +63,7 @@ Key objectives:
 - **Continuous Batching**: vLLM-style dynamic batch management for production serving
 - **vLLM Integration**: Drop-in compatibility layer for vLLM-based applications
 - **Python Bindings**: Full Python API for KV cache, profiling, and engine management
-- **Model Optimizations**: Pre-configured optimizations for Llama, Mistral, Phi models
+- **Model Optimizations**: Pre-configured optimizations for Llama, Mistral, Phi, Qwen, Gemma, Falcon; `from_pretrained()` supports all decoder-only architectures in HuggingFace Transformers
 - **Performance Profiling**: Comprehensive profiling with latency, memory, and throughput tracking
 
 ## Architecture
@@ -119,6 +152,11 @@ cache = llmir.PagedKVCache(config)
 optimizer = llmir.LlamaOptimizer.for_llama3_8b()
 kv_config = optimizer.get_optimized_kv_cache_config()
 
+# Or load from HuggingFace (requires: pip install llmir[full])
+if llmir.from_pretrained:
+    optimizer = llmir.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
+    kv_config = optimizer.get_optimized_kv_cache_config()
+
 # Profile performance
 profiler = llmir.Profiler()
 profiler.start()
@@ -157,6 +195,22 @@ ninja
 
 # Run tests
 ninja check-llmir
+```
+
+### Python Tests
+
+```bash
+# Install with dev dependencies
+pip install -e ".[dev]"
+
+# Run all Python tests (no network)
+pytest tests/ -v
+
+# Run HuggingFace integration tests (requires network)
+pytest tests/test_integration_hf.py -v -m network
+
+# Run KV cache benchmark (Python)
+llmir-benchmark --model llama3-8b --batch-sizes 1,4,8 --output results.json
 ```
 
 ## Usage Examples
@@ -461,36 +515,28 @@ int64_t maxSeq = estimator.findMaxSeqLen(gpuMemory, batchSize);
 ## Project Structure
 
 ```
-├── include/mlir/Dialect/LLM/   # MLIR dialect definitions
-│   ├── IR/                     # MLIR operations and types
-│   └── Runtime/                # Runtime support headers
-│       ├── PagedKVCache.h      # Core KV cache implementation
-│       ├── QuantizedKVCache.h  # INT8/INT4 quantization
-│       ├── DistributedKVCache.h # Multi-GPU sharding
-│       ├── SpeculativeKVCache.h # Speculative decoding
-│       ├── PrefixCache.h       # Prefix caching
-│       ├── ContinuousBatching.h # Production serving
-│       ├── VLLMIntegration.h   # vLLM compatibility
-│       └── ModelOptimizations.h # Model-specific optimizations
+├── src/llmir/                  # Python package (pip install -e .)
+│   ├── runtime/                # KV cache, config
+│   ├── models/                 # Model optimizers (Llama, Mistral, Phi)
+│   ├── serving/                # LLMEngine, ContinuousBatching
+│   ├── integration/            # HuggingFace from_pretrained
+│   └── cli/                    # llmir-profile, llmir-benchmark
 │
-├── lib/Dialect/LLM/            # Implementation
-│   ├── IR/                     # MLIR operation implementations
-│   └── Runtime/                # Runtime library implementations
+├── include/mlir/Dialect/LLM/    # MLIR dialect (C++)
+│   ├── IR/                     # Operations and types
+│   └── Runtime/                # PagedKVCache, QuantizedKVCache, etc.
 │
-├── python/mlir/dialects/llm/   # Python bindings
-│   ├── __init__.py             # Main Python API
-│   ├── native.py               # C++ bindings via ctypes
-│   ├── profiling.py            # Performance profiling tools
-│   └── compat.py               # Legacy compatibility functions
-│
-├── benchmark/LLM/              # Performance benchmarks
-├── test/Dialect/LLM/           # Tests
-├── docs/                       # Documentation
-│   ├── design/                 # Design documents
-│   └── DEVELOPMENT_STATUS.md   # Development progress
-├── patches/                    # Integration patches
-├── IEEE-conference/            # Academic paper
-└── examples/                   # Example applications
+├── lib/Dialect/LLM/             # C++ implementation
+├── benchmark/                   # C++ and Python benchmarks
+│   └── LLM/                    # Llama 3.1 benchmark
+├── scripts/                     # Benchmark and utility scripts
+├── tests/                       # Python tests (pytest)
+├── test/                        # MLIR lit tests
+├── docs/                        # Documentation
+├── examples/                    # Example applications
+├── pyproject.toml               # Python package config
+├── docker-compose.yml           # Docker benchmark
+└── CMakeLists.txt               # MLIR build
 ```
 
 ## Development Roadmap
@@ -616,6 +662,17 @@ source venv/bin/activate_llmir
 ```
 
 This compares the baseline vLLM performance with LLMIR-optimized performance across different batch sizes and sequence lengths. For more details, see [benchmark/LLM/README_LLAMA31.md](benchmark/LLM/README_LLAMA31.md).
+
+### Docker Benchmark
+
+```bash
+./scripts/docker_run_benchmark.sh   # Requires NVIDIA GPU, HUGGINGFACE_TOKEN
+# or: docker-compose up llama31-benchmark
+```
+
+### Additional Scripts
+
+See [scripts/README.md](scripts/README.md) for PyTorch/vLLM/SGLang comparison and other benchmarks.
 
 ## Contributing
 

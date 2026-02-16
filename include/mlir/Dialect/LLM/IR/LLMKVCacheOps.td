@@ -16,7 +16,8 @@
 include "mlir/Dialect/LLM/IR/LLMBase.td"
 include "mlir/Dialect/LLM/IR/LLMTypes.td"
 include "mlir/Dialect/LLM/Runtime/RuntimeInterfaces.td"
-include "mlir/Dialect/LLM/Runtime/KVCache.td"
+// Note: KVCache.td (StructAttr) excluded for MLIR 18 compatibility.
+// LLMKVCacheOps do not use KVCacheConfig/KVCacheStats attributes.
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 

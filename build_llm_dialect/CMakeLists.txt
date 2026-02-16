@@ -59,8 +59,9 @@ mlir_tablegen(include/mlir/Dialect/LLM/IR/LLMTypes.h.inc -gen-typedef-decls)
 mlir_tablegen(include/mlir/Dialect/LLM/IR/LLMTypes.cpp.inc -gen-typedef-defs)
 add_public_tablegen_target(MLIRLLMTypesIncGen)
 
-# Note: LLM KV Cache Ops uses StructAttr which is removed in MLIR 18
-# Skipping KVCacheOps TableGen for now
+# Note: LLM KV Cache Ops uses StructAttr (via KVCache.td) removed in MLIR 18.
+# KVCache.td include removed from LLMKVCacheOps.td - re-enable when building
+# with full MLIR that has LLMKVCacheOpsIncGen. Standalone build skips KV cache ops.
 
 # Passes TableGen
 set(LLVM_TARGET_DEFINITIONS ${LLMIR_SOURCE_DIR}/include/mlir/Dialect/LLM/Transforms/Passes.td)
@@ -72,7 +73,7 @@ add_library(MLIRLLMIR STATIC
     ${LLMIR_SOURCE_DIR}/lib/Dialect/LLM/IR/LLMDialect.cpp
     ${LLMIR_SOURCE_DIR}/lib/Dialect/LLM/IR/LLMOps.cpp
     ${LLMIR_SOURCE_DIR}/lib/Dialect/LLM/IR/LLMTypes.cpp
-    # Note: LLMKVCacheOps.cpp excluded due to MLIR 18 StructAttr deprecation
+    # LLMKVCacheOps excluded - requires KVCache.td/StructAttr migration
 )
 
 add_dependencies(MLIRLLMIR

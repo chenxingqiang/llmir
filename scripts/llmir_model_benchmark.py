@@ -15,8 +15,12 @@ import time
 import numpy as np
 from typing import List, Dict, Any
 
-# Ensure LLMIR is in path
-sys.path.insert(0, '/workspace/src')
+# Ensure LLMIR is in path (scripts/ or project root)
+_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+for prefix in [os.path.join(_root, 'src'), '/workspace/src']:
+    if os.path.exists(prefix) and prefix not in sys.path:
+        sys.path.insert(0, prefix)
+        break
 
 from llmir.models import (
     ModelRegistry, ModelConfig, ModelOptimizer,

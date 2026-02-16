@@ -17,6 +17,9 @@ __all__ = [
     'LlamaOptimizer',
     'MistralOptimizer',
     'PhiOptimizer',
+    'QwenOptimizer',
+    'GemmaOptimizer',
+    'FalconOptimizer',
     'ModelRegistry',
     'ModelMemoryEstimator',
 ]
@@ -68,6 +71,34 @@ class ModelConfig:
     
     # Sliding window
     sliding_window_size: int = 4096
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary for serialization."""
+        return {
+            "architecture": self.architecture.name,
+            "attention_type": self.attention_type.name,
+            "num_layers": self.num_layers,
+            "hidden_size": self.hidden_size,
+            "num_attention_heads": self.num_attention_heads,
+            "num_key_value_heads": self.num_key_value_heads,
+            "head_dim": self.head_dim,
+            "intermediate_size": self.intermediate_size,
+            "vocab_size": self.vocab_size,
+            "max_position_embeddings": self.max_position_embeddings,
+            "rope_theta": self.rope_theta,
+            "rope_scaling_factor": self.rope_scaling_factor,
+            "sliding_window_size": self.sliding_window_size,
+        }
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "ModelConfig":
+        """Create configuration from dictionary."""
+        d = dict(d)
+        if "architecture" in d and isinstance(d["architecture"], str):
+            d["architecture"] = ModelArchitecture[d["architecture"]]
+        if "attention_type" in d and isinstance(d["attention_type"], str):
+            d["attention_type"] = AttentionType[d["attention_type"]]
+        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
     
     def get_head_dim(self) -> int:
         """Get head dimension."""
@@ -344,6 +375,120 @@ class PhiOptimizer(ModelOptimizer):
         return 16
 
 
+class QwenOptimizer(ModelOptimizer):
+    """Optimizations for Qwen models."""
+
+    @classmethod
+    def for_qwen2_0_5b(cls) -> 'QwenOptimizer':
+        """Create optimizer for Qwen2 0.5B."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.QWEN2,
+            attention_type=AttentionType.GROUPED_QUERY,
+            num_layers=24, hidden_size=896,
+            num_attention_heads=14, num_key_value_heads=2,
+            head_dim=64, intermediate_size=4864,
+            vocab_size=151936, max_position_embeddings=131072,
+        ))
+
+    @classmethod
+    def for_qwen2_1_5b(cls) -> 'QwenOptimizer':
+        """Create optimizer for Qwen2 1.5B."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.QWEN2,
+            attention_type=AttentionType.GROUPED_QUERY,
+            num_layers=28, hidden_size=1536,
+            num_attention_heads=12, num_key_value_heads=2,
+            head_dim=128, intermediate_size=8960,
+            vocab_size=151936, max_position_embeddings=131072,
+        ))
+
+    @classmethod
+    def for_qwen2_7b(cls) -> 'QwenOptimizer':
+        """Create optimizer for Qwen2 7B."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.QWEN2,
+            attention_type=AttentionType.GROUPED_QUERY,
+            num_layers=28, hidden_size=3584,
+            num_attention_heads=28, num_key_value_heads=4,
+            head_dim=128, intermediate_size=18944,
+            vocab_size=152064, max_position_embeddings=32768,
+        ))
+
+    @classmethod
+    def for_qwen2_72b(cls) -> 'QwenOptimizer':
+        """Create optimizer for Qwen2 72B."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.QWEN2,
+            attention_type=AttentionType.GROUPED_QUERY,
+            num_layers=80, hidden_size=8192,
+            num_attention_heads=64, num_key_value_heads=8,
+            head_dim=128, intermediate_size=29568,
+            vocab_size=152064, max_position_embeddings=32768,
+        ))
+
+
+class GemmaOptimizer(ModelOptimizer):
+    """Optimizations for Gemma models."""
+
+    @classmethod
+    def for_gemma_2b(cls) -> 'GemmaOptimizer':
+        """Create optimizer for Gemma 2B (MQA)."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.GEMMA,
+            attention_type=AttentionType.MULTI_QUERY,
+            num_layers=18, hidden_size=2048,
+            num_attention_heads=8, num_key_value_heads=1,
+            head_dim=256, intermediate_size=16384,
+            vocab_size=256000, max_position_embeddings=8192,
+        ))
+
+    @classmethod
+    def for_gemma_7b(cls) -> 'GemmaOptimizer':
+        """Create optimizer for Gemma 7B."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.GEMMA,
+            num_layers=28, hidden_size=3072,
+            num_attention_heads=16, num_key_value_heads=16,
+            head_dim=256, intermediate_size=24576,
+            vocab_size=256000, max_position_embeddings=8192,
+        ))
+
+    def get_optimized_block_size(self) -> int:
+        """Gemma uses large head_dim (256); smaller blocks."""
+        return 8
+
+
+class FalconOptimizer(ModelOptimizer):
+    """Optimizations for Falcon models."""
+
+    @classmethod
+    def for_falcon_7b(cls) -> 'FalconOptimizer':
+        """Create optimizer for Falcon 7B (MHA)."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.FALCON,
+            num_layers=32, hidden_size=4544,
+            num_attention_heads=71, num_key_value_heads=71,
+            head_dim=64, intermediate_size=18176,
+            vocab_size=65024, max_position_embeddings=2048,
+        ))
+
+    @classmethod
+    def for_falcon_40b(cls) -> 'FalconOptimizer':
+        """Create optimizer for Falcon 40B (GQA)."""
+        return cls(ModelConfig(
+            architecture=ModelArchitecture.FALCON,
+            attention_type=AttentionType.GROUPED_QUERY,
+            num_layers=60, hidden_size=8192,
+            num_attention_heads=128, num_key_value_heads=8,
+            head_dim=64, intermediate_size=32768,
+            vocab_size=65024, max_position_embeddings=2048,
+        ))
+
+    def get_optimized_block_size(self) -> int:
+        """Falcon head_dim=64; use larger blocks."""
+        return 32
+
+
 class ModelRegistry:
     """Registry for model configurations and optimizers."""
     
@@ -359,6 +504,7 @@ class ModelRegistry:
     def _register_builtin_models(self):
         """Register built-in model configurations."""
         self._configs = {
+            # Llama
             'llama-7b': LlamaOptimizer.for_llama_7b().config,
             'llama-13b': LlamaOptimizer.for_llama_13b().config,
             'llama2-7b': LlamaOptimizer.for_llama2_7b().config,
@@ -368,12 +514,25 @@ class ModelRegistry:
             'llama3.1-8b': LlamaOptimizer.for_llama31_8b().config,
             'llama3.1-70b': LlamaOptimizer.for_llama31_70b().config,
             'llama3.1-405b': LlamaOptimizer.for_llama31_405b().config,
+            # Mistral / Mixtral
             'mistral-7b': MistralOptimizer.for_mistral_7b().config,
             'mixtral-8x7b': MistralOptimizer.for_mixtral_8x7b().config,
             'mixtral-8x22b': MistralOptimizer.for_mixtral_8x22b().config,
+            # Phi
             'phi-2': PhiOptimizer.for_phi2().config,
             'phi-3-mini': PhiOptimizer.for_phi3_mini().config,
             'phi-3-medium': PhiOptimizer.for_phi3_medium().config,
+            # Qwen
+            'qwen2-0.5b': QwenOptimizer.for_qwen2_0_5b().config,
+            'qwen2-1.5b': QwenOptimizer.for_qwen2_1_5b().config,
+            'qwen2-7b': QwenOptimizer.for_qwen2_7b().config,
+            'qwen2-72b': QwenOptimizer.for_qwen2_72b().config,
+            # Gemma
+            'gemma-2b': GemmaOptimizer.for_gemma_2b().config,
+            'gemma-7b': GemmaOptimizer.for_gemma_7b().config,
+            # Falcon
+            'falcon-7b': FalconOptimizer.for_falcon_7b().config,
+            'falcon-40b': FalconOptimizer.for_falcon_40b().config,
         }
     
     def register(self, name: str, config: ModelConfig):
@@ -390,7 +549,7 @@ class ModelRegistry:
         if not config:
             return None
         
-        if config.architecture in (ModelArchitecture.LLAMA, 
+        if config.architecture in (ModelArchitecture.LLAMA,
                                    ModelArchitecture.LLAMA2,
                                    ModelArchitecture.LLAMA3):
             return LlamaOptimizer(config)
@@ -400,6 +559,12 @@ class ModelRegistry:
         elif config.architecture in (ModelArchitecture.PHI,
                                      ModelArchitecture.PHI3):
             return PhiOptimizer(config)
+        elif config.architecture == ModelArchitecture.QWEN2:
+            return QwenOptimizer(config)
+        elif config.architecture == ModelArchitecture.GEMMA:
+            return GemmaOptimizer(config)
+        elif config.architecture == ModelArchitecture.FALCON:
+            return FalconOptimizer(config)
         return ModelOptimizer(config)
     
     def list_models(self) -> List[str]:

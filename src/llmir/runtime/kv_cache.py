@@ -77,19 +77,22 @@ class PagedKVCache:
         assert keys.shape == values.shape, "Keys and values must have same shape"
         assert len(seq_ids) == batch_size, "seq_ids length must match batch size"
         
-        # Allocate blocks and store KV pairs
         block_indices = np.zeros((batch_size, self.config.num_layers), dtype=np.int32)
-        
+
         for i, seq_id in enumerate(seq_ids):
             seq_id = int(seq_id)
+            block_indices[i, 0] = seq_id
             if seq_id not in self._sequences:
                 self._sequences[seq_id] = {
                     'length': 0,
-                    'blocks': [],
+                    'kv_list': [],  # List of (keys, values) per append
                 }
-            
             self._sequences[seq_id]['length'] += seq_len
-        
+            # Store slice for this batch item: keys[i:i+1], values[i:i+1]
+            k = keys[i : i + 1].copy()  # (1, seq_len, num_heads, head_dim)
+            v = values[i : i + 1].copy()
+            self._sequences[seq_id]['kv_list'].append((k, v))
+
         return block_indices
     
     def lookup(self,
@@ -103,18 +106,39 @@ class PagedKVCache:
             seq_lens: Sequence lengths of shape [batch]
             
         Returns:
-            keys: Key tensor
-            values: Value tensor
+            keys: Key tensor of shape [batch, max_seq_len, num_heads, head_dim]
+            values: Value tensor of same shape
         """
         batch_size = len(seq_lens)
         max_seq_len = int(seq_lens.max())
-        
+
         dtype = np.float16 if 'float16' in self.config.dtype else np.float32
-        keys = np.zeros((batch_size, max_seq_len, 
-                        self.config.num_heads, self.config.head_dim),
-                       dtype=dtype)
+        keys = np.zeros(
+            (batch_size, max_seq_len, self.config.num_heads, self.config.head_dim),
+            dtype=dtype,
+        )
         values = np.zeros_like(keys)
-        
+
+        # Restore from stored kv_list. block_indices[i] links batch i to seq.
+        for batch_idx in range(batch_size):
+            seq_len_i = int(seq_lens[batch_idx])
+            if seq_len_i <= 0:
+                continue
+            seq_id = int(block_indices[batch_idx, 0]) if batch_idx < block_indices.shape[0] else batch_idx
+            seq_data = self._sequences.get(seq_id)
+            if not seq_data:
+                continue
+            kv_list = seq_data.get('kv_list', [])
+            if not kv_list:
+                continue
+            k_cat = np.concatenate([kv[0] for kv in kv_list], axis=1)
+            v_cat = np.concatenate([kv[1] for kv in kv_list], axis=1)
+            actual_len = k_cat.shape[1]
+            end = min(seq_len_i, max_seq_len, actual_len)
+            if end > 0:
+                keys[batch_idx, :end] = k_cat[0, :end]
+                values[batch_idx, :end] = v_cat[0, :end]
+
         return keys, values
     
     def clear_sequence(self, seq_id: int) -> bool:

@@ -80,10 +80,11 @@ Changelog = "https://github.com/chenxingqiang/llmir/blob/main/CHANGELOG.md"
 [project.scripts]
 llmir-profile = "llmir.cli:profile_main"
 llmir-benchmark = "llmir.cli:benchmark_main"
+llmir-list-models = "llmir.cli:list_models_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli"]
+packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli", "llmir.integration"]
 
 [tool.setuptools.package-data]
 llmir = ["py.typed"]
@@ -139,3 +140,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "network: mark tests that require network access (e.g. HuggingFace Hub)",
+]
