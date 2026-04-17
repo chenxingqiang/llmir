@@ -519,7 +519,11 @@ class PyTorchImporter:
             raise ValueError(f"Failed to trace model: {e}")
     
     def _extract_model_config(self, model) -> Dict[str, Any]:
-        """Extract model configuration from a PyTorch model."""
+        """Extract model configuration from a PyTorch model.
+        
+        Note: For HuggingFace models, this requires the `transformers` package.
+        Install with: pip install transformers
+        """
         config = {}
         
         # Try to get config from HuggingFace model
@@ -565,6 +569,7 @@ def import_pytorch_model(
         
     Example:
         >>> import torch
+        >>> # Requires: pip install transformers
         >>> from transformers import AutoModelForCausalLM
         >>> from llmir.importers.pytorch import import_pytorch_model, ImportConfig
         >>> 

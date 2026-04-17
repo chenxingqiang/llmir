@@ -161,7 +161,8 @@ private:
     // Check if any operand is a constant (weight matrix)
     bool hasConstantWeight = false;
     for (Value operand : op->getOperands()) {
-      if (operand.getDefiningOp<arith::ConstantOp>()) {
+      auto constOp = operand.getDefiningOp<arith::ConstantOp>();
+      if (constOp != nullptr) {
         hasConstantWeight = true;
         break;
       }

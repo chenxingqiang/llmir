@@ -16,7 +16,8 @@
 // CHECK: llm.optimal_block_size
 func.func @test_block_size_analysis(
     %input: tensor<4x512x4096xf16>,
-    %kv_cache: !llm.paged_kv_cache<f16, 32, 32, 128, 64, 8192>,
+    // KV cache type: <element_type, num_layers, num_heads, head_dim, block_size, max_seq_len>
+    %kv_cache: !llm.paged_kv_cache<f16, 32, 32, 128, 16, 8192>,
     %block_indices: tensor<4x128xi32>,
     %seq_lens: tensor<4xi32>
 ) -> tensor<4x512x4096xf16> {
