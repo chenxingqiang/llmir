@@ -4,6 +4,9 @@ add_mlir_dialect_library(MLIRLLMTransforms
   LLMLowering.cpp
   LowerKVCacheOps.cpp
   KVCacheOptimization.cpp
+  LLMPassPipeline.cpp
+  QuantizationAnalysis.cpp
+  BlockSizeAnalysis.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Dialect/LLM/Transforms
