@@ -114,14 +114,16 @@ line_length = 88
 known_first_party = ["llmir"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings

@@ -2,7 +2,9 @@
 
 import pytest
 
-pytest.importorskip("transformers", reason="Requires transformers (pip install llmir[full])")
+pytest.importorskip(
+    "transformers", reason="Requires transformers (pip install llmir[full])"
+)
 
 
 @pytest.mark.network

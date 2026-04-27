@@ -21,6 +21,7 @@ def list_models_main():
     args = parser.parse_args()
 
     from llmir.models import ModelRegistry
+
     registry = ModelRegistry()
     models = sorted(registry.list_models())
 
@@ -49,43 +50,31 @@ def profile_main():
 Examples:
   llmir-profile --model llama-7b --batch-size 8 --seq-len 512
   llmir-profile --input trace.json --output report.html
-        """
+        """,
     )
-    
+
+    parser.add_argument("--model", "-m", type=str, help="Model name or path to profile")
     parser.add_argument(
-        "--model", "-m",
-        type=str,
-        help="Model name or path to profile"
-    )
-    parser.add_argument(
-        "--batch-size", "-b",
-        type=int,
-        default=1,
-        help="Batch size for profiling"
+        "--batch-size", "-b", type=int, default=1, help="Batch size for profiling"
     )
     parser.add_argument(
-        "--seq-len", "-s",
-        type=int,
-        default=512,
-        help="Sequence length for profiling"
+        "--seq-len", "-s", type=int, default=512, help="Sequence length for profiling"
     )
+    parser.add_argument("--input", "-i", type=str, help="Input trace file")
     parser.add_argument(
-        "--input", "-i",
-        type=str,
-        help="Input trace file"
-    )
-    parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=str,
         default="profile_report.json",
-        help="Output report file"
+        help="Output report file",
     )
     parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         type=str,
         choices=["json", "chrome", "text"],
         default="json",
-        help="Output format"
+        help="Output format",
     )
     parser.add_argument(
         "--export-config",
@@ -93,14 +82,15 @@ Examples:
         metavar="PATH",
         help="Export model and KV cache config as JSON to file",
     )
-    
+
     args = parser.parse_args()
-    
+
     print("LLMIR Profiler")
     print("=" * 40)
-    
+
     if args.model:
         from llmir.models import ModelRegistry
+
         registry = ModelRegistry()
         optimizer = None
 
@@ -109,7 +99,8 @@ Examples:
         else:
             try:
                 from llmir import from_pretrained
-                if from_pretrained:
+
+                if from_pretrained is not None:
                     optimizer = from_pretrained(args.model)
             except (ImportError, Exception):
                 pass
@@ -122,6 +113,7 @@ Examples:
             print(f"Estimated memory: {memory / 1e9:.2f} GB")
             if args.export_config:
                 import json
+
                 kv = optimizer.get_optimized_kv_cache_config()
                 out = {
                     "model": args.model,
@@ -138,18 +130,19 @@ Examples:
     else:
         print("No model specified. Use --model to specify a model.")
         print(f"Available models: {', '.join(ModelRegistry().list_models())}")
-    
+
     return 0
 
 
 def benchmark_main():
     """Main entry point for llmir-benchmark command."""
-    import time
     import json
+    import time
+
     import numpy as np
 
-    from llmir.models import ModelRegistry
     from llmir import PagedKVCache
+    from llmir.models import ModelRegistry
 
     parser = argparse.ArgumentParser(
         description="LLMIR Benchmark Tool - KV cache and config benchmarks",
@@ -158,43 +151,45 @@ def benchmark_main():
 Examples:
   llmir-benchmark --model llama3-8b --batch-sizes 1,4,8
   llmir-benchmark --model llama3-8b --output results.json
-        """
+        """,
     )
     parser.add_argument(
-        "--model", "-m",
+        "--model",
+        "-m",
         type=str,
         required=True,
-        help="Model name from registry (e.g. llama3-8b) or HuggingFace ID (requires llmir[full])"
+        help="Model name from registry (e.g. llama3-8b) or HuggingFace ID (requires llmir[full])",
     )
     parser.add_argument(
-        "--batch-sizes", "-b",
+        "--batch-sizes",
+        "-b",
         type=str,
         default="1,2,4,8",
-        help="Comma-separated batch sizes"
+        help="Comma-separated batch sizes",
     )
     parser.add_argument(
-        "--seq-lens", "-s",
+        "--seq-lens",
+        "-s",
         type=str,
         default="128,512,1024",
-        help="Comma-separated sequence lengths"
+        help="Comma-separated sequence lengths",
     )
     parser.add_argument(
-        "--warmup", "-w",
-        type=int,
-        default=3,
-        help="Number of warmup iterations"
+        "--warmup", "-w", type=int, default=3, help="Number of warmup iterations"
     )
     parser.add_argument(
-        "--iterations", "-n",
+        "--iterations",
+        "-n",
         type=int,
         default=50,
-        help="Number of benchmark iterations"
+        help="Number of benchmark iterations",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=str,
         default="benchmark_results.json",
-        help="Output results file (JSON)"
+        help="Output results file (JSON)",
     )
     args = parser.parse_args()
 
@@ -216,7 +211,8 @@ Examples:
     else:
         try:
             from llmir import from_pretrained
-            if from_pretrained:
+
+            if from_pretrained is not None:
                 optimizer = from_pretrained(args.model)
         except ImportError:
             pass
@@ -229,20 +225,29 @@ Examples:
 
     kv_config = optimizer.get_optimized_kv_cache_config()
     mem_est = optimizer.estimate_memory(1, 512)
-    print(f"KV config: layers={kv_config.num_layers}, heads={kv_config.num_heads}, "
-          f"head_dim={kv_config.head_dim}, block_size={kv_config.block_size}")
+    print(
+        f"KV config: layers={kv_config.num_layers}, heads={kv_config.num_heads}, "
+        f"head_dim={kv_config.head_dim}, block_size={kv_config.block_size}"
+    )
     print(f"Memory estimate (batch=1, seq=512): {mem_est / 1e9:.3f} GB")
     print()
 
     results = []
     for seq_len in seq_lens:
         for batch_size in batch_sizes:
-            if batch_size * seq_len * kv_config.num_heads * kv_config.head_dim > 50_000_000:
+            if (
+                batch_size * seq_len * kv_config.num_heads * kv_config.head_dim
+                > 50_000_000
+            ):
                 print(f"Skipping batch={batch_size} seq={seq_len} (large)")
                 continue
             cache = PagedKVCache(kv_config)
-            keys = np.random.randn(batch_size, seq_len, kv_config.num_heads, kv_config.head_dim).astype(np.float16)
-            values = np.random.randn(batch_size, seq_len, kv_config.num_heads, kv_config.head_dim).astype(np.float16)
+            keys = np.random.randn(
+                batch_size, seq_len, kv_config.num_heads, kv_config.head_dim
+            ).astype(np.float16)
+            values = np.random.randn(
+                batch_size, seq_len, kv_config.num_heads, kv_config.head_dim
+            ).astype(np.float16)
             seq_ids = np.arange(batch_size, dtype=np.int32)
             for _ in range(args.warmup):
                 cache.append(keys, values, seq_ids)

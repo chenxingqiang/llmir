@@ -4,15 +4,11 @@ These tests run without network - they use the built-in model registry
 and verify config consistency, memory estimation, and KV cache setup.
 """
 
-import pytest
-
 from llmir import (
-    ModelRegistry,
     LlamaOptimizer,
     MistralOptimizer,
-    PhiOptimizer,
+    ModelRegistry,
     PagedKVCache,
-    KVCacheConfig,
 )
 from llmir.models import ModelMemoryEstimator
 
@@ -40,7 +36,14 @@ class TestConfigRoundTrip:
     def test_registry_to_optimizer_roundtrip(self):
         """ModelRegistry returns optimizer with correct config."""
         registry = ModelRegistry()
-        for name in ["llama3-8b", "mistral-7b", "phi-3-mini", "qwen2-7b", "gemma-2b", "falcon-40b"]:
+        for name in [
+            "llama3-8b",
+            "mistral-7b",
+            "phi-3-mini",
+            "qwen2-7b",
+            "gemma-2b",
+            "falcon-40b",
+        ]:
             opt = registry.get_optimizer(name)
             assert opt is not None, f"Missing optimizer for {name}"
             kv = opt.get_optimized_kv_cache_config()
