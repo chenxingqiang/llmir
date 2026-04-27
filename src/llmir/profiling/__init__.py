@@ -90,9 +90,9 @@ class Profiler:
     _instance: Optional["Profiler"] = None
     _lock = threading.Lock()
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._events: List[ProfileEvent] = []
-        self._active: bool = False
+        self._active = False
         self._start_time = 0.0
         self._end_time = 0.0
         self._counters: Dict[str, int] = defaultdict(int)
@@ -295,7 +295,7 @@ class ProfileReport:
 class MemoryProfiler:
     """Memory profiler for tracking allocations."""
 
-    def __init__(self, sample_interval_ms: float = 100):
+    def __init__(self, sample_interval_ms: float = 100) -> None:
         self.sample_interval = sample_interval_ms / 1000
         self._snapshots: List[Dict[str, float]] = []
         self._active = False
@@ -334,7 +334,7 @@ class MemoryProfiler:
 class LatencyProfiler:
     """Latency profiler with percentile statistics."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._measurements: Dict[str, List[float]] = defaultdict(list)
 
     @contextlib.contextmanager
