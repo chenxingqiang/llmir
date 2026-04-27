@@ -4,16 +4,15 @@ LLMIR Serving Module
 Production-ready serving components for LLM inference.
 """
 
-from llmir.serving.engine import (
-    LLMEngine,
-    ContinuousBatchingEngine,
-)
-
 from llmir.serving.config import (
+    RequestPriority,
     SamplingParams,
     SchedulerConfig,
     SchedulingPolicy,
-    RequestPriority,
+)
+from llmir.serving.engine import (
+    ContinuousBatchingEngine,
+    LLMEngine,
 )
 
 __all__ = [

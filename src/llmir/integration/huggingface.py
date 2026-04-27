@@ -7,19 +7,19 @@ Supports all decoder-only transformer architectures in the
 transformers package.
 """
 
-from typing import Optional, Union, Any, Tuple
+from typing import Any, Optional, Tuple
 
 from llmir.models import (
-    ModelConfig,
-    ModelOptimizer,
-    ModelArchitecture,
     AttentionType,
+    FalconOptimizer,
+    GemmaOptimizer,
     LlamaOptimizer,
     MistralOptimizer,
+    ModelArchitecture,
+    ModelConfig,
+    ModelOptimizer,
     PhiOptimizer,
     QwenOptimizer,
-    GemmaOptimizer,
-    FalconOptimizer,
 )
 
 __all__ = ["from_pretrained"]
@@ -108,7 +108,7 @@ def _model_config_from_hf(hf_config: Any) -> ModelConfig:
     """
     model_type = _getattr_safe(hf_config, "model_type")
     if not model_type and getattr(hf_config, "architectures", None):
-        archs = getattr(hf_config, "architectures")
+        archs = hf_config.architectures
         model_type = archs[0] if archs else None
     model_type = (model_type or "").lower()
 
@@ -194,7 +194,9 @@ def _model_config_from_hf(hf_config: Any) -> ModelConfig:
             rope_scaling_factor = getattr(rope_scaling, "factor", 1.0)
 
     # Sliding window
-    sliding_window_size = _getattr_safe(hf_config, "sliding_window") or _getattr_safe(hf_config, "sliding_window_size")
+    sliding_window_size = _getattr_safe(hf_config, "sliding_window") or _getattr_safe(
+        hf_config, "sliding_window_size"
+    )
     if sliding_window_size is None:
         sliding_window_size = max_position_embeddings
 
@@ -229,7 +231,11 @@ def _model_config_from_hf(hf_config: Any) -> ModelConfig:
 def _create_optimizer(config: ModelConfig) -> ModelOptimizer:
     """Create the appropriate optimizer subclass from ModelConfig."""
     arch = config.architecture
-    if arch in (ModelArchitecture.LLAMA, ModelArchitecture.LLAMA2, ModelArchitecture.LLAMA3):
+    if arch in (
+        ModelArchitecture.LLAMA,
+        ModelArchitecture.LLAMA2,
+        ModelArchitecture.LLAMA3,
+    ):
         return LlamaOptimizer(config)
     if arch in (ModelArchitecture.MISTRAL, ModelArchitecture.MIXTRAL):
         return MistralOptimizer(config)

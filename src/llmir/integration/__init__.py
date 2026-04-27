@@ -7,8 +7,11 @@ Adapters for external frameworks (HuggingFace Transformers, etc.).
 __all__ = []
 
 try:
-    from llmir.integration.huggingface import from_pretrained
+    from llmir.integration.huggingface import from_pretrained as from_pretrained
+
     __all__.append("from_pretrained")
 except ImportError:
     # transformers not installed
     pass
+
+__all__ = list(__all__)
