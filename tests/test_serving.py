@@ -186,6 +186,17 @@ class TestLLMEngine:
 
         assert engine.model_path == "test-model"
 
+    def test_create_engine_with_backend(self):
+        """Test engine creation with an explicit backend."""
+        engine = LLMEngine(model_path="test-model", backend="vllm")
+
+        assert engine.backend == "vllm"
+
+    def test_create_engine_with_invalid_backend(self):
+        """Test invalid backend validation."""
+        with pytest.raises(ValueError, match="Unsupported backend"):
+            LLMEngine(model_path="test-model", backend="unknown")
+
     def test_from_pretrained(self):
         """Test from_pretrained factory method."""
         engine = LLMEngine.from_pretrained(
@@ -243,12 +254,16 @@ class TestLLMEngine:
             backend="vllm",
             dtype="float32",
             tensor_parallel_size=2,
+            max_model_len=128,
+            trust_remote_code=True,
         )
         outputs = engine.generate("hello", SamplingParams(max_tokens=2, stop=[]))
 
         assert FakeLLM.init_kwargs["model"] == "test-model"
         assert FakeLLM.init_kwargs["tensor_parallel_size"] == 2
         assert FakeLLM.init_kwargs["dtype"] == "float32"
+        assert FakeLLM.init_kwargs["max_model_len"] == 128
+        assert FakeLLM.init_kwargs["trust_remote_code"] is True
         assert FakeLLM.sampling_kwargs["max_tokens"] == 2
         assert "stop" not in FakeLLM.sampling_kwargs
         assert len(outputs) == 1

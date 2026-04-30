@@ -287,9 +287,12 @@ class LLMEngine:
         engine_config: Optional[EngineConfig] = None,
         cache_config: Optional[KVCacheConfig] = None,
         scheduler_config: Optional[SchedulerConfig] = None,
+        backend: Optional[Union[BackendType, str]] = None,
     ):
         self.model_path = model_path
         self.engine_config = engine_config or EngineConfig(model_path=model_path)
+        if backend is not None:
+            self.engine_config.backend = _normalize_backend(backend)
         self.cache_config = cache_config or KVCacheConfig()
         self.scheduler_config = scheduler_config or SchedulerConfig()
 
@@ -337,11 +340,15 @@ class LLMEngine:
             Initialized LLMEngine
         """
         backend_name = _normalize_backend(backend)
+        max_model_len = kwargs.pop("max_model_len", None)
+        trust_remote_code = kwargs.pop("trust_remote_code", False)
         engine_config = EngineConfig(
             model_path=model_name_or_path,
             tensor_parallel_size=tensor_parallel_size,
             dtype=dtype,
             gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            trust_remote_code=trust_remote_code,
             backend=backend_name,
         )
 
@@ -487,7 +494,8 @@ class LLMEngine:
                     prompt=prompt,
                     prompt_token_ids=prompt_token_ids,
                     outputs=completions,
-                    finished=all(completion.finished for completion in completions),
+                    finished=bool(completions)
+                    and all(completion.finished for completion in completions),
                 )
             )
         return outputs
