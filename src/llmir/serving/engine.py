@@ -264,10 +264,14 @@ class LLMEngine:
 
     Args:
         model_path: Path to the model
-        engine_config: Engine configuration
-        cache_config: KV cache configuration
-        scheduler_config: Scheduler configuration
-        backend: Serving backend. If omitted, engine_config.backend is used.
+        engine_config: Optional engine configuration. If omitted, a default
+            EngineConfig is created from model_path.
+        cache_config: Optional KV cache configuration. If omitted, a default
+            KVCacheConfig is used.
+        scheduler_config: Optional scheduler configuration. If omitted, a
+            default SchedulerConfig is used.
+        backend: Optional serving backend override. If omitted,
+            engine_config.backend is used.
 
     Example:
         >>> engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")
@@ -292,8 +296,6 @@ class LLMEngine:
     ):
         self.model_path = model_path
         self.engine_config = engine_config or EngineConfig(model_path=model_path)
-        if backend is not None:
-            self.engine_config.backend = _normalize_backend(backend)
         self.cache_config = cache_config or KVCacheConfig()
         self.scheduler_config = scheduler_config or SchedulerConfig()
 
@@ -305,7 +307,9 @@ class LLMEngine:
         self._vllm_engine = None
         self._vllm_sampling_params_cls = None
         self._initialized = False
-        self.backend = _normalize_backend(self.engine_config.backend)
+        self.backend = _normalize_backend(
+            backend if backend is not None else self.engine_config.backend
+        )
         self.engine_config.backend = self.backend
 
     @classmethod
