@@ -281,6 +281,7 @@ class TestLLMEngine:
         assert outputs[0].outputs[0].token_ids == [10, 11]
         assert outputs[0].finished
 
+        FakeLLM.sampling_kwargs = None
         engine.generate(
             "hello",
             SamplingParams(max_tokens=2, stop=["END"], stop_token_ids=[99]),

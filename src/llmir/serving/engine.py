@@ -267,8 +267,7 @@ class LLMEngine:
         engine_config: Engine configuration
         cache_config: KV cache configuration
         scheduler_config: Scheduler configuration
-        backend: Serving backend. Takes precedence over engine_config.backend when
-            provided as a non-default value.
+        backend: Serving backend. If omitted, engine_config.backend is used.
 
     Example:
         >>> engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")
@@ -289,11 +288,11 @@ class LLMEngine:
         engine_config: Optional[EngineConfig] = None,
         cache_config: Optional[KVCacheConfig] = None,
         scheduler_config: Optional[SchedulerConfig] = None,
-        backend: Union[BackendType, str] = BackendType.LLMIR,
+        backend: Optional[Union[BackendType, str]] = None,
     ):
         self.model_path = model_path
         self.engine_config = engine_config or EngineConfig(model_path=model_path)
-        if engine_config is None or backend != BackendType.LLMIR:
+        if backend is not None:
             self.engine_config.backend = _normalize_backend(backend)
         self.cache_config = cache_config or KVCacheConfig()
         self.scheduler_config = scheduler_config or SchedulerConfig()

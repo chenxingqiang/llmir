@@ -20,14 +20,21 @@ python -c "from llmir import PagedKVCache, KVCacheConfig; c = KVCacheConfig(num_
 llmir-benchmark --model llama3-8b --batch-sizes 1,4
 llmir-benchmark --model Qwen/Qwen2-0.5B
 
-# Use vLLM as the optional serving backend (requires vLLM installed separately)
-python -c "from llmir import LLMEngine, SamplingParams; e = LLMEngine.from_pretrained('facebook/opt-125m', backend='vllm'); print(e.generate('Hello', SamplingParams(max_tokens=8))[0].outputs[0].text)"
-
 # List supported models
 llmir-list-models
 
 # Run tests
 pytest tests/ -v
+```
+
+Use vLLM as the optional serving backend (requires vLLM installed separately):
+
+```python
+from llmir import LLMEngine, SamplingParams
+
+engine = LLMEngine.from_pretrained("facebook/opt-125m", backend="vllm")
+outputs = engine.generate("Hello", SamplingParams(max_tokens=8))
+print(outputs[0].outputs[0].text)
 ```
 
 | What | Where |
