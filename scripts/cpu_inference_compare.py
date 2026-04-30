@@ -20,6 +20,7 @@ if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
 from llmir import LLMEngine, SamplingParams  # noqa: E402
+from llmir.serving.config import BackendType  # noqa: E402
 
 
 @dataclass
@@ -156,6 +157,54 @@ def run_vllm_cpu(
     )
 
 
+def run_llmir_vllm_backend(
+    model: str,
+    batch_size: int,
+    prompt_tokens: int,
+    max_tokens: int,
+    warmup: int,
+) -> Optional[BenchmarkResult]:
+    """Benchmark LLMIR's ``LLMEngine`` driving the optional vLLM backend.
+
+    Returns ``None`` when vLLM is not installed so the rest of the comparison
+    can still run on CPU-only environments.
+    """
+    try:
+        import vllm  # noqa: F401
+    except ImportError:
+        return None
+
+    prompts = build_prompts(batch_size, prompt_tokens)
+    params = SamplingParams(max_tokens=max_tokens, temperature=0.0)
+    engine = LLMEngine.from_pretrained(
+        model,
+        backend=BackendType.VLLM,
+        dtype="float32",
+        trust_remote_code=True,
+    )
+
+    for _ in range(warmup):
+        engine.generate(prompts[:1], params, use_tqdm=False)
+
+    elapsed_s, generated_tokens = time_call(
+        lambda: sum(
+            len(output.outputs[0].token_ids)
+            for output in engine.generate(prompts, params, use_tqdm=False)
+        )
+    )
+    engine.shutdown()
+
+    return make_result(
+        "llmir+vllm",
+        model,
+        batch_size,
+        prompt_tokens,
+        generated_tokens,
+        elapsed_s,
+        note="LLMIR LLMEngine with vLLM backend",
+    )
+
+
 def print_results(results: List[BenchmarkResult]) -> None:
     """Print a compact comparison table."""
     print(
@@ -183,6 +232,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=16)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--skip-vllm", action="store_true")
+    parser.add_argument(
+        "--skip-llmir-vllm-backend",
+        action="store_true",
+        help="Skip the LLMIR LLMEngine path that drives the vLLM backend",
+    )
     parser.add_argument("--output", help="Optional JSON output path")
     return parser.parse_args()
 
@@ -212,6 +266,19 @@ def main() -> int:
             print("vLLM is not installed; skipping vLLM CPU baseline.")
         else:
             results.append(vllm_result)
+
+    if not args.skip_llmir_vllm_backend:
+        llmir_vllm_result = run_llmir_vllm_backend(
+            args.model,
+            args.batch_size,
+            args.prompt_tokens,
+            args.max_tokens,
+            args.warmup,
+        )
+        if llmir_vllm_result is None:
+            print("vLLM is not installed; skipping LLMIR+vLLM backend path.")
+        else:
+            results.append(llmir_vllm_result)
 
     print_results(results)
 
