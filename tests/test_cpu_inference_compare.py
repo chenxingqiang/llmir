@@ -56,6 +56,20 @@ def test_llmir_cpu_benchmark_runs_without_vllm():
     assert result.throughput_tokens_s > 0
 
 
+def test_llmir_paged_cpu_returns_none_without_transformers(monkeypatch):
+    """The LLMIR-paged path is skipped when transformers is not installed."""
+    module = load_module()
+    monkeypatch.setitem(sys.modules, "transformers", None)
+    result = module.run_llmir_paged_cpu(
+        model="test-model",
+        batch_size=1,
+        prompt_tokens=4,
+        max_tokens=3,
+        warmup=0,
+    )
+    assert result is None
+
+
 def test_llmir_vllm_backend_returns_none_without_vllm(monkeypatch):
     """The LLMIR+vLLM backend path is skipped when vLLM is not installed."""
     module = load_module()

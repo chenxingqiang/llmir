@@ -1,10 +1,37 @@
 # `cpu_inference_compare.py` — CPU comparison benchmark
 
-Three-way comparison on CPU between:
+Four-way comparison on CPU between:
 
-1. `llmir` — LLMIR's serving/token path (no real model; placeholder)
-2. `vllm` — vLLM's `LLM` engine running directly
-3. `llmir+vllm` — LLMIR's `LLMEngine` driving the optional vLLM backend
+1. `llmir` — LLMIR's built-in scheduler with the placeholder token loop. No
+   real model is executed; this row measures Python serving overhead only and
+   is **not** comparable to the others.
+2. `vllm` — vLLM's `LLM` engine running directly. vLLM owns the KV cache and
+   attention kernels; this is the upstream baseline.
+3. `llmir+vllm` — LLMIR's `LLMEngine` with `backend="vllm"`. This path
+   currently **forwards** to `vllm.LLM.generate()`. LLMIR is *not* in the hot
+   loop, so by construction this row mirrors the `vllm` row to within Python
+   wrapper overhead. Useful to check that the bridge is regression-free; it
+   does **not** reflect any LLMIR optimization.
+4. `llmir-paged` — **Kernel-layer integration.** LLMIR's `LLMEngine` with
+   `backend="llmir_paged"`. Drives a HuggingFace `transformers` model in a
+   manual decode loop where every layer's K/V tensors flow through
+   `llmir.runtime.PagedKVCache` between forward steps. This is the row that
+   actually exercises LLMIR's KV-cache subsystem and where future LLMIR
+   optimizations (paged storage, quantization, prefix sharing, speculative
+   branches) will surface as deltas vs. the `vllm` baseline.
+
+## What each row measures (and what it does *not*)
+
+| Row | Model executor | KV cache subsystem | Useful for |
+|---|---|---|---|
+| `llmir` | none (placeholder) | none | sanity-checking serving plumbing |
+| `vllm` | vLLM | vLLM | upstream baseline |
+| `llmir+vllm` | vLLM | vLLM | regression check on the bridge layer |
+| `llmir-paged` | HF transformers | **LLMIR `PagedKVCache`** | measuring LLMIR KV-cache impact |
+
+The reference numbers further down show `vllm` ≈ `llmir+vllm` to within ~1 %,
+which is *expected*: when LLMIR isn't in the hot loop, there is nothing for
+it to optimize. Use the `llmir-paged` row to evaluate LLMIR's actual impact.
 
 ## Install vLLM on CPU
 
@@ -42,6 +69,14 @@ pip install -r requirements/cpu.txt       --extra-index-url https://download.pyt
 VLLM_TARGET_DEVICE=cpu pip install -v --no-build-isolation .
 ```
 
+The `llmir-paged` row needs `transformers` and `torch` (and is independent of
+vLLM). Install those if you want to run only the kernel-integrated row:
+
+```bash
+pip install --extra-index-url https://download.pytorch.org/whl/cpu \
+    transformers torch
+```
+
 ## Run
 
 ```bash
@@ -49,6 +84,12 @@ PYTHONPATH=src python scripts/cpu_inference_compare.py \
     --model facebook/opt-125m \
     --batch-size 4 --prompt-tokens 32 --max-tokens 32 \
     --warmup 1 --output bench.json
+
+# Skip rows that require missing dependencies:
+PYTHONPATH=src python scripts/cpu_inference_compare.py \
+    --skip-vllm --skip-llmir-vllm-backend          # only llmir + llmir-paged
+PYTHONPATH=src python scripts/cpu_inference_compare.py \
+    --skip-llmir-paged                              # legacy three-way
 ```
 
 When the host has no GPU, vLLM auto-selects `CpuPlatform`. `device_type='cpu'`
@@ -67,6 +108,11 @@ exported to `/tmp/tiny-opt`:
 |     1 |     16 |  16 |       212.26 |             211.38 |   +0.4%  |
 |     4 |     32 | 128 |       616.63 |             612.74 |   +0.6%  |
 |     8 |     64 | 512 |     1,045.87 |           1,085.63 |   −3.7%  |
+
+These are the legacy three-row results; `llmir+vllm` ≈ `vllm` because the bridge
+forwards every call to vLLM. The `llmir-paged` row was added to expose LLMIR's
+KV-cache subsystem on the critical path; capture and report its numbers
+separately when comparing kernel-level optimizations.
 
 The `llmir` row in the JSON file reports the LLMIR serving path's own overhead
 without invoking a real LLM and is **not** comparable to the vLLM rows.

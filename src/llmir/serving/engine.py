@@ -47,7 +47,11 @@ def _normalize_backend(backend: Union[BackendType, str]) -> str:
     """Return a supported backend name."""
     backend_name = backend.value if isinstance(backend, BackendType) else str(backend)
     backend_name = backend_name.lower()
-    if backend_name not in {BackendType.LLMIR.value, BackendType.VLLM.value}:
+    if backend_name not in {
+        BackendType.LLMIR.value,
+        BackendType.VLLM.value,
+        BackendType.LLMIR_PAGED.value,
+    }:
         raise ValueError(f"Unsupported backend: {backend}")
     return backend_name
 
@@ -306,6 +310,9 @@ class LLMEngine:
         self._hf_token: Optional[str] = None
         self._vllm_engine = None
         self._vllm_sampling_params_cls = None
+        # LLMIR_PAGED backend (kernel-layer integration) state
+        self._hf_model: Any = None
+        self._paged_decoder: Any = None
         self._initialized = False
         self.backend = _normalize_backend(
             backend if backend is not None else self.engine_config.backend
@@ -403,6 +410,9 @@ class LLMEngine:
 
         if self.backend == BackendType.VLLM.value:
             return self._generate_vllm(prompts, params)
+
+        if self.backend == BackendType.LLMIR_PAGED.value:
+            return self._generate_llmir_paged(prompts, params)
 
         # Start engine if not running
         if not self._engine.is_running():
@@ -503,6 +513,114 @@ class LLMEngine:
                     outputs=completions,
                     finished=bool(completions)
                     and all(completion.finished for completion in completions),
+                )
+            )
+        return outputs
+
+    def _ensure_llmir_paged(self) -> None:
+        """Load HF transformers model + tokenizer for the LLMIR_PAGED path."""
+
+        if self._paged_decoder is not None:
+            return
+
+        try:
+            from transformers import AutoModelForCausalLM
+        except ImportError as exc:  # pragma: no cover - transformers absent
+            raise ImportError(
+                "backend='llmir_paged' requires the 'transformers' package "
+                "(install llmir[full] or pip install transformers torch)."
+            ) from exc
+
+        from llmir.runtime.paged_decoder import (
+            PagedKVDecoder,
+            kv_config_from_hf_config,
+        )
+
+        self._ensure_tokenizer()
+        if self._tokenizer is None:
+            raise RuntimeError(
+                f"Could not load tokenizer for {self.model_path!r}; "
+                "LLMIR_PAGED backend requires a working HuggingFace tokenizer."
+            )
+
+        load_kwargs: Dict[str, Any] = {
+            "trust_remote_code": self.engine_config.trust_remote_code,
+        }
+        if self._hf_token:
+            load_kwargs["token"] = self._hf_token
+        # Map the engine dtype string to a torch dtype when possible.
+        try:
+            import torch
+
+            dtype_map = {
+                "float32": torch.float32,
+                "float16": torch.float16,
+                "bfloat16": torch.bfloat16,
+                "fp32": torch.float32,
+                "fp16": torch.float16,
+                "bf16": torch.bfloat16,
+            }
+            torch_dtype = dtype_map.get(self.engine_config.dtype.lower())
+            if torch_dtype is not None:
+                load_kwargs["torch_dtype"] = torch_dtype
+        except ImportError:
+            pass
+
+        model = AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
+        model.eval()
+        self._hf_model = model
+
+        # Honour the user-provided cache_config when its layer count matches
+        # the model; otherwise derive a fresh one from the HF config so the
+        # PagedKVCache is sized correctly.
+        kv_config = kv_config_from_hf_config(
+            getattr(model, "config", None) or type("_C", (), {})(),
+            dtype=self.engine_config.dtype,
+        )
+        if (
+            self.cache_config is not None
+            and self.cache_config.num_layers == kv_config.num_layers
+            and self.cache_config.num_heads == kv_config.num_heads
+            and self.cache_config.head_dim == kv_config.head_dim
+        ):
+            kv_config = self.cache_config
+
+        self._paged_decoder = PagedKVDecoder(
+            model,
+            self._tokenizer,
+            kv_config=kv_config,
+        )
+
+    def _generate_llmir_paged(
+        self, prompts: List[str], sampling_params: SamplingParams
+    ) -> List[RequestOutput]:
+        """Run the kernel-integrated decode loop and shape outputs."""
+
+        self._ensure_llmir_paged()
+        assert self._paged_decoder is not None  # for type-checkers
+
+        stop_token_ids = list(sampling_params.stop_token_ids or ())
+        results = self._paged_decoder.decode(
+            prompts,
+            max_new_tokens=sampling_params.max_tokens,
+            stop_token_ids=stop_token_ids,
+        )
+
+        outputs: List[RequestOutput] = []
+        for index, (prompt, decoded) in enumerate(zip(prompts, results)):
+            completion = CompletionOutput(
+                text=decoded.text,
+                token_ids=list(decoded.generated_token_ids),
+                finished=True,
+                finish_reason=decoded.finish_reason,
+            )
+            outputs.append(
+                RequestOutput(
+                    request_id=str(index),
+                    prompt=prompt,
+                    prompt_token_ids=list(decoded.prompt_token_ids),
+                    outputs=[completion],
+                    finished=True,
                 )
             )
         return outputs

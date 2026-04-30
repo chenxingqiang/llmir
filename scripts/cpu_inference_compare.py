@@ -204,6 +204,62 @@ def run_llmir_vllm_backend(
     )
 
 
+def run_llmir_paged_cpu(
+    model: str,
+    batch_size: int,
+    prompt_tokens: int,
+    max_tokens: int,
+    warmup: int,
+) -> Optional[BenchmarkResult]:
+    """Benchmark the LLMIR kernel-integrated paged-KV-cache path.
+
+    This is the path that actually exercises ``llmir.runtime.PagedKVCache``:
+    every layer's K/V flows through LLMIR between forward steps. Unlike the
+    pass-through ``llmir+vllm`` row, differences between this row and the raw
+    ``vllm`` row reflect the cost / benefit of LLMIR's KV-cache subsystem
+    being on the critical path.
+
+    Returns ``None`` when transformers / torch are unavailable so the rest of
+    the comparison can still run.
+    """
+
+    try:
+        import torch  # noqa: F401
+        import transformers  # noqa: F401
+    except ImportError:
+        return None
+
+    prompts = build_prompts(batch_size, prompt_tokens)
+    params = SamplingParams(max_tokens=max_tokens, temperature=0.0)
+    engine = LLMEngine.from_pretrained(
+        model,
+        backend=BackendType.LLMIR_PAGED,
+        dtype="float32",
+        trust_remote_code=True,
+    )
+
+    for _ in range(warmup):
+        engine.generate(prompts[:1], params, use_tqdm=False)
+
+    elapsed_s, generated_tokens = time_call(
+        lambda: sum(
+            len(output.outputs[0].token_ids)
+            for output in engine.generate(prompts, params, use_tqdm=False)
+        )
+    )
+    engine.shutdown()
+
+    return make_result(
+        "llmir-paged",
+        model,
+        batch_size,
+        prompt_tokens,
+        generated_tokens,
+        elapsed_s,
+        note="LLMIR kernel-integrated path (PagedKVCache in the loop)",
+    )
+
+
 def print_results(results: List[BenchmarkResult]) -> None:
     """Print a compact comparison table."""
     print(
@@ -235,6 +291,14 @@ def parse_args() -> argparse.Namespace:
         "--skip-llmir-vllm-backend",
         action="store_true",
         help="Skip the LLMIR LLMEngine path that drives the vLLM backend",
+    )
+    parser.add_argument(
+        "--skip-llmir-paged",
+        action="store_true",
+        help=(
+            "Skip the LLMIR kernel-integrated path "
+            "(PagedKVCache substituted for the model's default cache)"
+        ),
     )
     parser.add_argument("--output", help="Optional JSON output path")
     return parser.parse_args()
@@ -278,6 +342,22 @@ def main() -> int:
             print("vLLM is not installed; skipping LLMIR+vLLM backend path.")
         else:
             results.append(llmir_vllm_result)
+
+    if not args.skip_llmir_paged:
+        llmir_paged_result = run_llmir_paged_cpu(
+            args.model,
+            args.batch_size,
+            args.prompt_tokens,
+            args.max_tokens,
+            args.warmup,
+        )
+        if llmir_paged_result is None:
+            print(
+                "transformers/torch not installed; "
+                "skipping LLMIR kernel-integrated path."
+            )
+        else:
+            results.append(llmir_paged_result)
 
     print_results(results)
 

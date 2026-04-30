@@ -37,6 +37,21 @@ outputs = engine.generate("Hello", SamplingParams(max_tokens=8))
 print(outputs[0].outputs[0].text)
 ```
 
+> ℹ️ The `vllm` backend simply forwards to `vllm.LLM.generate()` — vLLM owns
+> KV cache and attention kernels, and LLMIR is not in the hot loop. To put
+> LLMIR's KV-cache subsystem **on the critical path** at the kernel layer,
+> use the `llmir_paged` backend instead (requires `transformers` + `torch`):
+>
+> ```python
+> engine = LLMEngine.from_pretrained("facebook/opt-125m", backend="llmir_paged")
+> outputs = engine.generate("Hello", SamplingParams(max_tokens=8))
+> ```
+>
+> This drives a HuggingFace `transformers` model in a manual decode loop
+> where every layer's K/V flows through `llmir.runtime.PagedKVCache`
+> between forward steps. See [`scripts/cpu_inference_compare.README.md`](./scripts/cpu_inference_compare.README.md)
+> for the four-row CPU benchmark and what each row measures.
+
 | What | Where |
 |------|-------|
 | Python package | `src/llmir/` |

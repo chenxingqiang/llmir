@@ -29,10 +29,24 @@ class RequestPriority(Enum):
 
 
 class BackendType(Enum):
-    """Supported serving backends."""
+    """Supported serving backends.
+
+    Values:
+        LLMIR: Built-in LLMIR scheduler (placeholder token loop; useful as a
+            no-model smoke path).
+        VLLM: Forward to ``vllm.LLM.generate()`` unchanged. vLLM owns the
+            KV cache and attention kernels on this path; LLMIR is not in the
+            hot loop. Kept for compatibility and as a baseline.
+        LLMIR_PAGED: Kernel-layer integration. The model executor (HuggingFace
+            transformers) runs forward, but every layer's K/V tensors are
+            routed through ``llmir.runtime.PagedKVCache`` via a manual decode
+            loop. This is the path that actually exercises LLMIR's KV-cache
+            subsystem and is the right target for measuring LLMIR optimization.
+    """
 
     LLMIR = "llmir"
     VLLM = "vllm"
+    LLMIR_PAGED = "llmir_paged"
 
 
 @dataclass
