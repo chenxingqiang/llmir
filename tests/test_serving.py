@@ -286,6 +286,9 @@ class TestLLMEngine:
             "hello",
             SamplingParams(max_tokens=2, stop=["END"], stop_token_ids=[99]),
         )
+        assert FakeLLM.sampling_kwargs is not None
+        assert "stop" in FakeLLM.sampling_kwargs
+        assert "stop_token_ids" in FakeLLM.sampling_kwargs
         assert FakeLLM.sampling_kwargs["stop"] == ["END"]
         assert FakeLLM.sampling_kwargs["stop_token_ids"] == [99]
 

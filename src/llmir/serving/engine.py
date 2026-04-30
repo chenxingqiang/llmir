@@ -319,6 +319,8 @@ class LLMEngine:
         tensor_parallel_size: int = 1,
         dtype: str = "float16",
         gpu_memory_utilization: float = 0.9,
+        max_model_len: Optional[int] = None,
+        trust_remote_code: bool = False,
         cache_config: Optional[KVCacheConfig] = None,
         token: Optional[str] = None,
         backend: Union[BackendType, str] = BackendType.LLMIR,
@@ -336,6 +338,8 @@ class LLMEngine:
             tensor_parallel_size: Number of GPUs
             dtype: Data type
             gpu_memory_utilization: GPU memory utilization
+            max_model_len: Maximum model context length
+            trust_remote_code: Allow remote model code
             cache_config: Optional KV cache config (auto-detected from HF if omitted)
             token: HuggingFace token for gated models (optional)
             backend: Serving backend to use ("llmir" or "vllm")
@@ -345,8 +349,6 @@ class LLMEngine:
             Initialized LLMEngine
         """
         backend_name = _normalize_backend(backend)
-        max_model_len = kwargs.pop("max_model_len", None)
-        trust_remote_code = kwargs.pop("trust_remote_code", False)
         engine_config = EngineConfig(
             model_path=model_name_or_path,
             tensor_parallel_size=tensor_parallel_size,
