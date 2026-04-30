@@ -267,6 +267,8 @@ class LLMEngine:
         engine_config: Engine configuration
         cache_config: KV cache configuration
         scheduler_config: Scheduler configuration
+        backend: Serving backend. Takes precedence over engine_config.backend when
+            provided as a non-default value.
 
     Example:
         >>> engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")

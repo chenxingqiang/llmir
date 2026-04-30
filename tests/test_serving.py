@@ -281,6 +281,13 @@ class TestLLMEngine:
         assert outputs[0].outputs[0].token_ids == [10, 11]
         assert outputs[0].finished
 
+        engine.generate(
+            "hello",
+            SamplingParams(max_tokens=2, stop=["END"], stop_token_ids=[99]),
+        )
+        assert FakeLLM.sampling_kwargs["stop"] == ["END"]
+        assert FakeLLM.sampling_kwargs["stop_token_ids"] == [99]
+
     def test_generate_single(self):
         """Test generating from single prompt."""
         engine = LLMEngine(model_path="test-model")
