@@ -130,7 +130,6 @@ def run_vllm_cpu(
     sampling_params = VLLMSamplingParams(max_tokens=max_tokens, temperature=0.0)
     llm = LLM(
         model=model,
-        device="cpu",
         dtype="float32",
         trust_remote_code=True,
         enforce_eager=True,
