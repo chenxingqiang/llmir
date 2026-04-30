@@ -73,6 +73,7 @@ from llmir.runtime.kv_cache import (
     SpeculativeKVCache,
 )
 from llmir.serving.config import (
+    BackendType,
     RequestPriority,
     SamplingParams,
     SchedulerConfig,
@@ -115,6 +116,7 @@ __all__ = [
     "SchedulerConfig",
     "SchedulingPolicy",
     "RequestPriority",
+    "BackendType",
     # Profiling
     "Profiler",
     "MemoryProfiler",

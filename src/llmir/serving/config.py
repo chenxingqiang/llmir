@@ -28,6 +28,13 @@ class RequestPriority(Enum):
     URGENT = 3
 
 
+class BackendType(Enum):
+    """Supported serving backends."""
+
+    LLMIR = "llmir"
+    VLLM = "vllm"
+
+
 @dataclass
 class SamplingParams:
     """
@@ -153,6 +160,7 @@ class EngineConfig:
     gpu_memory_utilization: float = 0.9
     max_model_len: Optional[int] = None
     trust_remote_code: bool = False
+    backend: str = BackendType.LLMIR.value
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -164,4 +172,5 @@ class EngineConfig:
             "gpu_memory_utilization": self.gpu_memory_utilization,
             "max_model_len": self.max_model_len,
             "trust_remote_code": self.trust_remote_code,
+            "backend": self.backend,
         }

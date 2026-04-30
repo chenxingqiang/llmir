@@ -20,6 +20,9 @@ python -c "from llmir import PagedKVCache, KVCacheConfig; c = KVCacheConfig(num_
 llmir-benchmark --model llama3-8b --batch-sizes 1,4
 llmir-benchmark --model Qwen/Qwen2-0.5B
 
+# Use vLLM as the optional serving backend (requires vLLM installed separately)
+python -c "from llmir import LLMEngine, SamplingParams; e = LLMEngine.from_pretrained('facebook/opt-125m', backend='vllm'); print(e.generate('Hello', SamplingParams(max_tokens=8))[0].outputs[0].text)"
+
 # List supported models
 llmir-list-models
 
@@ -455,6 +458,10 @@ outputs = engine.generate(
     SamplingParams(max_tokens=100, temperature=0.7)
 )
 
+# Optional vLLM backend for real vLLM execution
+vllm_engine = LLMEngine.from_pretrained("facebook/opt-125m", backend="vllm")
+vllm_outputs = vllm_engine.generate("Hello!", SamplingParams(max_tokens=32))
+
 # Performance profiling
 profiler = Profiler()
 profiler.start()
@@ -681,4 +688,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the Apache License 2.0 with LLVM Exceptions - see the LICENSE.TXT file for details.
-

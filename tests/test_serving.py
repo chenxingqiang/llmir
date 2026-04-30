@@ -1,10 +1,14 @@
 """Tests for LLMIR serving components."""
 
+import sys
+import types
+
 import pytest
 
 from llmir.runtime.config import KVCacheConfig
 from llmir.runtime.kv_cache import PagedKVCache
 from llmir.serving.config import (
+    BackendType,
     SamplingParams,
     SchedulerConfig,
     SchedulingPolicy,
@@ -190,6 +194,68 @@ class TestLLMEngine:
 
         assert engine.engine_config.tensor_parallel_size == 2
         assert engine.engine_config.dtype == "bfloat16"
+
+    def test_from_pretrained_vllm_backend(self):
+        """Test creating an engine that targets the optional vLLM backend."""
+        engine = LLMEngine.from_pretrained("test-model", backend=BackendType.VLLM)
+
+        assert engine.backend == "vllm"
+        assert engine.engine_config.backend == "vllm"
+
+    def test_generate_vllm_backend(self, monkeypatch):
+        """Test vLLM backend generation with a fake vLLM module."""
+
+        class FakeVLLMSamplingParams:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        class FakeCompletion:
+            text = "fake completion"
+            token_ids = [10, 11]
+            finish_reason = "length"
+            logprobs = None
+            cumulative_logprob = 0.0
+
+        class FakeRequestOutput:
+            prompt = "hello"
+            prompt_token_ids = [1]
+            outputs = [FakeCompletion()]
+
+        class FakeLLM:
+            init_kwargs = None
+            sampling_kwargs = None
+
+            def __init__(self, **kwargs):
+                FakeLLM.init_kwargs = kwargs
+
+            def generate(self, prompts, sampling_params):
+                FakeLLM.sampling_kwargs = sampling_params.kwargs
+                assert prompts == ["hello"]
+                return [FakeRequestOutput()]
+
+        fake_vllm = types.ModuleType("vllm")
+        fake_vllm.LLM = FakeLLM
+        fake_vllm.SamplingParams = FakeVLLMSamplingParams
+        monkeypatch.setitem(sys.modules, "vllm", fake_vllm)
+
+        engine = LLMEngine.from_pretrained(
+            "test-model",
+            backend="vllm",
+            dtype="float32",
+            tensor_parallel_size=2,
+        )
+        outputs = engine.generate("hello", SamplingParams(max_tokens=2, stop=[]))
+
+        assert FakeLLM.init_kwargs["model"] == "test-model"
+        assert FakeLLM.init_kwargs["tensor_parallel_size"] == 2
+        assert FakeLLM.init_kwargs["dtype"] == "float32"
+        assert FakeLLM.sampling_kwargs["max_tokens"] == 2
+        assert "stop" not in FakeLLM.sampling_kwargs
+        assert len(outputs) == 1
+        assert outputs[0].prompt == "hello"
+        assert outputs[0].outputs[0].text == "fake completion"
+        assert outputs[0].outputs[0].token_ids == [10, 11]
+        assert outputs[0].finished
 
     def test_generate_single(self):
         """Test generating from single prompt."""
