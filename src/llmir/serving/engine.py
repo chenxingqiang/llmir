@@ -287,11 +287,11 @@ class LLMEngine:
         engine_config: Optional[EngineConfig] = None,
         cache_config: Optional[KVCacheConfig] = None,
         scheduler_config: Optional[SchedulerConfig] = None,
-        backend: Optional[Union[BackendType, str]] = None,
+        backend: Union[BackendType, str] = BackendType.LLMIR,
     ):
         self.model_path = model_path
         self.engine_config = engine_config or EngineConfig(model_path=model_path)
-        if backend is not None:
+        if engine_config is None or backend != BackendType.LLMIR:
             self.engine_config.backend = _normalize_backend(backend)
         self.cache_config = cache_config or KVCacheConfig()
         self.scheduler_config = scheduler_config or SchedulerConfig()
@@ -455,10 +455,10 @@ class LLMEngine:
         """Convert LLMIR sampling parameters to vLLM sampling parameters."""
         self._ensure_vllm()
         kwargs = params.to_dict()
-        if not kwargs["stop"]:
-            kwargs.pop("stop")
-        if not kwargs["stop_token_ids"]:
-            kwargs.pop("stop_token_ids")
+        if not kwargs.get("stop"):
+            kwargs.pop("stop", None)
+        if not kwargs.get("stop_token_ids"):
+            kwargs.pop("stop_token_ids", None)
         return self._vllm_sampling_params_cls(**kwargs)
 
     def _generate_vllm(

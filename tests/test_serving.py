@@ -9,6 +9,7 @@ from llmir.runtime.config import KVCacheConfig
 from llmir.runtime.kv_cache import PagedKVCache
 from llmir.serving.config import (
     BackendType,
+    EngineConfig,
     SamplingParams,
     SchedulerConfig,
     SchedulingPolicy,
@@ -192,6 +193,13 @@ class TestLLMEngine:
 
         assert engine.backend == "vllm"
 
+    def test_create_engine_preserves_configured_backend(self):
+        """Test engine creation preserves EngineConfig backend."""
+        engine_config = EngineConfig(model_path="test-model", backend="vllm")
+        engine = LLMEngine(model_path="test-model", engine_config=engine_config)
+
+        assert engine.backend == "vllm"
+
     def test_create_engine_with_invalid_backend(self):
         """Test invalid backend validation."""
         with pytest.raises(ValueError, match="Unsupported backend"):
@@ -266,6 +274,7 @@ class TestLLMEngine:
         assert FakeLLM.init_kwargs["trust_remote_code"] is True
         assert FakeLLM.sampling_kwargs["max_tokens"] == 2
         assert "stop" not in FakeLLM.sampling_kwargs
+        assert "stop_token_ids" not in FakeLLM.sampling_kwargs
         assert len(outputs) == 1
         assert outputs[0].prompt == "hello"
         assert outputs[0].outputs[0].text == "fake completion"
