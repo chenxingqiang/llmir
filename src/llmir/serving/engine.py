@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from llmir.runtime.config import KVCacheConfig
 from llmir.runtime.kv_cache import PagedKVCache
 from llmir.serving.config import (
+    BackendType,
     EngineConfig,
     RequestPriority,
     SamplingParams,
@@ -40,6 +41,19 @@ class RequestOutput:
     outputs: List[CompletionOutput]
     finished: bool
     metrics: Optional[Dict[str, float]] = None
+
+
+def _normalize_backend(backend: Union[BackendType, str]) -> str:
+    """Return a supported backend name."""
+    backend_name = backend.value if isinstance(backend, BackendType) else str(backend)
+    backend_name = backend_name.lower()
+    if backend_name not in {
+        BackendType.LLMIR.value,
+        BackendType.VLLM.value,
+        BackendType.LLMIR_PAGED.value,
+    }:
+        raise ValueError(f"Unsupported backend: {backend}")
+    return backend_name
 
 
 class ContinuousBatchingEngine:
@@ -254,9 +268,14 @@ class LLMEngine:
 
     Args:
         model_path: Path to the model
-        engine_config: Engine configuration
-        cache_config: KV cache configuration
-        scheduler_config: Scheduler configuration
+        engine_config: Optional engine configuration. If omitted, a default
+            EngineConfig is created from model_path.
+        cache_config: Optional KV cache configuration. If omitted, a default
+            KVCacheConfig is used.
+        scheduler_config: Optional scheduler configuration. If omitted, a
+            default SchedulerConfig is used.
+        backend: Optional serving backend override. If omitted,
+            engine_config.backend is used.
 
     Example:
         >>> engine = LLMEngine.from_pretrained("meta-llama/Llama-3.1-8B")
@@ -277,6 +296,7 @@ class LLMEngine:
         engine_config: Optional[EngineConfig] = None,
         cache_config: Optional[KVCacheConfig] = None,
         scheduler_config: Optional[SchedulerConfig] = None,
+        backend: Optional[Union[BackendType, str]] = None,
     ):
         self.model_path = model_path
         self.engine_config = engine_config or EngineConfig(model_path=model_path)
@@ -288,7 +308,16 @@ class LLMEngine:
         self._tokenizer = None
         self._tokenizer_attempted = False
         self._hf_token: Optional[str] = None
+        self._vllm_engine = None
+        self._vllm_sampling_params_cls = None
+        # LLMIR_PAGED backend (kernel-layer integration) state
+        self._hf_model: Any = None
+        self._paged_decoder: Any = None
         self._initialized = False
+        self.backend = _normalize_backend(
+            backend if backend is not None else self.engine_config.backend
+        )
+        self.engine_config.backend = self.backend
 
     @classmethod
     def from_pretrained(
@@ -297,8 +326,11 @@ class LLMEngine:
         tensor_parallel_size: int = 1,
         dtype: str = "float16",
         gpu_memory_utilization: float = 0.9,
+        max_model_len: Optional[int] = None,
+        trust_remote_code: bool = False,
         cache_config: Optional[KVCacheConfig] = None,
         token: Optional[str] = None,
+        backend: Union[BackendType, str] = BackendType.LLMIR,
         **kwargs,
     ) -> "LLMEngine":
         """
@@ -313,18 +345,25 @@ class LLMEngine:
             tensor_parallel_size: Number of GPUs
             dtype: Data type
             gpu_memory_utilization: GPU memory utilization
+            max_model_len: Maximum model context length
+            trust_remote_code: Allow remote model code
             cache_config: Optional KV cache config (auto-detected from HF if omitted)
             token: HuggingFace token for gated models (optional)
+            backend: Serving backend to use ("llmir" or "vllm")
             **kwargs: Additional arguments (scheduler_config, etc.)
 
         Returns:
             Initialized LLMEngine
         """
+        backend_name = _normalize_backend(backend)
         engine_config = EngineConfig(
             model_path=model_name_or_path,
             tensor_parallel_size=tensor_parallel_size,
             dtype=dtype,
             gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            trust_remote_code=trust_remote_code,
+            backend=backend_name,
         )
 
         # Auto-configure KV cache from HuggingFace when not provided
@@ -369,6 +408,12 @@ class LLMEngine:
 
         params = sampling_params or SamplingParams()
 
+        if self.backend == BackendType.VLLM.value:
+            return self._generate_vllm(prompts, params)
+
+        if self.backend == BackendType.LLMIR_PAGED.value:
+            return self._generate_llmir_paged(prompts, params)
+
         # Start engine if not running
         if not self._engine.is_running():
             self._engine.start()
@@ -394,6 +439,190 @@ class LLMEngine:
                     completion.text = self._detokenize(completion.token_ids)
                 outputs.append(output)
 
+        return outputs
+
+    def _ensure_vllm(self) -> None:
+        """Load and initialize vLLM lazily."""
+        if self._vllm_engine is not None:
+            return
+
+        try:
+            from vllm import LLM
+            from vllm import SamplingParams as VLLMSamplingParams
+        except ImportError as exc:
+            raise ImportError(
+                "vLLM backend requested but vllm is not installed. "
+                "Install vLLM separately to use backend='vllm'."
+            ) from exc
+
+        vllm_kwargs: Dict[str, Any] = {
+            "model": self.model_path,
+            "tensor_parallel_size": self.engine_config.tensor_parallel_size,
+            "dtype": self.engine_config.dtype,
+            "gpu_memory_utilization": self.engine_config.gpu_memory_utilization,
+            "trust_remote_code": self.engine_config.trust_remote_code,
+        }
+        if self.engine_config.max_model_len is not None:
+            vllm_kwargs["max_model_len"] = self.engine_config.max_model_len
+
+        self._vllm_engine = LLM(**vllm_kwargs)
+        self._vllm_sampling_params_cls = VLLMSamplingParams
+
+    def _to_vllm_sampling_params(self, params: SamplingParams) -> Any:
+        """Convert LLMIR sampling parameters to vLLM sampling parameters."""
+        self._ensure_vllm()
+        kwargs = params.to_dict()
+        if not kwargs.get("stop"):
+            kwargs.pop("stop", None)
+        if not kwargs.get("stop_token_ids"):
+            kwargs.pop("stop_token_ids", None)
+        return self._vllm_sampling_params_cls(**kwargs)
+
+    def _generate_vllm(
+        self, prompts: List[str], sampling_params: SamplingParams
+    ) -> List[RequestOutput]:
+        """Generate completions through vLLM and normalize outputs."""
+        self._ensure_vllm()
+        vllm_params = self._to_vllm_sampling_params(sampling_params)
+        vllm_outputs = self._vllm_engine.generate(prompts, vllm_params)
+
+        outputs = []
+        for index, output in enumerate(vllm_outputs):
+            prompt = getattr(output, "prompt", prompts[index])
+            prompt_token_ids = list(getattr(output, "prompt_token_ids", []))
+            completions = []
+            for completion in getattr(output, "outputs", []):
+                finish_reason = getattr(completion, "finish_reason", "") or ""
+                completions.append(
+                    CompletionOutput(
+                        text=getattr(completion, "text", ""),
+                        token_ids=list(getattr(completion, "token_ids", [])),
+                        finished=bool(finish_reason),
+                        finish_reason=finish_reason,
+                        logprobs=getattr(completion, "logprobs", None),
+                        cumulative_logprob=getattr(
+                            completion, "cumulative_logprob", 0.0
+                        ),
+                    )
+                )
+            outputs.append(
+                RequestOutput(
+                    request_id=str(index),
+                    prompt=prompt,
+                    prompt_token_ids=prompt_token_ids,
+                    outputs=completions,
+                    finished=bool(completions)
+                    and all(completion.finished for completion in completions),
+                )
+            )
+        return outputs
+
+    def _ensure_llmir_paged(self) -> None:
+        """Load HF transformers model + tokenizer for the LLMIR_PAGED path."""
+
+        if self._paged_decoder is not None:
+            return
+
+        try:
+            from transformers import AutoModelForCausalLM
+        except ImportError as exc:  # pragma: no cover - transformers absent
+            raise ImportError(
+                "backend='llmir_paged' requires the 'transformers' package "
+                "(install llmir[full] or pip install transformers torch)."
+            ) from exc
+
+        from llmir.runtime.paged_decoder import (
+            PagedKVDecoder,
+            kv_config_from_hf_config,
+        )
+
+        self._ensure_tokenizer()
+        if self._tokenizer is None:
+            raise RuntimeError(
+                f"Could not load tokenizer for {self.model_path!r}; "
+                "LLMIR_PAGED backend requires a working HuggingFace tokenizer."
+            )
+
+        load_kwargs: Dict[str, Any] = {
+            "trust_remote_code": self.engine_config.trust_remote_code,
+        }
+        if self._hf_token:
+            load_kwargs["token"] = self._hf_token
+        # Map the engine dtype string to a torch dtype when possible.
+        try:
+            import torch
+
+            dtype_map = {
+                "float32": torch.float32,
+                "float16": torch.float16,
+                "bfloat16": torch.bfloat16,
+                "fp32": torch.float32,
+                "fp16": torch.float16,
+                "bf16": torch.bfloat16,
+            }
+            torch_dtype = dtype_map.get(self.engine_config.dtype.lower())
+            if torch_dtype is not None:
+                load_kwargs["torch_dtype"] = torch_dtype
+        except ImportError:
+            pass
+
+        model = AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
+        model.eval()
+        self._hf_model = model
+
+        # Honour the user-provided cache_config when its layer count matches
+        # the model; otherwise derive a fresh one from the HF config so the
+        # PagedKVCache is sized correctly.
+        kv_config = kv_config_from_hf_config(
+            getattr(model, "config", None) or type("_C", (), {})(),
+            dtype=self.engine_config.dtype,
+        )
+        if (
+            self.cache_config is not None
+            and self.cache_config.num_layers == kv_config.num_layers
+            and self.cache_config.num_heads == kv_config.num_heads
+            and self.cache_config.head_dim == kv_config.head_dim
+        ):
+            kv_config = self.cache_config
+
+        self._paged_decoder = PagedKVDecoder(
+            model,
+            self._tokenizer,
+            kv_config=kv_config,
+        )
+
+    def _generate_llmir_paged(
+        self, prompts: List[str], sampling_params: SamplingParams
+    ) -> List[RequestOutput]:
+        """Run the kernel-integrated decode loop and shape outputs."""
+
+        self._ensure_llmir_paged()
+        assert self._paged_decoder is not None  # for type-checkers
+
+        stop_token_ids = list(sampling_params.stop_token_ids or ())
+        results = self._paged_decoder.decode(
+            prompts,
+            max_new_tokens=sampling_params.max_tokens,
+            stop_token_ids=stop_token_ids,
+        )
+
+        outputs: List[RequestOutput] = []
+        for index, (prompt, decoded) in enumerate(zip(prompts, results)):
+            completion = CompletionOutput(
+                text=decoded.text,
+                token_ids=list(decoded.generated_token_ids),
+                finished=True,
+                finish_reason=decoded.finish_reason,
+            )
+            outputs.append(
+                RequestOutput(
+                    request_id=str(index),
+                    prompt=prompt,
+                    prompt_token_ids=list(decoded.prompt_token_ids),
+                    outputs=[completion],
+                    finished=True,
+                )
+            )
         return outputs
 
     def _ensure_tokenizer(self) -> None:

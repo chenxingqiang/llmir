@@ -5,6 +5,7 @@ Production-ready serving components for LLM inference.
 """
 
 from llmir.serving.config import (
+    BackendType,
     RequestPriority,
     SamplingParams,
     SchedulerConfig,
@@ -22,4 +23,5 @@ __all__ = [
     "SchedulerConfig",
     "SchedulingPolicy",
     "RequestPriority",
+    "BackendType",
 ]

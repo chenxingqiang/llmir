@@ -1,10 +1,15 @@
 """Tests for LLMIR serving components."""
 
+import sys
+import types
+
 import pytest
 
 from llmir.runtime.config import KVCacheConfig
 from llmir.runtime.kv_cache import PagedKVCache
 from llmir.serving.config import (
+    BackendType,
+    EngineConfig,
     SamplingParams,
     SchedulerConfig,
     SchedulingPolicy,
@@ -182,6 +187,24 @@ class TestLLMEngine:
 
         assert engine.model_path == "test-model"
 
+    def test_create_engine_with_backend(self):
+        """Test engine creation with an explicit backend."""
+        engine = LLMEngine(model_path="test-model", backend="vllm")
+
+        assert engine.backend == "vllm"
+
+    def test_create_engine_preserves_configured_backend(self):
+        """Test engine creation preserves EngineConfig backend."""
+        engine_config = EngineConfig(model_path="test-model", backend="vllm")
+        engine = LLMEngine(model_path="test-model", engine_config=engine_config)
+
+        assert engine.backend == "vllm"
+
+    def test_create_engine_with_invalid_backend(self):
+        """Test invalid backend validation."""
+        with pytest.raises(ValueError, match="Unsupported backend"):
+            LLMEngine(model_path="test-model", backend="unknown")
+
     def test_from_pretrained(self):
         """Test from_pretrained factory method."""
         engine = LLMEngine.from_pretrained(
@@ -190,6 +213,84 @@ class TestLLMEngine:
 
         assert engine.engine_config.tensor_parallel_size == 2
         assert engine.engine_config.dtype == "bfloat16"
+
+    def test_from_pretrained_vllm_backend(self):
+        """Test creating an engine that targets the optional vLLM backend."""
+        engine = LLMEngine.from_pretrained("test-model", backend=BackendType.VLLM)
+
+        assert engine.backend == "vllm"
+        assert engine.engine_config.backend == "vllm"
+
+    def test_generate_vllm_backend(self, monkeypatch):
+        """Test vLLM backend generation with a fake vLLM module."""
+
+        class FakeVLLMSamplingParams:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        class FakeCompletion:
+            text = "fake completion"
+            token_ids = [10, 11]
+            finish_reason = "length"
+            logprobs = None
+            cumulative_logprob = 0.0
+
+        class FakeRequestOutput:
+            prompt = "hello"
+            prompt_token_ids = [1]
+            outputs = [FakeCompletion()]
+
+        class FakeLLM:
+            init_kwargs = None
+            sampling_kwargs = None
+
+            def __init__(self, **kwargs):
+                FakeLLM.init_kwargs = kwargs
+
+            def generate(self, prompts, sampling_params):
+                FakeLLM.sampling_kwargs = sampling_params.kwargs
+                assert prompts == ["hello"]
+                return [FakeRequestOutput()]
+
+        fake_vllm = types.ModuleType("vllm")
+        fake_vllm.LLM = FakeLLM
+        fake_vllm.SamplingParams = FakeVLLMSamplingParams
+        monkeypatch.setitem(sys.modules, "vllm", fake_vllm)
+
+        engine = LLMEngine.from_pretrained(
+            "test-model",
+            backend="vllm",
+            dtype="float32",
+            tensor_parallel_size=2,
+            max_model_len=128,
+            trust_remote_code=True,
+        )
+        outputs = engine.generate("hello", SamplingParams(max_tokens=2, stop=[]))
+
+        assert FakeLLM.init_kwargs["model"] == "test-model"
+        assert FakeLLM.init_kwargs["tensor_parallel_size"] == 2
+        assert FakeLLM.init_kwargs["dtype"] == "float32"
+        assert FakeLLM.init_kwargs["max_model_len"] == 128
+        assert FakeLLM.init_kwargs["trust_remote_code"] is True
+        assert FakeLLM.sampling_kwargs["max_tokens"] == 2
+        assert "stop" not in FakeLLM.sampling_kwargs
+        assert "stop_token_ids" not in FakeLLM.sampling_kwargs
+        assert len(outputs) == 1
+        assert outputs[0].prompt == "hello"
+        assert outputs[0].outputs[0].text == "fake completion"
+        assert outputs[0].outputs[0].token_ids == [10, 11]
+        assert outputs[0].finished
+
+        FakeLLM.sampling_kwargs = None
+        engine.generate(
+            "hello",
+            SamplingParams(max_tokens=2, stop=["END"], stop_token_ids=[99]),
+        )
+        assert FakeLLM.sampling_kwargs is not None
+        assert "stop" in FakeLLM.sampling_kwargs
+        assert "stop_token_ids" in FakeLLM.sampling_kwargs
+        assert FakeLLM.sampling_kwargs["stop"] == ["END"]
+        assert FakeLLM.sampling_kwargs["stop_token_ids"] == [99]
 
     def test_generate_single(self):
         """Test generating from single prompt."""

@@ -18,6 +18,11 @@ from llmir.runtime.kv_cache import (
     QuantizedKVCache,
     SpeculativeKVCache,
 )
+from llmir.runtime.paged_decoder import (
+    DecodeResult,
+    PagedKVDecoder,
+    kv_config_from_hf_config,
+)
 
 __all__ = [
     "PagedKVCache",
@@ -30,4 +35,7 @@ __all__ = [
     "QuantizationType",
     "ShardingStrategy",
     "SpeculativeConfig",
+    "PagedKVDecoder",
+    "DecodeResult",
+    "kv_config_from_hf_config",
 ]

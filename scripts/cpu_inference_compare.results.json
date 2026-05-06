@@ -1,0 +1,101 @@
+[
+  {
+    "engine": "llmir",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 1,
+    "prompt_tokens": 16,
+    "generated_tokens": 16,
+    "elapsed_s": 0.0001545530003568274,
+    "throughput_tokens_s": 103524.35710118647,
+    "latency_ms_per_token": 0.009659562522301712,
+    "note": "LLMIR serving/token path on CPU"
+  },
+  {
+    "engine": "vllm",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 1,
+    "prompt_tokens": 16,
+    "generated_tokens": 16,
+    "elapsed_s": 0.07537750600022264,
+    "throughput_tokens_s": 212.26491627293615,
+    "latency_ms_per_token": 4.711094125013915,
+    "note": "vLLM CPU baseline"
+  },
+  {
+    "engine": "llmir+vllm",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 1,
+    "prompt_tokens": 16,
+    "generated_tokens": 16,
+    "elapsed_s": 0.07569277499987948,
+    "throughput_tokens_s": 211.38080880276192,
+    "latency_ms_per_token": 4.730798437492467,
+    "note": "LLMIR LLMEngine with vLLM backend"
+  },
+  {
+    "engine": "llmir",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 4,
+    "prompt_tokens": 32,
+    "generated_tokens": 128,
+    "elapsed_s": 0.0007313200003409293,
+    "throughput_tokens_s": 175025.98033737423,
+    "latency_ms_per_token": 0.00571343750266351,
+    "note": "LLMIR serving/token path on CPU"
+  },
+  {
+    "engine": "vllm",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 4,
+    "prompt_tokens": 32,
+    "generated_tokens": 128,
+    "elapsed_s": 0.20757932900050946,
+    "throughput_tokens_s": 616.6317263685049,
+    "latency_ms_per_token": 1.6217135078164802,
+    "note": "vLLM CPU baseline"
+  },
+  {
+    "engine": "llmir+vllm",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 4,
+    "prompt_tokens": 32,
+    "generated_tokens": 128,
+    "elapsed_s": 0.20889915600037057,
+    "throughput_tokens_s": 612.7358408272983,
+    "latency_ms_per_token": 1.632024656252895,
+    "note": "LLMIR LLMEngine with vLLM backend"
+  },
+  {
+    "engine": "llmir",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 8,
+    "prompt_tokens": 64,
+    "generated_tokens": 512,
+    "elapsed_s": 0.002013719999922614,
+    "throughput_tokens_s": 254255.80518626017,
+    "latency_ms_per_token": 0.003933046874848856,
+    "note": "LLMIR serving/token path on CPU"
+  },
+  {
+    "engine": "vllm",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 8,
+    "prompt_tokens": 64,
+    "generated_tokens": 512,
+    "elapsed_s": 0.48954368100021384,
+    "throughput_tokens_s": 1045.8719413023664,
+    "latency_ms_per_token": 0.9561400019535427,
+    "note": "vLLM CPU baseline"
+  },
+  {
+    "engine": "llmir+vllm",
+    "model": "/tmp/tiny-opt",
+    "batch_size": 8,
+    "prompt_tokens": 64,
+    "generated_tokens": 512,
+    "elapsed_s": 0.47161649400004535,
+    "throughput_tokens_s": 1085.62784913954,
+    "latency_ms_per_token": 0.9211259648438386,
+    "note": "LLMIR LLMEngine with vLLM backend"
+  }
+]
