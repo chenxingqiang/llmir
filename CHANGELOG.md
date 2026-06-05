@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking (serving):** Default `LLMEngine` / `EngineConfig` backend is now
+  `llmir_paged` (real HuggingFace inference). `backend="llmir"` remains for
+  scheduler smoke tests and emits `UserWarning`.
+- `PagedKVDecoder` uses `create_paged_kv_cache()` — prefers C++
+  `libMLIRLLMRuntime` when `LLMIR_LIB_PATH` is set, else NumPy reference.
+- `llmir-benchmark` CLI description clarifies KV **microbenchmark** vs e2e inference.
+
+### Added
+
+- `docs/CAPABILITY_MATRIX.md` — honest feature status table.
+- `llmir[native]` optional extra (documents C++ runtime dependency).
+- `llmir.runtime.native_bridge`, `native_kvcache`, `kv_factory`.
+- `scripts/plot_from_results.py` — plots JSON from benchmarks (no hard-coded throughput).
+- `examples/demos/simulated/` and `IEEE-conference/figures/paper-only/` READMEs.
+
+### Moved
+
+- `examples/demo_llmir_0.6b.py` → `examples/demos/simulated/`
+- Hard-coded paper chart scripts → `IEEE-conference/figures/paper-only/`
+
 ## [0.1.0] - 2025-12-26
 
 ### Added

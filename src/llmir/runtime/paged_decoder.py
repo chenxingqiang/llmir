@@ -22,6 +22,7 @@ import numpy as np
 
 from llmir.runtime.config import KVCacheConfig
 from llmir.runtime.kv_cache import PagedKVCache
+from llmir.runtime.kv_factory import create_paged_kv_cache
 
 __all__ = ["DecodeResult", "PagedKVDecoder", "kv_config_from_hf_config"]
 
@@ -109,8 +110,10 @@ class PagedKVDecoder:
        the running output.
 
     The point of routing K/V through LLMIR is not (yet) to make the kernel
-    *faster* — ``PagedKVCache`` is a numpy-backed reference implementation —
-    but to put LLMIR-owned data structures on the critical path so that
+    *faster* when the NumPy reference backend is used — prefer the C++
+    runtime via :func:`llmir.runtime.kv_factory.create_paged_kv_cache` when
+    ``libMLIRLLMRuntime`` is installed — but to put LLMIR-owned data
+    structures on the critical path so that
     further optimizations (block-paged storage, quantization, prefix sharing,
     speculative branches) actually take effect end-to-end. This is what
     distinguishes the ``LLMIR_PAGED`` backend from the pass-through ``VLLM``
@@ -241,7 +244,8 @@ class PagedKVDecoder:
         # simple and mirrors how a real engine would scope cache lifetimes
         # to a sequence (or set of sequences).
         layer_caches: List[PagedKVCache] = [
-            PagedKVCache(self.kv_config) for _ in range(self.kv_config.num_layers)
+            create_paged_kv_cache(self.kv_config)
+            for _ in range(self.kv_config.num_layers)
         ]
         seq_ids = np.zeros(input_ids.shape[0], dtype=np.int32)
 

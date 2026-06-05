@@ -9,48 +9,51 @@ LLMIR is a compiler infrastructure for large language models based on MLIR (Mult
 ## Quick Start
 
 ```bash
-# Install
-pip install llmir
-# or for HuggingFace support: pip install llmir[full]
+# Install (real inference needs transformers)
+pip install "llmir[full]"
 
-# Try it
-python -c "from llmir import PagedKVCache, KVCacheConfig; c = KVCacheConfig(num_layers=8, num_heads=8, head_dim=64); print(PagedKVCache(c))"
+# Optional: C++ KV cache — build libMLIRLLMRuntime from the MLIR tree, then:
+export LLMIR_LIB_PATH=/path/to/libMLIRLLMRuntime.so
 
-# Benchmark KV cache (registry or HuggingFace model ID)
+# Real inference (default backend: llmir_paged)
+python -c "
+from llmir import LLMEngine, SamplingParams
+e = LLMEngine.from_pretrained('facebook/opt-125m')
+print(e.generate('Hello', SamplingParams(max_tokens=8))[0].outputs[0].text)
+"
+
+# KV-cache microbenchmark (not full-model e2e)
 llmir-benchmark --model llama3-8b --batch-sizes 1,4
-llmir-benchmark --model Qwen/Qwen2-0.5B
 
-# List supported models
+# List registry model presets
 llmir-list-models
 
-# Run tests
 pytest tests/ -v
 ```
 
-Use vLLM as the optional serving backend (requires vLLM installed separately):
+**Capability matrix** (what is C++ vs reference Python vs demo-only):
+[`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md)
+
+| Backend | Use when |
+|---------|----------|
+| `llmir_paged` (**default**) | Real HF inference; K/V through LLMIR cache (C++ if `LLMIR_LIB_PATH` set) |
+| `vllm` | Pass-through to vLLM (baseline / production serving) |
+| `llmir` | **Smoke tests only** — emits `UserWarning`, no real model |
 
 ```python
 from llmir import LLMEngine, SamplingParams
 
-engine = LLMEngine.from_pretrained("facebook/opt-125m", backend="vllm")
+# Default: llmir_paged
+engine = LLMEngine.from_pretrained("facebook/opt-125m")
 outputs = engine.generate("Hello", SamplingParams(max_tokens=8))
-print(outputs[0].outputs[0].text)
+
+# vLLM baseline (install vLLM separately)
+engine = LLMEngine.from_pretrained("facebook/opt-125m", backend="vllm")
 ```
 
-> ℹ️ The `vllm` backend simply forwards to `vllm.LLM.generate()` — vLLM owns
-> KV cache and attention kernels, and LLMIR is not in the hot loop. To put
-> LLMIR's KV-cache subsystem **on the critical path** at the kernel layer,
-> use the `llmir_paged` backend instead (requires `transformers` + `torch`):
->
-> ```python
-> engine = LLMEngine.from_pretrained("facebook/opt-125m", backend="llmir_paged")
-> outputs = engine.generate("Hello", SamplingParams(max_tokens=8))
-> ```
->
-> This drives a HuggingFace `transformers` model in a manual decode loop
-> where every layer's K/V flows through `llmir.runtime.PagedKVCache`
-> between forward steps. See [`scripts/cpu_inference_compare.README.md`](./scripts/cpu_inference_compare.README.md)
-> for the four-row CPU benchmark and what each row measures.
+See [`scripts/cpu_inference_compare.README.md`](./scripts/cpu_inference_compare.README.md)
+for multi-backend CPU benchmarks. Paper figure scripts with hard-coded data live under
+[`IEEE-conference/figures/paper-only/`](./IEEE-conference/figures/paper-only/).
 
 | What | Where |
 |------|-------|
@@ -74,7 +77,10 @@ Key objectives:
 
 ## Key Features
 
-- **PagedKVCache**: Efficient key-value cache implementation for optimized attention computation
+> See [`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md) for implementation status
+> (C++ / Python reference / planned). Not every bullet below is on the default pip hot path yet.
+
+- **PagedKVCache**: Block-based KV cache (C++ runtime + Python reference fallback)
 - **MLIR Dialect for LLMs**: Custom operations and types for language model inference
 - **Memory Optimizations**: Block-based memory management for efficient, low-fragmentation memory usage
 - **Multi-sequence Support**: Handle multiple concurrent sequences with varying lengths

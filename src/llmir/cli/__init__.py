@@ -145,12 +145,18 @@ def benchmark_main():
     from llmir.models import ModelRegistry
 
     parser = argparse.ArgumentParser(
-        description="LLMIR Benchmark Tool - KV cache and config benchmarks",
+        description=(
+            "LLMIR KV-cache microbenchmark + model config reporter "
+            "(not full-model e2e; see scripts/cpu_inference_compare.py)"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   llmir-benchmark --model llama3-8b --batch-sizes 1,4,8
   llmir-benchmark --model llama3-8b --output results.json
+
+  # Plot results (optional matplotlib):
+  python scripts/plot_from_results.py -i results.json -o out.png
         """,
     )
     parser.add_argument(
@@ -196,7 +202,7 @@ Examples:
     batch_sizes = [int(x.strip()) for x in args.batch_sizes.split(",")]
     seq_lens = [int(x.strip()) for x in args.seq_lens.split(",")]
 
-    print("LLMIR Benchmark (KV Cache + Config)")
+    print("LLMIR KV microbenchmark (PagedKVCache append/lookup + model config)")
     print("=" * 50)
     print(f"Model: {args.model}")
     print(f"Batch sizes: {batch_sizes}")
