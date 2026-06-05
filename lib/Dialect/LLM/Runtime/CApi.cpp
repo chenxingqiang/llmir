@@ -17,6 +17,10 @@
 #include "mlir/Dialect/LLM/Runtime/SpeculativeKVCache.h"
 #include "mlir/Dialect/LLM/Runtime/PrefixCache.h"
 #include "mlir/Dialect/LLM/Runtime/ContinuousBatching.h"
+#if defined(LLMIR_ENABLE_CUDA)
+#include "mlir/Dialect/LLM/Runtime/CUDAKernels.h"
+#include <cuda_runtime.h>
+#endif
 
 #include <cstring>
 #include <memory>
@@ -39,6 +43,25 @@ bool llmir_has_cuda_support(void) {
   return true;
 #else
   return false;
+#endif
+}
+
+bool llmir_cuda_runtime_available(void) {
+#if defined(LLMIR_ENABLE_CUDA)
+  return mlir::llm::runtime::cuda::isCUDAAvailable();
+#else
+  return false;
+#endif
+}
+
+int32_t llmir_cuda_device_count(void) {
+#if defined(LLMIR_ENABLE_CUDA)
+  int count = 0;
+  if (cudaGetDeviceCount(&count) != cudaSuccess)
+    return 0;
+  return static_cast<int32_t>(count);
+#else
+  return 0;
 #endif
 }
 

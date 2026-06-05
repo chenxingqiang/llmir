@@ -44,7 +44,8 @@ Legend:
 | PyTorch → MLIR import | **Python (ref)** | `llmir.importers` + toy SDPA; emits MLIR text |
 | `llmir-compile` KV micro-pipeline | **Python (ref)** | Emit + optional `mlir-opt` + NumPy/native reference |
 | `mlir-opt` → execute e2e | **Planned** | Lowering works; full execution JIT not wired |
-| CUDA Flash kernels | **Planned** | `CUDAKernels.cu` not in CMake build |
+| CUDA MQA kernels | **C++** (optional) | `CUDAKernels.cu` when `LLMIR_ENABLE_CUDA=ON` |
+| Prebuilt native wheel | **Planned** | `scripts/package_native_lib.sh` for local bundling |
 
 ## Benchmarks & docs
 
