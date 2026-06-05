@@ -20,6 +20,7 @@ from llmir.benchmark.device import (
 from llmir.integration.hf_load import (
     apply_transformers_load_patches,
     hf_from_pretrained_kwargs,
+    materialize_hf_causal_lm,
 )
 from llmir.serving.config import BackendType
 
@@ -161,7 +162,9 @@ def run_hf_transformers(
         torch_dtype=torch_dtype,
         trust_remote_code=True,
     )
-    torch_model = AutoModelForCausalLM.from_pretrained(model, **load_kwargs)
+    torch_model = materialize_hf_causal_lm(
+        AutoModelForCausalLM.from_pretrained(model, **load_kwargs)
+    )
     if cfg.resolved.device == "cuda":
         torch_model = torch_model.to("cuda")
     torch_model.eval()
@@ -325,7 +328,10 @@ def run_llmir_paged(
 
         engine._ensure_llmir_paged()
         assert engine._hf_model is not None
-        engine._hf_model.to(torch.device("cuda"))
+        dev = torch.device("cuda")
+        engine._hf_model.to(dev)
+        if engine._paged_decoder is not None:
+            engine._paged_decoder._device = dev
     for _ in range(warmup):
         engine.generate(prompts[:1], params, use_tqdm=False)
     elapsed_s, generated_tokens = time_call(

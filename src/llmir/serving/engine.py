@@ -547,6 +547,7 @@ class LLMEngine:
         from llmir.integration.hf_load import (
             apply_transformers_load_patches,
             hf_from_pretrained_kwargs,
+            materialize_hf_causal_lm,
         )
 
         apply_transformers_load_patches()
@@ -575,6 +576,7 @@ class LLMEngine:
             pass
 
         model = AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
+        model = materialize_hf_causal_lm(model)
         model.eval()
         self._hf_model = model
 

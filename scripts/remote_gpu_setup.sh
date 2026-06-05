@@ -42,6 +42,7 @@ cat > "${ENV_ROOT}/activate-llmir.sh" <<'ACTIVATE'
 export LLMIR_ENV_ROOT="${LLMIR_ENV_ROOT:-/root/llmir-env}"
 source "${LLMIR_ENV_ROOT}/.venv/bin/activate"
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
+export HUGGINGFACE_HUB_ENDPOINT="${HUGGINGFACE_HUB_ENDPOINT:-https://hf-mirror.com}"
 export TRANSFORMERS_NO_ADVISORY_WARNINGS=1
 cd "${LLMIR_ENV_ROOT}/llmir"
 ACTIVATE

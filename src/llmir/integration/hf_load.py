@@ -49,3 +49,57 @@ def hf_from_pretrained_kwargs(
     if torch_dtype is not None:
         kwargs["torch_dtype"] = torch_dtype
     return kwargs
+
+
+def materialize_hf_causal_lm(model: Any) -> Any:
+    """
+    Fix tied-word-embedding models (e.g. OPT) that leave shared weights on ``meta``.
+
+    Reloads weights from the on-disk safetensors snapshot when any parameter
+    remains on the meta device after ``from_pretrained``.
+    """
+    import torch
+
+    if not any(p.device.type == "meta" for p in model.parameters()):
+        return model
+
+    try:
+        from huggingface_hub import snapshot_download
+        from safetensors.torch import load_file
+    except ImportError:
+        return model
+
+    try:
+        model_id = getattr(model, "name_or_path", None) or getattr(
+            model.config, "_name_or_path", ""
+        )
+        if not model_id:
+            return model
+        cache_dir = snapshot_download(model_id, local_files_only=True)
+    except Exception:
+        return model
+
+    from pathlib import Path
+
+    root = Path(cache_dir)
+    files = sorted(root.glob("*.safetensors"))
+    if not files:
+        return model
+
+    state: Dict[str, Any] = {}
+    for path in files:
+        state.update(load_file(str(path)))
+    if state:
+        model.load_state_dict(state, strict=False, assign=True)
+    if any(p.device.type == "meta" for p in model.parameters()):
+        # Last resort: untie and clone from any materialized output projection.
+        out = model.get_output_embeddings()
+        inp = model.get_input_embeddings()
+        if (
+            out is not None
+            and inp is not None
+            and out.weight.device.type != "meta"
+            and inp.weight.device.type == "meta"
+        ):
+            inp.weight = torch.nn.Parameter(out.weight.detach().clone())
+    return model

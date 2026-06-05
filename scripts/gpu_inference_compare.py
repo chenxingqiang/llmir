@@ -19,7 +19,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Compare inference backends on GPU when available"
     )
-    parser.add_argument("--model", default="facebook/opt-125m")
+    parser.add_argument(
+        "--model",
+        default="gpt2",
+        help="Default gpt2 avoids OPT tied-embedding meta tensors on some transformers builds",
+    )
     parser.add_argument(
         "--backends",
         default="hf,vllm,llmir-paged",
