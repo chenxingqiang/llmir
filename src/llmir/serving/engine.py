@@ -17,6 +17,7 @@ from llmir.serving.config import (
     SamplingParams,
     SchedulerConfig,
 )
+from llmir.serving.warnings import warn_if_placeholder_backend
 
 
 @dataclass
@@ -174,10 +175,9 @@ class ContinuousBatchingEngine:
                 req["started_at"] = time.time()
 
             if req["status"] == "running":
-                # Simulate token generation
+                # Placeholder token loop (backend='llmir' smoke path only).
                 params = req["params"]
                 if len(req["output_tokens"]) < params.max_tokens:
-                    # Generate a token (placeholder)
                     req["output_tokens"].append(0)
                     self._total_tokens += 1
 
@@ -318,6 +318,7 @@ class LLMEngine:
             backend if backend is not None else self.engine_config.backend
         )
         self.engine_config.backend = self.backend
+        warn_if_placeholder_backend(self.backend)
 
     @classmethod
     def from_pretrained(
@@ -330,7 +331,7 @@ class LLMEngine:
         trust_remote_code: bool = False,
         cache_config: Optional[KVCacheConfig] = None,
         token: Optional[str] = None,
-        backend: Union[BackendType, str] = BackendType.LLMIR,
+        backend: Union[BackendType, str] = BackendType.LLMIR_PAGED,
         **kwargs,
     ) -> "LLMEngine":
         """
@@ -349,7 +350,7 @@ class LLMEngine:
             trust_remote_code: Allow remote model code
             cache_config: Optional KV cache config (auto-detected from HF if omitted)
             token: HuggingFace token for gated models (optional)
-            backend: Serving backend to use ("llmir" or "vllm")
+            backend: Serving backend (``llmir_paged``, ``vllm``, or smoke ``llmir``)
             **kwargs: Additional arguments (scheduler_config, etc.)
 
         Returns:
@@ -614,6 +615,13 @@ class LLMEngine:
                 finished=True,
                 finish_reason=decoded.finish_reason,
             )
+            metrics = {
+                "prefix_hit_tokens": decoded.prefix_hit_tokens,
+                "prefill_tokens_computed": decoded.prefill_tokens_computed,
+            }
+            stats = getattr(self._paged_decoder, "prefix_cache_stats", None)
+            if stats is not None:
+                metrics["prefix_cache_hit_ratio"] = stats.hit_ratio
             outputs.append(
                 RequestOutput(
                     request_id=str(index),
@@ -621,6 +629,7 @@ class LLMEngine:
                     prompt_token_ids=list(decoded.prompt_token_ids),
                     outputs=[completion],
                     finished=True,
+                    metrics=metrics,
                 )
             )
         return outputs

@@ -81,6 +81,8 @@ def test_llm_engine_routes_llmir_paged_to_decoder(monkeypatch) -> None:
                     generated_token_ids=[10, 11, 12][:max_new_tokens],
                     text="hi",
                     finish_reason="length",
+                    prefix_hit_tokens=0,
+                    prefill_tokens_computed=3,
                 )
                 for _ in prompts
             ]
@@ -91,6 +93,7 @@ def test_llm_engine_routes_llmir_paged_to_decoder(monkeypatch) -> None:
     # ``_ensure_llmir_paged`` is a no-op for the rest of the test.
     engine._paged_decoder = _StubDecoder.__new__(_StubDecoder)
     engine._paged_decoder.decode = _StubDecoder.decode.__get__(engine._paged_decoder)
+    engine._paged_decoder.prefix_cache_stats = None
 
     outputs = engine.generate(
         ["hello", "world"],
@@ -129,74 +132,6 @@ def test_normalize_backend_accepts_llmir_paged() -> None:
 
     assert engine_a.backend == "llmir_paged"
     assert engine_b.backend == "llmir_paged"
-
-
-# ---------------------------------------------------------------------------
-# Real-model integration tests (gated on torch + transformers being installed)
-# ---------------------------------------------------------------------------
-
-
-@pytest.fixture
-def tiny_llama():
-    """Build a 2-layer toy LLaMA model + a synthetic tokenizer in-memory.
-
-    The model's weights are random and the tokenizer is a tiny word-level
-    one built locally so the test runs fully offline. We only assert
-    structural things (correct number of tokens generated, K/V routed
-    through PagedKVCache) — never specific token values.
-    """
-
-    torch = pytest.importorskip("torch")
-    pytest.importorskip("transformers")
-    pytest.importorskip("tokenizers")
-    from tokenizers import Tokenizer
-    from tokenizers.models import WordLevel
-    from tokenizers.pre_tokenizers import Whitespace
-    from transformers import LlamaConfig, LlamaForCausalLM, PreTrainedTokenizerFast
-
-    # 16-entry vocab covers the test prompts ("hello", "a") plus controls.
-    vocab = {
-        "[PAD]": 0,
-        "[UNK]": 1,
-        "<s>": 2,
-        "</s>": 3,
-        "hello": 4,
-        "world": 5,
-        "a": 6,
-        "b": 7,
-        "c": 8,
-        "d": 9,
-        "x": 10,
-        "y": 11,
-        "z": 12,
-        "the": 13,
-        "of": 14,
-        "to": 15,
-    }
-    backend_tok = Tokenizer(WordLevel(vocab=vocab, unk_token="[UNK]"))
-    backend_tok.pre_tokenizer = Whitespace()
-    tokenizer = PreTrainedTokenizerFast(
-        tokenizer_object=backend_tok,
-        unk_token="[UNK]",
-        pad_token="[PAD]",
-        bos_token="<s>",
-        eos_token="</s>",
-    )
-
-    config = LlamaConfig(
-        vocab_size=len(vocab),
-        hidden_size=32,
-        intermediate_size=64,
-        num_hidden_layers=2,
-        num_attention_heads=4,
-        num_key_value_heads=2,
-        max_position_embeddings=128,
-        rms_norm_eps=1e-5,
-        tie_word_embeddings=True,
-    )
-    torch.manual_seed(0)
-    model = LlamaForCausalLM(config).eval()
-    return model, tokenizer, config
 
 
 def test_paged_decoder_routes_kv_through_paged_kv_cache(tiny_llama, monkeypatch):

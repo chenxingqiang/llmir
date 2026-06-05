@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llmir"
-version = "0.1.0"
+version = "0.2.0"
 description = "LLMIR - Large Language Model Intermediate Representation for optimizing LLM inference"
 readme = "README.md"
 license = {text = "Apache-2.0 WITH LLVM-exception"}
@@ -64,6 +64,11 @@ full = [
     "transformers>=4.30.0",
     "accelerate>=0.20.0",
 ]
+native = [
+    # Python deps only; libMLIRLLMRuntime.so must be built from the MLIR tree
+    # and exposed via LLMIR_LIB_PATH or installed under sys.prefix/lib.
+    "llmir[full]",
+]
 docs = [
     "sphinx>=6.0.0",
     "sphinx-rtd-theme>=1.2.0",
@@ -81,10 +86,11 @@ Changelog = "https://github.com/chenxingqiang/llmir/blob/main/CHANGELOG.md"
 llmir-profile = "llmir.cli:profile_main"
 llmir-benchmark = "llmir.cli:benchmark_main"
 llmir-list-models = "llmir.cli:list_models_main"
+llmir-compile = "llmir.cli:compile_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli", "llmir.integration"]
+packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli", "llmir.integration", "llmir.compiler", "llmir.importers", "llmir.benchmark"]
 
 [tool.setuptools.package-data]
 llmir = ["py.typed"]

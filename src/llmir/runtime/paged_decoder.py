@@ -20,10 +20,18 @@ from typing import Any, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from llmir.runtime.config import KVCacheConfig
+from llmir.runtime.config import KVCacheConfig, PrefixCacheConfig
 from llmir.runtime.kv_cache import PagedKVCache
+from llmir.runtime.kv_factory import create_paged_kv_cache
+from llmir.runtime.prefix_kv_store import PrefixCacheStats, PrefixKVStore
 
-__all__ = ["DecodeResult", "PagedKVDecoder", "kv_config_from_hf_config"]
+__all__ = [
+    "DecodeResult",
+    "PagedKVDecoder",
+    "PrefixCacheStats",
+    "PrefixKVStore",
+    "kv_config_from_hf_config",
+]
 
 
 @dataclass
@@ -36,12 +44,17 @@ class DecodeResult:
         text: Decoded string for ``generated_token_ids``.
         finish_reason: ``"length"`` if ``max_tokens`` was reached or
             ``"stop"`` if the EOS / a stop token was emitted.
+        prefix_hit_tokens: Prompt tokens restored from :class:`PrefixKVStore`.
+        prefill_tokens_computed: Prompt tokens forwarded through the model
+            during prefill (excludes prefix hits).
     """
 
     prompt_token_ids: List[int]
     generated_token_ids: List[int]
     text: str
     finish_reason: str
+    prefix_hit_tokens: int = 0
+    prefill_tokens_computed: int = 0
 
 
 def kv_config_from_hf_config(
@@ -109,8 +122,10 @@ class PagedKVDecoder:
        the running output.
 
     The point of routing K/V through LLMIR is not (yet) to make the kernel
-    *faster* — ``PagedKVCache`` is a numpy-backed reference implementation —
-    but to put LLMIR-owned data structures on the critical path so that
+    *faster* when the NumPy reference backend is used — prefer the C++
+    runtime via :func:`llmir.runtime.kv_factory.create_paged_kv_cache` when
+    ``libMLIRLLMRuntime`` is installed — but to put LLMIR-owned data
+    structures on the critical path so that
     further optimizations (block-paged storage, quantization, prefix sharing,
     speculative branches) actually take effect end-to-end. This is what
     distinguishes the ``LLMIR_PAGED`` backend from the pass-through ``VLLM``
@@ -125,6 +140,9 @@ class PagedKVDecoder:
         *,
         device: Any = None,
         dtype: Any = None,
+        enable_prefix_cache: bool = True,
+        prefix_cache_config: Optional[PrefixCacheConfig] = None,
+        prefix_store: Optional[PrefixKVStore] = None,
     ):
         # Imported lazily to keep the module import cheap and to make the
         # transformers / torch dependency explicit at construction time.
@@ -144,6 +162,75 @@ class PagedKVDecoder:
         if self._num_layers and self.kv_config.num_layers != self._num_layers:
             # Trust the model — KVCache must match its layer count.
             self.kv_config.num_layers = self._num_layers
+
+        self.enable_prefix_cache = enable_prefix_cache
+        self._prefix_store: Optional[PrefixKVStore] = None
+        if enable_prefix_cache:
+            self._prefix_store = prefix_store or PrefixKVStore(
+                config=prefix_cache_config
+                or PrefixCacheConfig(min_prefix_length=4)
+            )
+
+    @property
+    def prefix_cache_stats(self) -> Optional[PrefixCacheStats]:
+        """Prefix cache counters for the decoder's store (if enabled)."""
+        if self._prefix_store is None:
+            return None
+        return self._prefix_store.stats
+
+    def warm_prefix(self, prompt: str) -> int:
+        """
+        Prefill and cache KV for ``prompt`` without generating tokens.
+
+        Subsequent :meth:`decode` calls whose tokenized prompt starts with the
+        same token sequence skip recomputing prefill for that prefix.
+        """
+        if self._prefix_store is None:
+            raise RuntimeError("Prefix cache is disabled on this decoder")
+
+        import torch
+
+        encoded = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=min(self.kv_config.max_seq_len, 4096),
+        )
+        input_ids = encoded["input_ids"].to(self._device)
+        attention_mask = encoded.get("attention_mask")
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(self._device)
+        else:
+            attention_mask = torch.ones_like(
+                input_ids, dtype=torch.long, device=self._device
+            )
+
+        token_ids = [int(t) for t in input_ids[0].tolist()]
+        layer_caches = [
+            create_paged_kv_cache(self.kv_config)
+            for _ in range(self.kv_config.num_layers)
+        ]
+        seq_ids = np.zeros(input_ids.shape[0], dtype=np.int32)
+
+        with torch.no_grad():
+            cache_position = torch.arange(
+                input_ids.shape[1], dtype=torch.int64, device=self._device
+            )
+            outputs = self.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                cache_position=cache_position,
+                use_cache=True,
+            )
+            self._append_to_paged(
+                layer_caches,
+                getattr(outputs, "past_key_values", None),
+                seq_ids,
+                append_only_new=False,
+            )
+
+        self._prefix_store.store(token_ids, layer_caches, self.kv_config)
+        return len(token_ids)
 
     # ------------------------------------------------------------------ utils
 
@@ -237,68 +324,56 @@ class PagedKVDecoder:
         prompt_token_ids = [int(t) for t in input_ids[0].tolist()]
         prompt_len = input_ids.shape[1]
 
-        # One PagedKVCache per layer. Allocating per request keeps the API
-        # simple and mirrors how a real engine would scope cache lifetimes
-        # to a sequence (or set of sequences).
         layer_caches: List[PagedKVCache] = [
-            PagedKVCache(self.kv_config) for _ in range(self.kv_config.num_layers)
+            create_paged_kv_cache(self.kv_config)
+            for _ in range(self.kv_config.num_layers)
         ]
-        seq_ids = np.zeros(input_ids.shape[0], dtype=np.int32)
+        prefix_hit_tokens = 0
+        prefill_start = 0
 
-        cache_position = torch.arange(
-            prompt_len, dtype=torch.int64, device=self._device
-        )
-        next_input_ids = input_ids
+        if self._prefix_store is not None:
+            prefix_hit_tokens, restored = self._prefix_store.lookup_restore(
+                prompt_token_ids, self.kv_config
+            )
+            if restored is not None:
+                layer_caches = restored
+                prefill_start = prefix_hit_tokens
+
+        seq_ids = np.zeros(input_ids.shape[0], dtype=np.int32)
         generated: List[int] = []
         finish_reason = "length"
+        prefill_tokens_computed = 0
 
-        first_step = True
         with torch.no_grad():
-            for _ in range(max_new_tokens):
-                if first_step:
-                    model_inputs = {
-                        "input_ids": next_input_ids,
-                        "attention_mask": attention_mask,
-                        "cache_position": cache_position,
-                        "use_cache": True,
-                    }
-                else:
-                    past_len = layer_caches[0].get_sequence_length(0)
-                    past_key_values = self._lookup_dynamic_cache(layer_caches, past_len)
-                    model_inputs = {
-                        "input_ids": next_input_ids,
-                        "attention_mask": attention_mask,
-                        "past_key_values": past_key_values,
-                        "cache_position": cache_position,
-                        "use_cache": True,
-                    }
-
-                outputs = self.model(**model_inputs)
-
-                # Capture this step's K/V into LLMIR PagedKVCache. On the
-                # first (prefill) step the model returns the full prompt-length
-                # KV; on later (decode) steps we want only the freshly added
-                # tail token, so we slice.
-                self._append_to_paged(
+            if prefill_start < prompt_len:
+                logits = self._prefill_suffix(
+                    input_ids,
+                    attention_mask,
                     layer_caches,
-                    getattr(outputs, "past_key_values", None),
                     seq_ids,
-                    append_only_new=not first_step,
+                    start_pos=prefill_start,
+                )
+                prefill_tokens_computed = prompt_len - prefill_start
+            else:
+                logits = self._logits_after_cached_prefix(
+                    input_ids,
+                    attention_mask,
+                    layer_caches,
+                    seq_ids,
+                    prompt_len=prompt_len,
                 )
 
-                logits = outputs.logits
-                next_token = int(logits[:, -1].argmax(dim=-1).item())
-                generated.append(next_token)
-
-                if next_token in stop_ids:
-                    finish_reason = "stop"
-                    break
-
-                # Prepare next iteration: feed only the new token, extend the
-                # attention mask, and bump cache_position by one.
-                next_input_ids = torch.tensor(
-                    [[next_token]], dtype=input_ids.dtype, device=self._device
+            if self._prefix_store is not None:
+                self._prefix_store.store(
+                    prompt_token_ids, layer_caches, self.kv_config
                 )
+
+            next_token = int(logits[:, -1].argmax(dim=-1).item())
+            generated.append(next_token)
+
+            if next_token in stop_ids:
+                finish_reason = "stop"
+            else:
                 attention_mask = torch.cat(
                     [
                         attention_mask,
@@ -306,8 +381,49 @@ class PagedKVDecoder:
                     ],
                     dim=-1,
                 )
-                cache_position = cache_position[-1:] + 1
-                first_step = False
+                cache_position = torch.tensor(
+                    [prompt_len], dtype=torch.int64, device=self._device
+                )
+                next_input_ids = torch.tensor(
+                    [[next_token]], dtype=input_ids.dtype, device=self._device
+                )
+
+                for _ in range(max_new_tokens - 1):
+                    past_len = layer_caches[0].get_sequence_length(0)
+                    past_key_values = self._lookup_dynamic_cache(
+                        layer_caches, past_len
+                    )
+                    outputs = self.model(
+                        input_ids=next_input_ids,
+                        attention_mask=attention_mask,
+                        past_key_values=past_key_values,
+                        cache_position=cache_position,
+                        use_cache=True,
+                    )
+                    self._append_to_paged(
+                        layer_caches,
+                        getattr(outputs, "past_key_values", None),
+                        seq_ids,
+                        append_only_new=True,
+                    )
+                    next_token = int(outputs.logits[:, -1].argmax(dim=-1).item())
+                    generated.append(next_token)
+
+                    if next_token in stop_ids:
+                        finish_reason = "stop"
+                        break
+
+                    next_input_ids = torch.tensor(
+                        [[next_token]], dtype=input_ids.dtype, device=self._device
+                    )
+                    attention_mask = torch.cat(
+                        [
+                            attention_mask,
+                            attention_mask.new_ones((attention_mask.shape[0], 1)),
+                        ],
+                        dim=-1,
+                    )
+                    cache_position = cache_position + 1
 
         text = (
             self.tokenizer.decode(generated, skip_special_tokens=True)
@@ -319,7 +435,100 @@ class PagedKVDecoder:
             generated_token_ids=generated,
             text=text,
             finish_reason=finish_reason,
+            prefix_hit_tokens=prefix_hit_tokens,
+            prefill_tokens_computed=prefill_tokens_computed,
         )
+
+    def _prefill_suffix(
+        self,
+        input_ids: Any,
+        attention_mask: Any,
+        layer_caches: List[PagedKVCache],
+        seq_ids: np.ndarray,
+        *,
+        start_pos: int,
+    ) -> Any:
+        """Forward prompt tokens ``[start_pos:prompt_len]`` and append KV."""
+        import torch
+
+        prompt_len = input_ids.shape[1]
+        suffix_len = prompt_len - start_pos
+        if start_pos > 0:
+            past_key_values = self._lookup_dynamic_cache(layer_caches, start_pos)
+            suffix_ids = input_ids[:, start_pos:]
+            cache_position = torch.arange(
+                start_pos, prompt_len, dtype=torch.int64, device=self._device
+            )
+            outputs = self.model(
+                input_ids=suffix_ids,
+                attention_mask=attention_mask[:, :prompt_len],
+                past_key_values=past_key_values,
+                cache_position=cache_position,
+                use_cache=True,
+            )
+            self._append_to_paged(
+                layer_caches,
+                getattr(outputs, "past_key_values", None),
+                seq_ids,
+                append_only_new=suffix_len == 1,
+            )
+        else:
+            cache_position = torch.arange(
+                prompt_len, dtype=torch.int64, device=self._device
+            )
+            outputs = self.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask[:, :prompt_len],
+                cache_position=cache_position,
+                use_cache=True,
+            )
+            self._append_to_paged(
+                layer_caches,
+                getattr(outputs, "past_key_values", None),
+                seq_ids,
+                append_only_new=False,
+            )
+        return outputs.logits
+
+    def _logits_after_cached_prefix(
+        self,
+        input_ids: Any,
+        attention_mask: Any,
+        layer_caches: List[PagedKVCache],
+        seq_ids: np.ndarray,
+        *,
+        prompt_len: int,
+    ) -> Any:
+        """Sample logits for the last prompt token when the full prefix is cached."""
+        import torch
+
+        if prompt_len <= 0:
+            raise ValueError("Cannot decode an empty prompt")
+
+        past_len = prompt_len - 1
+        past_key_values = (
+            self._lookup_dynamic_cache(layer_caches, past_len)
+            if past_len > 0
+            else None
+        )
+        last_token = input_ids[:, -1:]
+        cache_position = torch.tensor(
+            [prompt_len - 1], dtype=torch.int64, device=self._device
+        )
+        outputs = self.model(
+            input_ids=last_token,
+            attention_mask=attention_mask[:, :prompt_len],
+            past_key_values=past_key_values,
+            cache_position=cache_position,
+            use_cache=True,
+        )
+        self._append_to_paged(
+            layer_caches,
+            getattr(outputs, "past_key_values", None),
+            seq_ids,
+            append_only_new=True,
+        )
+        return outputs.logits
 
     # --------------------------------------------------------- KV plumbing
 

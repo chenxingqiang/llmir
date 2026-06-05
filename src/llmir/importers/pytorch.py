@@ -458,6 +458,14 @@ class PyTorchImporter:
         attention_patterns = self.pattern_matcher.find_attention_patterns(graph)
         linear_patterns = self.pattern_matcher.find_linear_patterns(graph)
 
+        for pattern in attention_patterns:
+            if pattern.head_dim <= 0:
+                pattern.head_dim = int(self._model_config.get("head_dim", 64))
+            if pattern.num_heads <= 0:
+                pattern.num_heads = int(
+                    self._model_config.get("num_attention_heads", 8)
+                )
+
         logger.info(f"Found {len(attention_patterns)} attention patterns")
         logger.info(f"Found {len(linear_patterns)} linear patterns")
 

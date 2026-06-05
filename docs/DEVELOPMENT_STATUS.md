@@ -1,5 +1,11 @@
 # KV Cache Implementation TODO List - Phase 3
 
+> **Status honesty (2026-06):** Checkboxes below track **C++/MLIR tree** work.
+> The default `pip install llmir` path uses **Python reference** KV unless
+> `libMLIRLLMRuntime` is built and `LLMIR_LIB_PATH` is set. End-to-end
+> compiler execution (PyTorch → mlir-opt → runtime) is **not** shipped in the
+> wheel yet. See [`CAPABILITY_MATRIX.md`](./CAPABILITY_MATRIX.md).
+
 This document outlines the remaining tasks to complete the PagedKVCache implementation for the LLMIR project, based on the design specifications.
 
 ## 1. GPU Support

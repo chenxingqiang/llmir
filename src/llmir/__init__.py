@@ -34,7 +34,7 @@ import os
 
 os.environ.setdefault("USE_TORCH", "1")
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Xingqiang Chen"
 __email__ = "chenxingqiang@turingai.cc"
 
@@ -72,6 +72,7 @@ from llmir.runtime.kv_cache import (
     QuantizedKVCache,
     SpeculativeKVCache,
 )
+from llmir.runtime.kv_factory import create_paged_kv_cache
 from llmir.serving.config import (
     BackendType,
     RequestPriority,
@@ -99,6 +100,7 @@ __all__ = [
     "__email__",
     # KV Cache
     "PagedKVCache",
+    "create_paged_kv_cache",
     "QuantizedKVCache",
     "DistributedKVCache",
     "SpeculativeKVCache",

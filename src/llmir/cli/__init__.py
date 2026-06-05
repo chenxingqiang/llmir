@@ -145,12 +145,19 @@ def benchmark_main():
     from llmir.models import ModelRegistry
 
     parser = argparse.ArgumentParser(
-        description="LLMIR Benchmark Tool - KV cache and config benchmarks",
+        description=(
+            "LLMIR KV-cache microbenchmark + model config reporter "
+            "(not full-model e2e; see scripts/cpu_inference_compare.py)"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   llmir-benchmark --model llama3-8b --batch-sizes 1,4,8
-  llmir-benchmark --model llama3-8b --output results.json
+  llmir-benchmark --model facebook/opt-125m --compare hf,llmir-paged -o bench.json
+  llmir-benchmark --prefix-bench -m llama3-8b -o prefix.json
+
+  # Plot results (optional matplotlib):
+  python scripts/plot_from_results.py -i results.json -o out.png
         """,
     )
     parser.add_argument(
@@ -191,12 +198,101 @@ Examples:
         default="benchmark_results.json",
         help="Output results file (JSON)",
     )
+    parser.add_argument(
+        "--compare",
+        type=str,
+        default="",
+        help=(
+            "E2E inference compare (comma backends: hf,vllm,llmir-paged,llmir). "
+            "Skips KV microbench when set."
+        ),
+    )
+    parser.add_argument(
+        "--compare-batch-size",
+        type=int,
+        default=1,
+        help="Batch size for --compare mode",
+    )
+    parser.add_argument(
+        "--compare-prompt-tokens",
+        type=int,
+        default=16,
+        help="Approx prompt words for --compare mode",
+    )
+    parser.add_argument(
+        "--compare-max-tokens",
+        type=int,
+        default=16,
+        help="Max new tokens for --compare mode",
+    )
+    parser.add_argument(
+        "--prefix-bench",
+        action="store_true",
+        help="Run prefix cache microbenchmark (lookup + KV reuse simulation)",
+    )
     args = parser.parse_args()
+
+    if args.compare:
+        from llmir.benchmark.inference_compare import (
+            print_inference_results,
+            results_to_json,
+            run_inference_compare,
+        )
+
+        backends = [b.strip() for b in args.compare.split(",") if b.strip()]
+        print("LLMIR inference compare")
+        print("=" * 50)
+        print(f"Model: {args.model}")
+        print(f"Backends: {backends}")
+        results = run_inference_compare(
+            args.model,
+            backends,
+            batch_size=args.compare_batch_size,
+            prompt_tokens=args.compare_prompt_tokens,
+            max_tokens=args.compare_max_tokens,
+            warmup=args.warmup,
+        )
+        print_inference_results(results)
+        out = {
+            "mode": "inference_compare",
+            "model": args.model,
+            "results": results_to_json(results),
+        }
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2)
+        print(f"\nResults saved to {args.output}")
+        return 0
+
+    if args.prefix_bench:
+        from llmir.benchmark.prefix_cache_bench import (
+            bench_prefix_kv_reuse,
+            bench_prefix_lookup_throughput,
+        )
+
+        print("LLMIR prefix cache benchmark")
+        print("=" * 50)
+        lookup = bench_prefix_lookup_throughput()
+        kv_rows = bench_prefix_kv_reuse()
+        print(f"lookup: {lookup.throughput_ops_s:,.0f} ops/s hit={lookup.hit_ratio:.1%}")
+        for row in kv_rows:
+            print(
+                f"{row.scenario}: {row.throughput_ops_s:,.0f} tok/s "
+                f"speedup={row.speedup_vs_baseline:.2f}x"
+            )
+        out = {
+            "mode": "prefix_cache",
+            "lookup": lookup.to_dict(),
+            "kv_reuse": [r.to_dict() for r in kv_rows],
+        }
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2)
+        print(f"\nResults saved to {args.output}")
+        return 0
 
     batch_sizes = [int(x.strip()) for x in args.batch_sizes.split(",")]
     seq_lens = [int(x.strip()) for x in args.seq_lens.split(",")]
 
-    print("LLMIR Benchmark (KV Cache + Config)")
+    print("LLMIR KV microbenchmark (PagedKVCache append/lookup + model config)")
     print("=" * 50)
     print(f"Model: {args.model}")
     print(f"Batch sizes: {batch_sizes}")
@@ -274,6 +370,106 @@ Examples:
     with open(args.output, "w") as f:
         json.dump(out, f, indent=2)
     print(f"\nResults saved to {args.output}")
+    return 0
+
+
+def compile_main():
+    """Entry point for ``llmir-compile`` — P2 KV micro-pipeline MVP."""
+    parser = argparse.ArgumentParser(
+        description="Emit and optionally optimize LLM dialect MLIR (P2 MVP)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  llmir-compile --emit-kv-pipeline -o /tmp/kv.mlir
+  llmir-compile --emit-kv-pipeline --run-reference --compare-torch
+  llmir-compile --import-toy-attention -o /tmp/toy.mlir
+        """,
+    )
+    parser.add_argument(
+        "-o", "--output", type=str, help="Write emitted MLIR to this path"
+    )
+    parser.add_argument(
+        "--emit-kv-pipeline",
+        action="store_true",
+        help="Emit concrete llm.append_kv / lookup / paged_attention MLIR",
+    )
+    parser.add_argument(
+        "--import-toy-attention",
+        action="store_true",
+        help="Import toy PyTorch SDPA module to MLIR (requires torch)",
+    )
+    parser.add_argument("--run-opt", action="store_true", help="Run mlir-opt / llmir-opt")
+    parser.add_argument(
+        "--run-reference",
+        action="store_true",
+        help="Execute Python reference KV pipeline (NumPy or native cache)",
+    )
+    parser.add_argument(
+        "--compare-torch",
+        action="store_true",
+        help="Compare reference output to torch SDPA (implies --run-reference)",
+    )
+    parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--seq-len", type=int, default=4)
+    parser.add_argument("--num-heads", type=int, default=4)
+    parser.add_argument("--head-dim", type=int, default=8)
+    args = parser.parse_args()
+
+    if not args.emit_kv_pipeline and not args.import_toy_attention:
+        parser.error("Specify --emit-kv-pipeline and/or --import-toy-attention")
+
+    from llmir.compiler.kv_emit import KVMicroPipelineConfig
+    from llmir.compiler.pipeline import compile_kv_micro_pipeline
+    from llmir.importers.toy_attention import import_toy_attention_to_mlir, ToyAttentionSpec
+
+    mlir_text = ""
+    if args.import_toy_attention:
+        spec = ToyAttentionSpec(
+            batch_size=args.batch_size,
+            seq_len=args.seq_len,
+            num_heads=args.num_heads,
+            head_dim=args.head_dim,
+        )
+        mlir_text = import_toy_attention_to_mlir(spec)
+        print(f"Imported toy attention MLIR ({len(mlir_text.splitlines())} lines)")
+    elif args.emit_kv_pipeline:
+        cfg = KVMicroPipelineConfig(
+            batch_size=args.batch_size,
+            seq_len=args.seq_len,
+            num_heads=args.num_heads,
+            head_dim=args.head_dim,
+        )
+        result = compile_kv_micro_pipeline(
+            cfg,
+            run_opt=args.run_opt,
+            run_reference=args.run_reference or args.compare_torch,
+            compare_torch=args.compare_torch,
+        )
+        mlir_text = result.mlir
+        if result.opt:
+            if result.opt.success:
+                print(f"mlir-opt OK ({result.opt.executable})")
+                if args.output:
+                    opt_path = args.output.replace(".mlir", ".opt.mlir")
+                    with open(opt_path, "w", encoding="utf-8") as f:
+                        f.write(result.opt.stdout)
+                    print(f"Wrote lowered MLIR: {opt_path}")
+            else:
+                print(f"mlir-opt skipped/failed: {result.opt.stderr.strip()}")
+        if result.reference_output is not None:
+            print(f"Reference backend: {result.reference_backend}")
+        if result.torch_max_abs_diff is not None:
+            print(f"max |ref - torch| = {result.torch_max_abs_diff:.6e}")
+            ok = result.metadata.get("torch_allclose_1e-4", False)
+            print(f"within 1e-4: {ok}")
+
+    if args.output and mlir_text:
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(mlir_text)
+        print(f"Wrote MLIR: {args.output}")
+    elif mlir_text and not args.output:
+        print(mlir_text)
+
     return 0
 
 

@@ -1,35 +1,25 @@
-"""Tests for the CPU inference comparison benchmark helpers."""
+"""Tests for CPU inference comparison (llmir.benchmark.inference_compare)."""
 
-import importlib.util
 import sys
 import types
-from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "cpu_inference_compare.py"
-
-
-def load_module():
-    """Load the benchmark script as a module."""
-    spec = importlib.util.spec_from_file_location("cpu_inference_compare", SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+from llmir.benchmark.inference_compare import (
+    build_prompts,
+    make_result,
+    run_inference_compare,
+    run_llmir_paged,
+    run_llmir_smoke,
+    run_llmir_vllm_backend,
+)
 
 
 def test_build_prompts():
-    """Prompts are deterministic and sized by batch."""
-    module = load_module()
-    prompts = module.build_prompts(batch_size=3, prompt_tokens=4)
+    prompts = build_prompts(batch_size=3, prompt_tokens=4)
     assert prompts == ["hello hello hello hello"] * 3
 
 
 def test_make_result_metrics():
-    """Derived throughput and latency metrics are computed correctly."""
-    module = load_module()
-    result = module.make_result(
+    result = make_result(
         "engine",
         "model",
         batch_size=2,
@@ -42,9 +32,7 @@ def test_make_result_metrics():
 
 
 def test_llmir_cpu_benchmark_runs_without_vllm():
-    """The LLMIR benchmark path runs without vLLM or model downloads."""
-    module = load_module()
-    result = module.run_llmir_cpu(
+    result = run_llmir_smoke(
         model="test-model",
         batch_size=2,
         prompt_tokens=4,
@@ -57,10 +45,8 @@ def test_llmir_cpu_benchmark_runs_without_vllm():
 
 
 def test_llmir_paged_cpu_returns_none_without_transformers(monkeypatch):
-    """The LLMIR-paged path is skipped when transformers is not installed."""
-    module = load_module()
     monkeypatch.setitem(sys.modules, "transformers", None)
-    result = module.run_llmir_paged_cpu(
+    result = run_llmir_paged(
         model="test-model",
         batch_size=1,
         prompt_tokens=4,
@@ -71,10 +57,8 @@ def test_llmir_paged_cpu_returns_none_without_transformers(monkeypatch):
 
 
 def test_llmir_vllm_backend_returns_none_without_vllm(monkeypatch):
-    """The LLMIR+vLLM backend path is skipped when vLLM is not installed."""
-    module = load_module()
     monkeypatch.setitem(sys.modules, "vllm", None)
-    result = module.run_llmir_vllm_backend(
+    result = run_llmir_vllm_backend(
         model="test-model",
         batch_size=1,
         prompt_tokens=4,
@@ -85,9 +69,6 @@ def test_llmir_vllm_backend_returns_none_without_vllm(monkeypatch):
 
 
 def test_llmir_vllm_backend_runs_with_fake_vllm(monkeypatch):
-    """The LLMIR+vLLM backend benchmark path runs against a fake vLLM module."""
-    module = load_module()
-
     class FakeVLLMSamplingParams:
         def __init__(self, **kwargs):
             self.kwargs = kwargs
@@ -116,7 +97,7 @@ def test_llmir_vllm_backend_runs_with_fake_vllm(monkeypatch):
     fake_vllm.SamplingParams = FakeVLLMSamplingParams
     monkeypatch.setitem(sys.modules, "vllm", fake_vllm)
 
-    result = module.run_llmir_vllm_backend(
+    result = run_llmir_vllm_backend(
         model="test-model",
         batch_size=2,
         prompt_tokens=4,
@@ -125,6 +106,13 @@ def test_llmir_vllm_backend_runs_with_fake_vllm(monkeypatch):
     )
     assert result is not None
     assert result.engine == "llmir+vllm"
-    # 2 prompts * 3 generated token_ids each = 6
     assert result.generated_tokens == 6
     assert result.throughput_tokens_s > 0
+
+
+def test_run_inference_compare_integration_smoke():
+    results = run_inference_compare(
+        "test-model", ["llmir"], max_tokens=2, warmup=0, batch_size=1
+    )
+    assert len(results) == 1
+    assert results[0].engine == "llmir"

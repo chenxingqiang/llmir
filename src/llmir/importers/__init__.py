@@ -14,12 +14,14 @@ from llmir.importers.pytorch import (
     PyTorchImporter,
     import_pytorch_model,
 )
+from llmir.importers.toy_attention import import_toy_attention_to_mlir
 
 __all__ = [
     "ImportConfig",
     "ImportMode",
     "PyTorchImporter",
     "import_pytorch_model",
+    "import_toy_attention_to_mlir",
     "PatternMatcher",
     "AttentionPattern",
     "LinearPattern",

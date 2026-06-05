@@ -186,6 +186,7 @@ class TestLLMEngine:
         engine = LLMEngine(model_path="test-model")
 
         assert engine.model_path == "test-model"
+        assert engine.backend == "llmir_paged"
 
     def test_create_engine_with_backend(self):
         """Test engine creation with an explicit backend."""
@@ -294,7 +295,7 @@ class TestLLMEngine:
 
     def test_generate_single(self):
         """Test generating from single prompt."""
-        engine = LLMEngine(model_path="test-model")
+        engine = LLMEngine(model_path="test-model", backend="llmir")
 
         outputs = engine.generate("Hello world", SamplingParams(max_tokens=5))
 
@@ -303,7 +304,7 @@ class TestLLMEngine:
 
     def test_generate_batch(self):
         """Test generating from multiple prompts."""
-        engine = LLMEngine(model_path="test-model")
+        engine = LLMEngine(model_path="test-model", backend="llmir")
 
         outputs = engine.generate(["Hello", "World"], SamplingParams(max_tokens=5))
 
@@ -311,7 +312,7 @@ class TestLLMEngine:
 
     def test_shutdown(self):
         """Test engine shutdown."""
-        engine = LLMEngine(model_path="test-model")
+        engine = LLMEngine(model_path="test-model", backend="llmir")
         engine.generate("Test", SamplingParams(max_tokens=1))
         engine.shutdown()
 

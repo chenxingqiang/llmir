@@ -32,16 +32,13 @@ class BackendType(Enum):
     """Supported serving backends.
 
     Values:
-        LLMIR: Built-in LLMIR scheduler (placeholder token loop; useful as a
-            no-model smoke path).
-        VLLM: Forward to ``vllm.LLM.generate()`` unchanged. vLLM owns the
-            KV cache and attention kernels on this path; LLMIR is not in the
-            hot loop. Kept for compatibility and as a baseline.
-        LLMIR_PAGED: Kernel-layer integration. The model executor (HuggingFace
-            transformers) runs forward, but every layer's K/V tensors are
-            routed through ``llmir.runtime.PagedKVCache`` via a manual decode
-            loop. This is the path that actually exercises LLMIR's KV-cache
-            subsystem and is the right target for measuring LLMIR optimization.
+        LLMIR: **Smoke test only** — placeholder token loop, no model forward.
+            Emits :class:`UserWarning` on use. Prefer :attr:`LLMIR_PAGED`.
+        LLMIR_PAGED: **Default for real inference.** HuggingFace ``transformers``
+            forward with per-layer K/V routed through
+            :func:`llmir.runtime.kv_factory.create_paged_kv_cache` (C++ when
+            available, else NumPy reference).
+        VLLM: Pass-through to ``vllm.LLM.generate()``; vLLM owns KV/attention.
     """
 
     LLMIR = "llmir"
@@ -174,7 +171,7 @@ class EngineConfig:
     gpu_memory_utilization: float = 0.9
     max_model_len: Optional[int] = None
     trust_remote_code: bool = False
-    backend: str = BackendType.LLMIR.value
+    backend: str = BackendType.LLMIR_PAGED.value
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""

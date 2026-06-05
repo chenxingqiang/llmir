@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (prefix on `llmir_paged`)
+
+- `PrefixKVStore` + `PagedKVDecoder.warm_prefix` / decode-time longest-prefix restore.
+- `DecodeResult.prefix_hit_tokens` / `prefill_tokens_computed`; surfaced on `LLMEngine` metrics.
+- `scripts/prefix_prefill_e2e.py`; tests `test_prefix_kv_store.py`, `test_paged_decoder_prefix.py`.
+
+### Added (P3)
+
+- `llmir.benchmark`: `run_inference_compare`, prefix cache microbenches.
+- `llmir-benchmark --compare hf,vllm,llmir-paged` for reproducible E2E JSON.
+- `llmir-benchmark --prefix-bench` and `scripts/prefix_cache_benchmark.py`.
+- `scripts/build_native_runtime.sh` + optional CI workflow `native-runtime.yml`.
+- `scripts/cpu_inference_compare.py` now delegates to `llmir.benchmark`.
+
+## [0.2.0] - 2026-06-05
+
+### Added (P2 MVP)
+
+- **`llmir-compile`** CLI: emit KV micro-pipeline MLIR, optional `mlir-opt`, reference run.
+- **`llmir.compiler`**: `emit_kv_micro_pipeline_mlir`, `run_mlir_opt`, reference interpreter.
+- **`llmir.importers.toy_attention`**: trace toy SDPA → MLIR.
+- **`examples/e2e/kv_micro_pipeline.py`**: one-command numerical check vs PyTorch SDPA.
+- **`scripts/kv_backend_compare.py`**: NumPy vs native KV microbench.
+- **`tests/test_compile_e2e.py`**, **`tests/test_e2e_token_consistency.py`** (network).
+
+### Changed (P0/P1 from 0.2.0 prep)
+
+- **Breaking (serving):** Default `LLMEngine` / `EngineConfig` backend is now
+  `llmir_paged` (real HuggingFace inference). `backend="llmir"` remains for
+  scheduler smoke tests and emits `UserWarning`.
+- `PagedKVDecoder` uses `create_paged_kv_cache()` — prefers C++
+  `libMLIRLLMRuntime` when `LLMIR_LIB_PATH` is set, else NumPy reference.
+- `llmir-benchmark` CLI description clarifies KV **microbenchmark** vs e2e inference.
+
+### Added
+
+- `docs/CAPABILITY_MATRIX.md` — honest feature status table.
+- `llmir[native]` optional extra (documents C++ runtime dependency).
+- `llmir.runtime.native_bridge`, `native_kvcache`, `kv_factory`.
+- `scripts/plot_from_results.py` — plots JSON from benchmarks (no hard-coded throughput).
+- `examples/demos/simulated/` and `IEEE-conference/figures/paper-only/` READMEs.
+
+### Moved
+
+- `examples/demo_llmir_0.6b.py` → `examples/demos/simulated/`
+- Hard-coded paper chart scripts → `IEEE-conference/figures/paper-only/`
+
 ## [0.1.0] - 2025-12-26
 
 ### Added
