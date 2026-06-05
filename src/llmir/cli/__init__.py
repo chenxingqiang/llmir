@@ -226,6 +226,20 @@ Examples:
         help="Max new tokens for --compare mode",
     )
     parser.add_argument(
+        "--compare-device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="Device for --compare (auto prefers CUDA when available)",
+    )
+    parser.add_argument(
+        "--compare-dtype",
+        type=str,
+        default="auto",
+        choices=["auto", "float32", "float16", "bfloat16"],
+        help="Model dtype for --compare",
+    )
+    parser.add_argument(
         "--prefix-bench",
         action="store_true",
         help="Run prefix cache microbenchmark (lookup + KV reuse simulation)",
@@ -251,11 +265,15 @@ Examples:
             prompt_tokens=args.compare_prompt_tokens,
             max_tokens=args.compare_max_tokens,
             warmup=args.warmup,
+            device=args.compare_device,
+            dtype=args.compare_dtype,
         )
         print_inference_results(results)
         out = {
             "mode": "inference_compare",
             "model": args.model,
+            "device": args.compare_device,
+            "dtype": args.compare_dtype,
             "results": results_to_json(results),
         }
         with open(args.output, "w", encoding="utf-8") as f:
