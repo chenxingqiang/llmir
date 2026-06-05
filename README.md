@@ -25,6 +25,9 @@ print(e.generate('Hello', SamplingParams(max_tokens=8))[0].outputs[0].text)
 # KV-cache microbenchmark (not full-model e2e)
 llmir-benchmark --model llama3-8b --batch-sizes 1,4
 
+# P2: emit MLIR + reference numerical check
+llmir-compile --emit-kv-pipeline --run-reference --compare-torch -o /tmp/kv.mlir
+
 # List registry model presets
 llmir-list-models
 

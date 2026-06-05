@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+## [0.2.0] - 2026-06-05
+
+### Added (P2 MVP)
+
+- **`llmir-compile`** CLI: emit KV micro-pipeline MLIR, optional `mlir-opt`, reference run.
+- **`llmir.compiler`**: `emit_kv_micro_pipeline_mlir`, `run_mlir_opt`, reference interpreter.
+- **`llmir.importers.toy_attention`**: trace toy SDPA → MLIR.
+- **`examples/e2e/kv_micro_pipeline.py`**: one-command numerical check vs PyTorch SDPA.
+- **`scripts/kv_backend_compare.py`**: NumPy vs native KV microbench.
+- **`tests/test_compile_e2e.py`**, **`tests/test_e2e_token_consistency.py`** (network).
+
+### Changed (P0/P1 from 0.2.0 prep)
 
 - **Breaking (serving):** Default `LLMEngine` / `EngineConfig` backend is now
   `llmir_paged` (real HuggingFace inference). `backend="llmir"` remains for

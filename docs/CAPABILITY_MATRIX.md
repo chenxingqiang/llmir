@@ -37,8 +37,9 @@ Legend:
 |---------|--------|-------|
 | `llm` dialect ops & types | **C++** | Lit tests under `test/Dialect/LLM/` |
 | Optimization passes | **C++** | Partial pipeline; some passes commented out |
-| PyTorch → MLIR import | **Planned** | `importers/pytorch.py` emits text; not in pip wheel |
-| `mlir-opt` → execute e2e | **Planned** | P2 roadmap |
+| PyTorch → MLIR import | **Python (ref)** | `llmir.importers` + toy SDPA; emits MLIR text |
+| `llmir-compile` KV micro-pipeline | **Python (ref)** | Emit + optional `mlir-opt` + NumPy/native reference |
+| `mlir-opt` → execute e2e | **Planned** | Lowering works; full execution JIT not wired |
 | CUDA Flash kernels | **Planned** | `CUDAKernels.cu` not in CMake build |
 
 ## Benchmarks & docs
