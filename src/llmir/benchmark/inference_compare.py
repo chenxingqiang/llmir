@@ -394,10 +394,22 @@ def run_inference_compare(
 
 
 def print_inference_results(results: List[BenchmarkResult]) -> None:
+    try:
+        from llmir.runtime.cuda_probe import summarize_cuda_stack
+
+        stack = summarize_cuda_stack()
+        print(
+            f"CUDA stack: torch={stack['torch_cuda']} "
+            f"native_built={stack['native_cuda_built']} "
+            f"native_runtime={stack['native_cuda_runtime']} "
+            f"devices={stack['device_count']}"
+        )
+    except ImportError:
+        pass
     if results:
         print(f"Device: {results[0].device or 'n/a'}  dtype: {results[0].dtype or 'n/a'}")
         if cuda_available():
-            print("(CUDA available)")
+            print("(CUDA available for compare)")
     print(
         f"{'Engine':<12} {'Batch':>5} {'Prompt':>6} {'Gen':>6} "
         f"{'Time(s)':>9} {'Tok/s':>12} {'ms/tok':>10}  Note"

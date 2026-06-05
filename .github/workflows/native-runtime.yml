@@ -19,6 +19,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends cmake ninja-build clang lld
 
       - name: Attempt MLIRLLMRuntime build
+        env:
+          LLMIR_ENABLE_CUDA: auto
         run: |
           chmod +x scripts/build_native_runtime.sh
           scripts/build_native_runtime.sh || echo "Native build skipped (LLVM/MLIR tree may be incomplete)"

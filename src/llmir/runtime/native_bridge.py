@@ -111,6 +111,15 @@ def _setup_signatures(lib: ctypes.CDLL) -> None:
     lib.llmir_kvcache_get_memory_usage.restype = c_int64
     lib.llmir_kvcache_get_num_sequences.argtypes = [c_void_p]
     lib.llmir_kvcache_get_num_sequences.restype = c_int32
+    if hasattr(lib, "llmir_has_cuda_support"):
+        lib.llmir_has_cuda_support.argtypes = []
+        lib.llmir_has_cuda_support.restype = c_bool
+    if hasattr(lib, "llmir_cuda_runtime_available"):
+        lib.llmir_cuda_runtime_available.argtypes = []
+        lib.llmir_cuda_runtime_available.restype = c_bool
+    if hasattr(lib, "llmir_cuda_device_count"):
+        lib.llmir_cuda_device_count.argtypes = []
+        lib.llmir_cuda_device_count.restype = c_int32
 
 
 _DTYPE_MAP = {"float16": 0, "float32": 1, "bfloat16": 2}

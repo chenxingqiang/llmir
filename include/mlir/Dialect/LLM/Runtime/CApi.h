@@ -393,6 +393,12 @@ const char* llmir_get_version(void);
 /// Check if CUDA support is enabled
 bool llmir_has_cuda_support(void);
 
+/// True when the library was built with CUDA and a device is visible at runtime.
+bool llmir_cuda_runtime_available(void);
+
+/// Number of CUDA devices (0 when unavailable).
+int32_t llmir_cuda_device_count(void);
+
 /// Check if NCCL support is enabled
 bool llmir_has_nccl_support(void);
 

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (P5)
+
+- **CUDA kernels**: `CUDAKernels.cu` wired into `MLIRLLMRuntime` via `LLMIR_ENABLE_CUDA`.
+- MQA / GQA / pruned attention launchers implemented (MVP block kernel).
+- C API: `llmir_cuda_runtime_available`, `llmir_cuda_device_count`.
+- Python: `llmir.runtime.cuda_probe`, native ctypes bindings.
+- `scripts/build_native_runtime.sh` auto-enables CUDA when `nvcc` is present.
+- `scripts/package_native_lib.sh` for dev wheel bundling; `docs/P5_CUDA_NATIVE.md`.
+
 ### Added (P4)
 
 - **vLLM KV connector**: `LLMIRConnector` + `LLMIRKVStorage` (`llmir.integration.vllm_connector`).
