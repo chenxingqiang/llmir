@@ -27,7 +27,8 @@ Legend:
 | `PagedKVCache` (pip default) | **Python (ref)** | Dict/list store; use `LLMIR_KV_BACKEND=numpy` |
 | `PagedKVCache` (optional) | **Python (native)** | `pip install llmir[native]` + built `.so` |
 | INT8/INT4 KV | **C++** / **Python (ref)** | Real quant in C++; Python returns ratio constants only |
-| Prefix cache (radix) | **Python (ref)** | Dict + LRU; C++ prefix APIs exist separately |
+| Prefix cache (radix) | **Python (ref)** | `PrefixCache` + `llmir-benchmark --prefix-bench`; C++ in `PrefixCache.cpp` |
+| `llmir-benchmark --compare` | **Python (ref)** | E2E `hf,vllm,llmir-paged` JSON compare |
 | Distributed KV | **Planned** | Python shard-0 only |
 | Speculative KV branches | **Planned** | Python `verify()` stub |
 

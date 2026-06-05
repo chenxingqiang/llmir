@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (P3)
+
+- `llmir.benchmark`: `run_inference_compare`, prefix cache microbenches.
+- `llmir-benchmark --compare hf,vllm,llmir-paged` for reproducible E2E JSON.
+- `llmir-benchmark --prefix-bench` and `scripts/prefix_cache_benchmark.py`.
+- `scripts/build_native_runtime.sh` + optional CI workflow `native-runtime.yml`.
+- `scripts/cpu_inference_compare.py` now delegates to `llmir.benchmark`.
+
 ## [0.2.0] - 2026-06-05
 
 ### Added (P2 MVP)

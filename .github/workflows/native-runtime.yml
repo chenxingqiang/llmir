@@ -1,0 +1,59 @@
+name: Native Runtime (optional)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  native-runtime:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build clang lld
+
+      - name: Attempt MLIRLLMRuntime build
+        run: |
+          chmod +x scripts/build_native_runtime.sh
+          scripts/build_native_runtime.sh || echo "Native build skipped (LLVM/MLIR tree may be incomplete)"
+
+      - name: Upload shared library artifact (if built)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: libMLIRLLMRuntime
+          path: build-native/**/libMLIRLLMRuntime.so
+          if-no-files-found: ignore
+
+  python-with-native:
+    runs-on: ubuntu-latest
+    needs: native-runtime
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: libMLIRLLMRuntime
+          path: native-lib
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Test native KV when artifact exists
+        run: |
+          pip install -e ".[full]" pytest numpy
+          SO="$(find native-lib -name 'libMLIRLLMRuntime.so' | head -1 || true)"
+          if [[ -n "$SO" ]]; then
+            export LLMIR_LIB_PATH="$SO"
+            pytest tests/test_kv_factory.py::test_create_paged_kv_cache_native_when_lib_present -v
+          else
+            echo "No native artifact; skipping native KV test"
+          fi

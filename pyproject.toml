@@ -90,7 +90,7 @@ llmir-compile = "llmir.cli:compile_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli", "llmir.integration", "llmir.compiler", "llmir.importers"]
+packages = ["llmir", "llmir.runtime", "llmir.serving", "llmir.profiling", "llmir.models", "llmir.cli", "llmir.integration", "llmir.compiler", "llmir.importers", "llmir.benchmark"]
 
 [tool.setuptools.package-data]
 llmir = ["py.typed"]

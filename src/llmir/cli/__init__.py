@@ -153,7 +153,8 @@ def benchmark_main():
         epilog="""
 Examples:
   llmir-benchmark --model llama3-8b --batch-sizes 1,4,8
-  llmir-benchmark --model llama3-8b --output results.json
+  llmir-benchmark --model facebook/opt-125m --compare hf,llmir-paged -o bench.json
+  llmir-benchmark --prefix-bench -m llama3-8b -o prefix.json
 
   # Plot results (optional matplotlib):
   python scripts/plot_from_results.py -i results.json -o out.png
@@ -197,7 +198,96 @@ Examples:
         default="benchmark_results.json",
         help="Output results file (JSON)",
     )
+    parser.add_argument(
+        "--compare",
+        type=str,
+        default="",
+        help=(
+            "E2E inference compare (comma backends: hf,vllm,llmir-paged,llmir). "
+            "Skips KV microbench when set."
+        ),
+    )
+    parser.add_argument(
+        "--compare-batch-size",
+        type=int,
+        default=1,
+        help="Batch size for --compare mode",
+    )
+    parser.add_argument(
+        "--compare-prompt-tokens",
+        type=int,
+        default=16,
+        help="Approx prompt words for --compare mode",
+    )
+    parser.add_argument(
+        "--compare-max-tokens",
+        type=int,
+        default=16,
+        help="Max new tokens for --compare mode",
+    )
+    parser.add_argument(
+        "--prefix-bench",
+        action="store_true",
+        help="Run prefix cache microbenchmark (lookup + KV reuse simulation)",
+    )
     args = parser.parse_args()
+
+    if args.compare:
+        from llmir.benchmark.inference_compare import (
+            print_inference_results,
+            results_to_json,
+            run_inference_compare,
+        )
+
+        backends = [b.strip() for b in args.compare.split(",") if b.strip()]
+        print("LLMIR inference compare")
+        print("=" * 50)
+        print(f"Model: {args.model}")
+        print(f"Backends: {backends}")
+        results = run_inference_compare(
+            args.model,
+            backends,
+            batch_size=args.compare_batch_size,
+            prompt_tokens=args.compare_prompt_tokens,
+            max_tokens=args.compare_max_tokens,
+            warmup=args.warmup,
+        )
+        print_inference_results(results)
+        out = {
+            "mode": "inference_compare",
+            "model": args.model,
+            "results": results_to_json(results),
+        }
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2)
+        print(f"\nResults saved to {args.output}")
+        return 0
+
+    if args.prefix_bench:
+        from llmir.benchmark.prefix_cache_bench import (
+            bench_prefix_kv_reuse,
+            bench_prefix_lookup_throughput,
+        )
+
+        print("LLMIR prefix cache benchmark")
+        print("=" * 50)
+        lookup = bench_prefix_lookup_throughput()
+        kv_rows = bench_prefix_kv_reuse()
+        print(f"lookup: {lookup.throughput_ops_s:,.0f} ops/s hit={lookup.hit_ratio:.1%}")
+        for row in kv_rows:
+            print(
+                f"{row.scenario}: {row.throughput_ops_s:,.0f} tok/s "
+                f"speedup={row.speedup_vs_baseline:.2f}x"
+            )
+        out = {
+            "mode": "prefix_cache",
+            "lookup": lookup.to_dict(),
+            "kv_reuse": [r.to_dict() for r in kv_rows],
+        }
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2)
+        print(f"\nResults saved to {args.output}")
+        return 0
 
     batch_sizes = [int(x.strip()) for x in args.batch_sizes.split(",")]
     seq_lens = [int(x.strip()) for x in args.seq_lens.split(",")]
