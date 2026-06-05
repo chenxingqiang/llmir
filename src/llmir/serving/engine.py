@@ -615,6 +615,13 @@ class LLMEngine:
                 finished=True,
                 finish_reason=decoded.finish_reason,
             )
+            metrics = {
+                "prefix_hit_tokens": decoded.prefix_hit_tokens,
+                "prefill_tokens_computed": decoded.prefill_tokens_computed,
+            }
+            stats = getattr(self._paged_decoder, "prefix_cache_stats", None)
+            if stats is not None:
+                metrics["prefix_cache_hit_ratio"] = stats.hit_ratio
             outputs.append(
                 RequestOutput(
                     request_id=str(index),
@@ -622,6 +629,7 @@ class LLMEngine:
                     prompt_token_ids=list(decoded.prompt_token_ids),
                     outputs=[completion],
                     finished=True,
+                    metrics=metrics,
                 )
             )
         return outputs

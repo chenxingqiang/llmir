@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (prefix on `llmir_paged`)
+
+- `PrefixKVStore` + `PagedKVDecoder.warm_prefix` / decode-time longest-prefix restore.
+- `DecodeResult.prefix_hit_tokens` / `prefill_tokens_computed`; surfaced on `LLMEngine` metrics.
+- `scripts/prefix_prefill_e2e.py`; tests `test_prefix_kv_store.py`, `test_paged_decoder_prefix.py`.
+
 ### Added (P3)
 
 - `llmir.benchmark`: `run_inference_compare`, prefix cache microbenches.
