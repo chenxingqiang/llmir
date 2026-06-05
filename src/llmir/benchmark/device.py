@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 DeviceChoice = Literal["auto", "cpu", "cuda"]
 DtypeChoice = Literal["auto", "float32", "float16", "bfloat16"]
@@ -70,9 +70,9 @@ def vllm_dtype_string(torch_dtype: str) -> str:
 
 
 def hf_device_map(device: str) -> Optional[str]:
-    """HuggingFace ``device_map`` value."""
+    """HuggingFace ``device_map`` value (legacy; prefer :func:`hf_from_pretrained_kwargs`)."""
     if device == "cuda":
-        return "auto"
+        return None
     return "cpu"
 
 
