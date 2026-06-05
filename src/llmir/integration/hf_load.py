@@ -43,9 +43,9 @@ def hf_from_pretrained_kwargs(
     kwargs: Dict[str, Any] = {
         "trust_remote_code": trust_remote_code,
         "use_safetensors": True,
+        # Avoid accelerate meta-tensor paths that break on ``.to(cuda)`` later.
+        "low_cpu_mem_usage": False,
     }
     if torch_dtype is not None:
         kwargs["torch_dtype"] = torch_dtype
-    if device == "cpu":
-        kwargs["device_map"] = "cpu"
     return kwargs

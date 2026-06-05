@@ -70,10 +70,8 @@ def vllm_dtype_string(torch_dtype: str) -> str:
 
 
 def hf_device_map(device: str) -> Optional[str]:
-    """HuggingFace ``device_map`` value (legacy; prefer :func:`hf_from_pretrained_kwargs`)."""
-    if device == "cuda":
-        return None
-    return "cpu"
+    """Deprecated: loading uses :func:`llmir.integration.hf_load.hf_from_pretrained_kwargs` instead."""
+    return None
 
 
 def torch_dtype_from_string(name: str) -> Optional["object"]:
