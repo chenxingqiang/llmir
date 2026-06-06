@@ -12,11 +12,15 @@ from llmir.benchmark.device import (
     DeviceChoice,
     InferenceDeviceConfig,
     cuda_available,
-    hf_device_map,
     resolve_inference_device,
     resolve_torch_dtype,
     torch_dtype_from_string,
     vllm_dtype_string,
+)
+from llmir.integration.hf_load import (
+    apply_transformers_load_patches,
+    hf_from_pretrained_kwargs,
+    materialize_hf_causal_lm,
 )
 from llmir.serving.config import BackendType
 
@@ -149,18 +153,25 @@ def run_hf_transformers(
     cfg = compare_config or InferenceCompareConfig()
     torch_dtype = torch_dtype_from_string(cfg.resolved.torch_dtype) or torch.float32
 
+    apply_transformers_load_patches()
     tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    torch_model = AutoModelForCausalLM.from_pretrained(
-        model,
+    load_kwargs = hf_from_pretrained_kwargs(
+        device=cfg.resolved.device,
         torch_dtype=torch_dtype,
-        device_map=hf_device_map(cfg.resolved.device),
         trust_remote_code=True,
     )
+    torch_model = materialize_hf_causal_lm(
+        AutoModelForCausalLM.from_pretrained(model, **load_kwargs)
+    )
+    if cfg.resolved.device == "cuda":
+        torch_model = torch_model.to("cuda")
     torch_model.eval()
     prompts = build_prompts(batch_size, prompt_tokens)
     inputs = tokenizer(prompts, return_tensors="pt", padding=True)
+    if cfg.resolved.device == "cuda":
+        inputs = {k: v.to(torch_model.device) for k, v in inputs.items()}
 
     for _ in range(warmup):
         with torch.no_grad():
@@ -312,6 +323,15 @@ def run_llmir_paged(
         dtype=cfg.resolved.torch_dtype,
         trust_remote_code=True,
     )
+    if cfg.resolved.device == "cuda":
+        import torch
+
+        engine._ensure_llmir_paged()
+        assert engine._hf_model is not None
+        dev = torch.device("cuda")
+        engine._hf_model.to(dev)
+        if engine._paged_decoder is not None:
+            engine._paged_decoder._device = dev
     for _ in range(warmup):
         engine.generate(prompts[:1], params, use_tqdm=False)
     elapsed_s, generated_tokens = time_call(
