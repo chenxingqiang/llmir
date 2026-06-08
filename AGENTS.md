@@ -51,7 +51,7 @@ llmir-benchmark --model llama3-8b --batch-sizes 1,4
 
 - **`pip install -e ".[full]"`** — adds PyTorch + Transformers for `llmir_paged` backend and HuggingFace integration tests.
 - **Native MLIR build** — requires LLVM 18, CMake ≥3.20, Ninja. From repo root: `mkdir build && cd build && cmake -G Ninja .. && ninja`. LLM dialect tests live under `test/Dialect/LLM/`. This is a large build and is not required for Python-only changes.
-- **GPU benchmarks** — `docker-compose up llama31-benchmark` or `scripts/comprehensive_benchmark.sh` need NVIDIA GPU + vLLM + often `HUGGINGFACE_TOKEN`.
+- **GPU benchmarks** — `docker-compose up llama31-benchmark` or `benchmark/LLM/` scripts need NVIDIA GPU + vLLM + often `HUGGINGFACE_TOKEN`.
 
 ### Lint / test caveats
 

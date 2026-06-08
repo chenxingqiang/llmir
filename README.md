@@ -672,11 +672,11 @@ source venv/bin/activate_llmir
 
 See [benchmark/LLM/README_LLAMA31.md](benchmark/LLM/README_LLAMA31.md) for setup notes and limitations.
 
-### Docker Benchmark
+### Docker Benchmark (experimental vLLM baseline)
 
 ```bash
-./scripts/docker_run_benchmark.sh   # Requires NVIDIA GPU, HUGGINGFACE_TOKEN
-# or: docker-compose up llama31-benchmark
+cd benchmark/LLM && ./docker_run_benchmark.sh   # NVIDIA GPU, HUGGINGFACE_TOKEN
+# or from repo root: docker-compose up llama31-benchmark
 ```
 
 ### Additional Scripts

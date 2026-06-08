@@ -1,18 +1,39 @@
 # Scripts
 
-Benchmark and utility scripts for LLMIR.
+Reproducible benchmarks and MVP harnesses for LLMIR. Run from repository root.
+
+## Paper / CI harnesses
 
 | Script | Description |
 |--------|-------------|
-| `comprehensive_benchmark.sh` | Compare PyTorch, vLLM, and SGLang inference performance |
-| `quick_benchmark.sh` | Quick benchmark for Qwen models |
-| `run_real_benchmark.sh` | HF `generate()` GPU baseline only (not LLMIR) |
-| `vllm_comparison.sh` | vLLM comparison benchmarks |
-| `llmir_model_benchmark.py` | Python benchmark for LLMIR KV cache and model optimization |
-| `real_model_benchmark.py` | HF `generate()` baseline only (not LLMIR) |
-| `docker_run_benchmark.sh` | Run Llama 3.1 benchmark in Docker (GPU required) |
-| `mps_full_pipeline.py` | MPS validation: config, KV micro-bench, model.generate, **LLMIR E2E** (KV round-trip) |
+| `paper_benchmark_collect.py` | Writes `IEEE-conference/benchmarks/paper_results.json` |
+| `sharegpt_prefix_bench.py` | MVP-B ShareGPT-shaped prefix benchmark |
+| `plot_from_results.py` | Plots benchmark JSON (no hard-coded throughput) |
+| `cpu_inference_compare.py` | CPU HF vs `llmir-paged` vs optional vLLM |
+| `gpu_inference_compare.py` | GPU-oriented compare wrapper (CI workflow) |
 
-**MPS (Apple Silicon)**: `python scripts/mps_full_pipeline.py` validates: (1) LLMIR config, (2) model load, (3) PagedKVCache micro-bench with synthetic data, (4) transformers inference, (5) **LLMIR E2E**—manual generation with KV routed through external store (round-trip through numpy); compares against model.generate() for correctness.
+## MVP / native runtime
 
-**Note**: Run scripts from the project root. For Docker benchmarks, ensure `HUGGINGFACE_TOKEN` is set for gated models.
+| Script | Description |
+|--------|-------------|
+| `mvp_a_single_layer_e2e.sh` | MVP-A single-layer compile + reference |
+| `mvp_c_cuda_kv_bench.py` | MVP-C CUDA KV microbench |
+| `build_native_runtime.sh` | Build `libMLIRLLMRuntime` |
+| `package_native_lib.sh` | Package native runtime for pip path |
+| `kv_backend_compare.py` | NumPy vs native KV microbench |
+
+## Prefix / integration smoke
+
+| Script | Description |
+|--------|-------------|
+| `prefix_cache_benchmark.py` | Prefix cache JSON benchmark |
+| `prefix_prefill_e2e.py` | Prefix prefill end-to-end JSON |
+| `vllm_kv_connector_smoke.py` | vLLM KV connector smoke test |
+
+## Optional local validation
+
+| Script | Description |
+|--------|-------------|
+| `mps_full_pipeline.py` | Apple Silicon validation pipeline |
+
+GPU Llama-3.1 experimental baseline: see [`benchmark/LLM/README_LLAMA31.md`](../benchmark/LLM/README_LLAMA31.md).
