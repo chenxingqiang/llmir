@@ -121,6 +121,16 @@ def _setup_signatures(lib: ctypes.CDLL) -> None:
         lib.llmir_cuda_device_count.argtypes = []
         lib.llmir_cuda_device_count.restype = c_int32
 
+    if hasattr(lib, "llmir_has_cuda_support"):
+        lib.llmir_has_cuda_support.argtypes = []
+        lib.llmir_has_cuda_support.restype = c_bool
+    if hasattr(lib, "llmir_cuda_runtime_available"):
+        lib.llmir_cuda_runtime_available.argtypes = []
+        lib.llmir_cuda_runtime_available.restype = c_bool
+    if hasattr(lib, "llmir_cuda_device_count"):
+        lib.llmir_cuda_device_count.argtypes = []
+        lib.llmir_cuda_device_count.restype = c_int32
+
 
 _DTYPE_MAP = {"float16": 0, "float32": 1, "bfloat16": 2}
 
@@ -242,3 +252,42 @@ class NativePagedKVCacheHandle:
 
     def get_sequence_length(self, seq_id: int) -> int:
         return self._seq_lengths.get(seq_id, 0)
+
+
+def has_cuda_support() -> bool:
+    """True when ``libMLIRLLMRuntime`` was built with ``LLMIR_ENABLE_CUDA``."""
+    if not native_library_available():
+        return False
+    try:
+        lib = _load_library()
+        if not hasattr(lib, "llmir_has_cuda_support"):
+            return False
+        return bool(lib.llmir_has_cuda_support())
+    except (RuntimeError, OSError, AttributeError):
+        return False
+
+
+def cuda_runtime_available() -> bool:
+    """True when native CUDA kernels can run (built + visible device)."""
+    if not native_library_available():
+        return False
+    try:
+        lib = _load_library()
+        if not hasattr(lib, "llmir_cuda_runtime_available"):
+            return has_cuda_support()
+        return bool(lib.llmir_cuda_runtime_available())
+    except (RuntimeError, OSError, AttributeError):
+        return False
+
+
+def cuda_device_count() -> int:
+    """Number of CUDA devices reported by the native library (0 if unavailable)."""
+    if not native_library_available():
+        return 0
+    try:
+        lib = _load_library()
+        if hasattr(lib, "llmir_cuda_device_count"):
+            return int(lib.llmir_cuda_device_count())
+    except (RuntimeError, OSError, AttributeError):
+        pass
+    return 0

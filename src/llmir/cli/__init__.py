@@ -272,6 +272,16 @@ Examples:
         action="store_true",
         help="KV simulation only (no HuggingFace E2E)",
     )
+    parser.add_argument(
+        "--mvp-c-bench",
+        action="store_true",
+        help="MVP-C: compare numpy vs torch_cuda KV backends (llmir_paged)",
+    )
+    parser.add_argument(
+        "--mvp-c-backends",
+        default="numpy,torch_cuda",
+        help="Comma backends for --mvp-c-bench (LLMIR_KV_BACKEND values)",
+    )
     args = parser.parse_args()
 
     if args.compare:
@@ -306,6 +316,28 @@ Examples:
         }
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(out, f, indent=2)
+        print(f"\nResults saved to {args.output}")
+        return 0
+
+    if args.mvp_c_bench:
+        from llmir.benchmark.mvp_c_cuda_kv_bench import (
+            MVPCudaKVBenchConfig,
+            print_mvp_c_results,
+            run_mvp_c_cuda_kv_benchmark,
+        )
+
+        cfg = MVPCudaKVBenchConfig(
+            model=args.model,
+            max_new_tokens=args.compare_max_tokens,
+            warmup=args.warmup,
+            backends=[b.strip() for b in args.mvp_c_backends.split(",") if b.strip()],
+        )
+        print("LLMIR MVP-C CUDA KV benchmark")
+        print("=" * 50)
+        payload = run_mvp_c_cuda_kv_benchmark(cfg)
+        print_mvp_c_results(payload)
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
         print(f"\nResults saved to {args.output}")
         return 0
 
