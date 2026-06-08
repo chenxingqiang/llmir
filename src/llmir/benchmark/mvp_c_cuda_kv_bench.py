@@ -60,9 +60,9 @@ def _run_one_backend(
     prev = os.environ.get("LLMIR_KV_BACKEND")
     os.environ["LLMIR_KV_BACKEND"] = kv_backend
     try:
-        device = cfg.device
-        if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
+        from llmir.runtime.device import resolve_inference_device
+
+        device = resolve_inference_device(cfg.device or "auto")
 
         dtype = torch.float16 if device == "cuda" else torch.float32
         load_kw = hf_from_pretrained_kwargs(device=device, torch_dtype=dtype)

@@ -550,13 +550,17 @@ class LLMEngine:
             materialize_hf_causal_lm,
         )
 
+        from llmir.runtime.device import resolve_inference_device
+
         apply_transformers_load_patches()
+        device_str = resolve_inference_device("auto")
         load_kwargs: Dict[str, Any] = hf_from_pretrained_kwargs(
-            device="cpu",
+            device=device_str,
             trust_remote_code=self.engine_config.trust_remote_code,
         )
         if self._hf_token:
             load_kwargs["token"] = self._hf_token
+        torch_dtype = None
         try:
             import torch
 
@@ -572,11 +576,14 @@ class LLMEngine:
             if torch_dtype is not None:
                 load_kwargs["torch_dtype"] = torch_dtype
         except ImportError:
-            pass
+            torch = None  # type: ignore[assignment]
 
         model = materialize_hf_causal_lm(
             AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
         )
+        if torch is not None:
+            dev = torch.device(device_str)
+            model.to(dev)
         model.eval()
         self._hf_model = model
 
@@ -595,10 +602,17 @@ class LLMEngine:
         ):
             kv_config = self.cache_config
 
+        decoder_kwargs: Dict[str, Any] = {}
+        if torch is not None:
+            decoder_kwargs["device"] = torch.device(device_str)
+            if torch_dtype is not None:
+                decoder_kwargs["dtype"] = torch_dtype
+
         self._paged_decoder = PagedKVDecoder(
             model,
             self._tokenizer,
             kv_config=kv_config,
+            **decoder_kwargs,
         )
 
     def _generate_llmir_paged(

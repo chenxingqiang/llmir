@@ -153,14 +153,9 @@ def bench_sharegpt_kv_simulation(
 
 
 def _resolve_device(device: str) -> str:
-    if device != "auto":
-        return device
-    try:
-        import torch
+    from llmir.runtime.device import resolve_inference_device
 
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:
-        return "cpu"
+    return resolve_inference_device(device)
 
 
 def _disable_prefix_cache(engine: Any) -> None:
@@ -192,16 +187,6 @@ def bench_llmir_paged_sharegpt(
         dtype=dtype,
         trust_remote_code=True,
     )
-    if resolved == "cuda":
-        import torch
-
-        engine._ensure_llmir_paged()
-        assert engine._hf_model is not None
-        dev = torch.device("cuda")
-        engine._hf_model.to(dev)
-        if engine._paged_decoder is not None:
-            engine._paged_decoder._device = dev
-
     if not with_warm_prefix:
         _disable_prefix_cache(engine)
 

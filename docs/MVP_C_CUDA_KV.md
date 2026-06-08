@@ -2,6 +2,11 @@
 
 Removes the **CPU NumPy round-trip** in `PagedKVDecoder` when the model runs on CUDA. This is the main latency fix for `llmir-paged` on GPU; paper-scale wins still come from prefix reuse (MVP-B) and compile-time block sizing (MVP-A).
 
+## Device selection
+
+- `LLMEngine` (`llmir_paged`) now resolves `cuda` when available and passes it to `PagedKVDecoder`.
+- Override with `LLMIR_DEVICE=cpu` or `LLMIR_DEVICE=cuda`.
+
 ## Backends (`LLMIR_KV_BACKEND`)
 
 | Value | Implementation | When |
