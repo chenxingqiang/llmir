@@ -12,11 +12,11 @@ LLMIR uses MLIR's multi-level IR capabilities to represent LLM operations at dif
 - **Mid-level**: Tensor operations and memory management
 - **Low-level**: Hardware-specific code generation
 
-### 2. Production-Ready Serving
-The design prioritizes production deployment with:
-- Continuous batching for high throughput
-- Memory pressure monitoring and preemption
-- vLLM-compatible APIs for easy integration
+### 2. Serving Integration (target)
+Production serving features are **design targets**; see [`CAPABILITY_MATRIX.md`](../CAPABILITY_MATRIX.md) for current status:
+- Continuous batching — **Planned**
+- Memory pressure monitoring — **Planned**
+- vLLM pass-through baseline — **Partial**
 
 ### 3. Model-Aware Optimization
 Optimizations are tailored for specific model architectures:

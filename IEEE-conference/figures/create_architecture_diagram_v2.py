@@ -131,7 +131,7 @@ create_rounded_rect(7.5, 3, 5.5, 1.5, colors['highlight'], colors['border'], ax,
                    'Runtime: Dynamic growth,\nParameter binding, Communication', 13, 'bold')
 
 # Performance summary
-ax.text(7, 1.5, 'Performance: 22.4% over vLLM | 37.8% over SGLang | Perplexity within 0.1%',
+ax.text(7, 1.5, 'MVP-A/B/C verified in CI; A100 scale rows are design targets (see appendix)',
         ha='center', va='center', fontsize=14, weight='bold', color=colors['text'],
         bbox=dict(boxstyle='round', facecolor='white', edgecolor=colors['border'], linewidth=2))
 

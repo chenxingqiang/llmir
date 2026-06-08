@@ -162,7 +162,7 @@ ax.text(12, 0.8, 'Key Innovation:\nIR-level PagedAttention\nRepresentation',
 
 # Performance callout
 perf_rect = create_rounded_rect(0.5, 0.2, 3, 1.2, '#FFFACD', colors['border'], ax)
-ax.text(2, 0.8, 'Performance:\n22.4% over vLLM\n37.8% over SGLang', 
+ax.text(2, 0.8, 'Status: MVP-A/B/C verified;\nscale targets in appendix', 
         ha='center', va='center', fontsize=9, weight='bold', color=colors['text'])
 
 # Add connecting lines for callouts

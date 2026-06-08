@@ -83,7 +83,7 @@ for i, (imp, val) in enumerate(zip(improvements_vs_vllm, llmir)):
                     fontsize=10, fontweight='bold', color='#1a5f3a')
 
 # Add text box with average improvements
-textstr = 'Average improvements:\n• vs vLLM: +22.4%\n• vs SGLang: +38.1%\n• vs TRT-LLM: +4.8%\n• vs MLC-LLM: +25.9%'
+textstr = 'ILLUSTRATIVE targets only.\nNot LLMIR measurements.\nSee appendix / paper-only README.'
 props = dict(boxstyle='round', facecolor='white', edgecolor='#2C3E50', alpha=0.95, linewidth=2)
 ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=11, fontweight='bold',
         verticalalignment='top', bbox=props)

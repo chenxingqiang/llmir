@@ -180,7 +180,7 @@ create_arrow(system_center_x, 1.8, system_center_x, 1.1, ax)  # Backend to Runti
 # Add key innovation callouts positioned at the bottom
 # Performance callout - bottom left (wider box for longer text)
 perf_rect = create_rounded_rect(0.5, -1.5, 7, 1.2, '#FFEAA7', colors['border'], ax)
-ax.text(4.0, -0.9, 'Performance:\n22.4% over vLLM, 37.8% over SGLang', 
+ax.text(4.0, -0.9, 'Status: MVP-A/B/C verified;\nscale targets in appendix', 
         ha='center', va='center', fontsize=10, weight='bold', color=colors['text'])
 
 # PagedAttention callout - bottom right (wider box for longer text)

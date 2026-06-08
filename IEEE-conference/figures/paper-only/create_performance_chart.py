@@ -98,7 +98,7 @@ def create_throughput_comparison():
     legend.get_frame().set_alpha(0.9)
     
     # Add performance improvement annotation
-    ax.annotate('LLMIR outperforms vLLM by 22.4%', 
+    ax.annotate('ILLUSTRATIVE design targets (not measured)', 
                 xy=(4, 75000), xytext=(8, 40000),
                 arrowprops=dict(arrowstyle='->', color='black', lw=1.5),
                 fontsize=11, ha='center',

@@ -126,13 +126,15 @@ Pre-quantized models (GPTQ, AWQ) are converted to quantized tensor types:
 
 | Model Family | Import Status | Notes |
 |--------------|--------------|-------|
-| LLaMA/LLaMA-2 | ✅ Full | Standard transformer |
-| Mistral | ✅ Full | Sliding window attention |
-| Phi-3 | ✅ Full | Block sparse attention |
-| Qwen-2 | ✅ Full | Standard transformer |
-| DeepSeek-V2 | ✅ Full | MoE architecture |
-| GPT-NeoX | ✅ Full | Rotary embeddings |
-| Falcon | ⚠️ Partial | Multi-query attention |
+| LLaMA/LLaMA-2 | Partial | `from_pretrained` + presets; full MLIR import **Planned** |
+| Mistral | Partial | Optimizer presets; dialect lowering **Planned** |
+| Phi-3 | Partial | Optimizer presets |
+| Qwen-2 | Partial | External baselines cited; LLMIR GPU harness **Planned** |
+| DeepSeek-V2 | Planned | MoE dialect ops incomplete |
+| GPT-NeoX | Planned | |
+| Falcon | Planned | Multi-query attention |
+
+See [`CAPABILITY_MATRIX.md`](CAPABILITY_MATRIX.md) for runtime vs compiler status.
 
 ---
 

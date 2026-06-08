@@ -19,7 +19,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 
 | Reviewer theme | Paper location | Status |
 |----------------|----------------|--------|
-| Multi-model throughput (8 models × 5 frameworks) | Table II († projected), heatmap | **No LLMIR GPU harness JSON**; gpt2 measured + Qwen cited only |
+| Multi-model throughput (8 models × 5 frameworks) | Appendix A (design targets), main text Table measured_harness only | **No LLMIR GPU harness JSON**; gpt2 measured + Qwen cited only |
 | Quality (PPL / MMLU) | Table III | **Planned** — illustrative targets, not measured |
 | Memory config / block sweep | Table IV, block-size figure | **KV-append microbench lineage** — not A100 LLaMA e2e |
 | Multi-GPU scaling | Table V | **Illustrative** — no artifact |

@@ -15,8 +15,8 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | Native CUDA KV kernels | `libMLIRLLMRuntime` + `cuda_probe`, `LLMIR_KV_BACKEND=native` | **MVP-C** (optional build) |
 | §5 ShareGPT throughput vs vLLM | vLLM baseline in same harness | Planned (needs vLLM + GPU CI) |
 | Table III PPL / MMLU | — | Planned |
-| Multi-model Table II | Partial: gpt2 measured + Qwen cited external | **Partial** (`paper_results.json`, `external_baselines.json`) |
-| Measured harness Table | `paper_results.json` (gpt2); Qwen from `external_baselines.json` | **gpt2 CPU** + **cited external** |
+| Main-text throughput | Table measured_harness only | **gpt2 CPU** + **cited Qwen** (`paper_results.json`, `external_baselines.json`) |
+| Appendix projected tables | Table II/VI design targets | **Illustrative** — `appendix` in `revised.tex` |
 | Prefix TTFT Fig (2048) | `sharegpt_2048_sim.json` | **KV sim measured** |
 
 ## Quick commands
@@ -52,7 +52,7 @@ Regenerate projected/illustrative: `python3 IEEE-conference/figures/generate_pro
 | `mvp_evaluation_nature` | **Yes** (panels a–c) | MVP-A/B/C CI + docs |
 | `prefix_cache_nature` | **Partial** | `sharegpt_prefix_bench` |
 | `block_size_optimization_nature` | **Partial** | Algorithm 1 + illustrative sweep |
-| `multi_model_comparison_nature` | **No** (projected) | Table II targets |
+| `multi_model_comparison_nature` | **No** (projected) | Appendix A design targets |
 | `attention_speedup_nature` | **No** (micro-bench) | Illustrative arrays |
 
 ## Honesty notes
