@@ -263,13 +263,10 @@ def run_sharegpt_prefix_benchmark(
             "sharegpt_llmir_warm_prefix",
             cfg,
             warmed_rows,
-            speedup=(
-                baseline.total_elapsed_s / warmed.total_elapsed_s
-                if warmed.total_elapsed_s > 0
-                else 1.0
-            ),
             details={"prefix_cache": "warm_prefix"},
         )
+        if warmed.total_elapsed_s > 0:
+            warmed.speedup_vs_baseline = baseline.total_elapsed_s / warmed.total_elapsed_s
         payload["results"].extend([baseline.to_dict(), warmed.to_dict()])
         payload["per_request"] = {
             "baseline": [asdict(r) for r in baseline_rows],

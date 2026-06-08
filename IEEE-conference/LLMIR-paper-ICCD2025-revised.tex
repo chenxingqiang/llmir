@@ -89,7 +89,7 @@ This paper presents LLMIR (Large Language Model Intermediate Representation), a 
     
     \item \textbf{Multi-Stage Compilation Pipeline}: A detailed transformation flow from PyTorch/ONNX models through LLM dialect to optimized CUDA kernels, with clear separation of optimization concerns at each level.
     
-    \item \textbf{Comprehensive Experimental Evaluation}: Benchmarks across multiple model families (LLaMA, Phi, Qwen, DeepSeek) and sizes (3B-72B), with comparisons against vLLM, SGLang, TensorRT-LLM, and MLC-LLM, including quality metrics (perplexity) on standard datasets.
+    \item \textbf{Reproducible MVP Evaluation}: An open-source harness (MVP-A/B/C) linking compiler passes to serving benchmarks---block-size IR rewrites, ShareGPT-shaped prefix reuse, and GPU KV paths---with JSON artifacts checked into the repository (\texttt{IEEE-conference/benchmarks/}).
 \end{itemize}
 
 \section{Related Work}
@@ -107,6 +107,27 @@ Deep learning compilers have evolved from general-purpose frameworks to domain-s
 MLC-LLM \cite{b15} applies TVM compilation to LLM deployment, enabling cross-platform execution but lacking specialized PagedAttention support and operating primarily at tensor computation level. Torch-MLIR \cite{b16} provides PyTorch-to-MLIR conversion but without LLM-specific optimizations.
 
 LLMIR distinguishes itself by providing: (1) LLM-specific IR abstractions capturing PagedAttention and KV cache semantics, (2) compile-time analysis of patterns previously optimized only at runtime, and (3) a complete compilation pipeline from model import to hardware-specific code generation.
+
+\begin{table}[htbp]
+\caption{Positioning vs Serving and Compilation Stacks}
+\begin{center}
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{System} & \textbf{IR semantics} & \textbf{AOT codegen} & \textbf{Runtime KV} \\
+\hline
+vLLM & Low (CUDA kernels) & Partial & PagedAttention (core) \\
+\hline
+TensorRT-LLM & Low (graph/engine) & Yes & Engine-managed \\
+\hline
+MLC-LLM / TVM & Medium (tensor IR) & Yes & Generic tensors \\
+\hline
+\textbf{LLMIR (ours)} & \textbf{High (LLM dialect)} & \textbf{Yes} & \textbf{Thin + pre-sized pools} \\
+\hline
+\end{tabular}
+\label{tab:related_compare}
+\end{center}
+\end{table}
 
 \section{LLMIR Architecture and Design}
 
@@ -361,7 +382,9 @@ LLaMA-2-70B & 12,450 & 10,200 & 9,050 & 11,800 & 9,400 \\
 \hline
 Phi-3-3.8B & 142,300 & 116,500 & 103,200 & 135,800 & 109,400 \\
 \hline
-Qwen-2-7B & 86,200 & 70,400 & 62,100 & 82,100 & 66,500 \\
+Qwen2.5-7B (meas.\textsuperscript{‡}) & --- & 94 & --- & --- & --- \\
+\hline
+gpt2 (meas.\textsuperscript{‡}) & 27 & --- & --- & --- & --- \\
 \hline
 Qwen-2-14B & 48,600 & 39,700 & 35,200 & 46,100 & 37,200 \\
 \hline
@@ -374,7 +397,25 @@ DeepSeek-16B & 52,400 & 42,800 & 37,900 & 49,600 & 40,100 \\
 \end{tabular}
 \label{tab:multi_model}
 \end{center}
-\textsuperscript{$\dagger$}\footnotesize Projected single-GPU targets (A100-80GB, batch 8); populate from \texttt{llmir-benchmark --compare} JSON. Heatmap: Fig.~\ref{fig:multi_model}.
+\textsuperscript{$\dagger$}\footnotesize Projected rows (A100-80GB, batch 8). \textsuperscript{‡}Measured: gpt2 \texttt{llmir-paged} 27 tok/s vs HF 70 tok/s (CPU, batch 1, 64 prompt tok) from \texttt{paper\_results.json}; Qwen2.5-7B vLLM 93.7 tok/s (A800, batch 1) from \texttt{a800\_qwen\_inference.json}. LLMIR \texttt{llmir-paged} on Qwen pending GPU CI.
+\end{table}
+
+\begin{table}[htbp]
+\caption{Measured Harness: HF vs LLMIR-paged vs vLLM (same prompt length)}
+\begin{center}
+\small
+\begin{tabular}{|l|c|c|c|l|}
+\hline
+\textbf{Model} & \textbf{HF} & \textbf{LLMIR-paged} & \textbf{vLLM} & \textbf{Source} \\
+\hline
+gpt2 & 70 & 27 & --- & \texttt{paper\_results.json} \\
+\hline
+Qwen2.5-7B & 46 & --- & 94 & A800 batch=1 \\
+\hline
+\end{tabular}
+\label{tab:measured_harness}
+\end{center}
+\footnotesize Tokens/sec; gpt2 on CPU (64 prompt, 8 gen). Qwen on A800-80GB (Feb 2026). vLLM skipped on CPU harness.
 \end{table}
 
 \begin{figure}[htbp]
@@ -384,7 +425,7 @@ DeepSeek-16B & 52,400 & 42,800 & 37,900 & 49,600 & 40,100 \\
 \label{fig:multi_model}
 \end{figure}
 
-Key observations: (1) LLMIR consistently outperforms all baselines across model families. (2) Improvement over TensorRT-LLM (4.8\%) is smaller than over runtime systems, as TensorRT-LLM also performs ahead-of-time compilation, but LLMIR's LLM-specific IR abstractions enable additional optimizations. (3) DeepSeek-V2's MoE architecture benefits from LLMIR's parallelization analysis.
+Key observations: (1) \textsuperscript{‡}Measured rows (Table~\ref{tab:measured_harness}) show HF can beat \texttt{llmir-paged} on short CPU prompts; LLMIR value is compile-time optimization plus prefix reuse (Fig.~\ref{fig:prefix_ttft}). (2) Projected rows suggest LLMIR targets gains over runtime systems when GPU harness completes. (3) Qwen2.5-7B vLLM throughput (94 tok/s, A800 batch=1) anchors one real baseline column.
 
 \subsection{Quality Metrics}
 
@@ -479,14 +520,32 @@ In hybrid mode, GPU allocation follows: GPUs 0-3 form one tensor-parallel group 
 
 \subsection{Prefix Cache and ShareGPT Workload}
 
-Figure~\ref{fig:prefix_cache} shows MVP-B behaviour: after \texttt{warm\_prefix}, subsequent requests skip repeated prefill for the shared system prompt. KV-layer simulation isolates prefix reuse; \texttt{llmir\_paged} end-to-end gains depend on prompt length and overlap.
+Figure~\ref{fig:prefix_ttft} reports \textbf{measured} MVP-B artifacts. Panel~\textbf{a} uses KV-layer simulation with a 2048-token shared system prompt ($7.4\times$ latency reduction, \texttt{sharegpt\_2048\_sim.json}). Panel~\textbf{b} shows reduced \texttt{prefill\_tokens\_computed} on gpt2 \texttt{llmir\_paged} after \texttt{warm\_prefix} (\texttt{paper\_results.json})---the product win is prefill savings under prefix-heavy workloads, not short-prompt raw throughput.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.48\textwidth]{figures/paper-only/prefix_cache_nature.pdf}
-\caption{ShareGPT-shaped prefix evaluation (Nature style). \textbf{a,} Per-request normalized latency with/without warm prefix. \textbf{b,} Speedup summary: KV simulation vs \texttt{llmir\_paged} E2E (gpt2-class models in CI).}
-\label{fig:prefix_cache}
+\includegraphics[width=0.48\textwidth]{figures/prefix_ttft_nature.pdf}
+\caption{Measured prefix / TTFT proxies (Nature style). \textbf{a,} KV simulation at 2048-token system prompt (32 requests). \textbf{b,} Per-request prefill tokens: cold vs \texttt{warm\_prefix} on gpt2 \texttt{llmir\_paged}.}
+\label{fig:prefix_ttft}
 \end{figure}
+
+\subsection{End-to-End Case Study: gpt2 (MVP-A $\rightarrow$ \texttt{llmir\_paged})}
+
+Listing~\ref{lst:mvp_a_mlir} shows MLIR after MVP-A block-size optimization (\texttt{block\_size} 1024$\rightarrow$32). Figure~\ref{fig:gpt2_latency} gives measured decode throughput (HF vs \texttt{llmir\_paged}) from the same harness; integration overhead dominates on short CPU prompts, motivating prefix-heavy evaluation (Fig.~\ref{fig:prefix_ttft}).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{figures/gpt2_measured_latency_nature.pdf}
+\caption{Measured gpt2 decode throughput (batch=1, 64 prompt tokens, 8 new tokens). Source: \texttt{IEEE-conference/benchmarks/paper\_results.json}.}
+\label{fig:gpt2_latency}
+\end{figure}
+
+\begin{lstlisting}[style=mlir,caption={Single-layer KV micro-pipeline after MVP-A block-size rewrite (excerpt).},label=lst:mvp_a_mlir]
+% block_size = 32 : i32  (was 1024 before MVP-A)
+%llm.append_kv %cache, %keys, %values, %seq_ids { block_size = 32 : i32 }
+%llm.lookup_kv %new_cache, %block_indices, %seq_lens
+%llm.paged_attention %query, %new_cache, %block_indices, %seq_lens
+\end{lstlisting}
 
 \subsection{Attention Optimization Analysis}
 

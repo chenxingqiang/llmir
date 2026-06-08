@@ -15,6 +15,7 @@ SCRIPTS = [
     HERE / "create_block_size_chart_nature.py",
     HERE / "create_attention_speedup_nature.py",
     HERE / "create_mvp_evaluation_nature.py",
+    HERE / "create_measured_figures_nature.py",
     PAPER_ONLY / "create_multi_model_comparison_nature.py",
     PAPER_ONLY / "create_prefix_cache_nature.py",
 ]

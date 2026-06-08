@@ -15,7 +15,9 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | Native CUDA KV kernels | `libMLIRLLMRuntime` + `cuda_probe`, `LLMIR_KV_BACKEND=native` | **MVP-C** (optional build) |
 | §5 ShareGPT throughput vs vLLM | vLLM baseline in same harness | Planned (needs vLLM + GPU CI) |
 | Table III PPL / MMLU | — | Planned |
-| Multi-model Table II | — | Planned (requires GPU harness) |
+| Multi-model Table II | Partial: gpt2 + Qwen2.5-7B measured rows | **Partial** (`paper_results.json`, `a800_qwen_inference.json`) |
+| Measured harness Table | `IEEE-conference/benchmarks/paper_results.json` | **gpt2 CPU** |
+| Prefix TTFT Fig (2048) | `sharegpt_2048_sim.json` | **KV sim measured** |
 
 ## Quick commands
 
@@ -26,6 +28,10 @@ pytest tests/test_mvp_a_e2e.py -m "not network" -q
 # MVP-C torch GPU KV path
 pytest tests/test_torch_gpu_kv_cache.py tests/test_mvp_c_e2e.py -m "not network" -q
 llmir-benchmark --mvp-c-bench --model gpt2 -o mvp_c.json
+
+# Paper measured JSON + figures
+python3 scripts/paper_benchmark_collect.py --model gpt2
+python3 IEEE-conference/figures/create_measured_figures_nature.py
 
 # Full path when llmir-opt is on PATH
 llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \

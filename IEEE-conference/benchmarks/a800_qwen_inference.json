@@ -1,0 +1,15 @@
+{
+  "source": "IEEE-conference/A800_GPU_TEST_RESULTS.md",
+  "hardware": "NVIDIA A800-80GB PCIe",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "date": "2026-02-04",
+  "batch_size_1": {
+    "hf_pytorch_tokens_s": 45.6,
+    "vllm_tokens_s": 93.7
+  },
+  "batch_size_8": {
+    "hf_pytorch_tokens_s": 356.2,
+    "vllm_tokens_s": 742.6
+  },
+  "note": "HF = transformers generate(); llmir-paged not yet measured on this host."
+}
