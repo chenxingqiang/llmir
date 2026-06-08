@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-LLMIR Real Model Benchmark
-使用真实模型进行推理性能测试
+HuggingFace GPU inference baseline (NOT llmir-paged / NOT LLMIR compiler output).
+
+Runs transformers generate() for throughput comparison; does not exercise LLMIR passes.
 """
 
 import os
@@ -204,7 +205,7 @@ def run_comprehensive_benchmark():
     results = []
     
     # 根据GPU内存选择测试模型
-    # A800 80GB可以测试的模型
+    # Model configs for HF generate() baseline (GPU memory dependent)
     test_configs = []
     
     if gpu_memory >= 70:

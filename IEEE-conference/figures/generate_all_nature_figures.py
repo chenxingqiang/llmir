@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate all Nature-style LLMIR paper figures."""
+"""Generate CI-verified / measured Nature-style paper figures (default)."""
 
 from __future__ import annotations
 
@@ -8,16 +8,13 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-PAPER_ONLY = HERE / "paper-only"
 
+# Measured or MVP-verified panels only. For illustrative sweeps/heatmaps, use
+# generate_projected_figures.py
 SCRIPTS = [
     HERE / "create_architecture_diagram_nature.py",
-    HERE / "create_block_size_chart_nature.py",
-    HERE / "create_attention_speedup_nature.py",
     HERE / "create_mvp_evaluation_nature.py",
     HERE / "create_measured_figures_nature.py",
-    PAPER_ONLY / "create_multi_model_comparison_nature.py",
-    PAPER_ONLY / "create_prefix_cache_nature.py",
 ]
 
 
@@ -25,7 +22,8 @@ def main() -> int:
     for script in SCRIPTS:
         print(f"Running {script.name}...")
         subprocess.run([sys.executable, str(script)], cwd=str(script.parent), check=True)
-    print("All Nature figures generated.")
+    print("Measured Nature figures generated.")
+    print("For projected figures: python3 generate_projected_figures.py")
     return 0
 
 

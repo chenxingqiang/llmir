@@ -65,7 +65,7 @@
 \maketitle
 
 \begin{abstract}
-Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) a reproducible evaluation stack (MVP-A/B/C) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} MVP-A rewrites oversized KV block attributes and matches a numeric reference; MVP-B demonstrates ShareGPT-shaped prefix reuse ($\sim$4--5$\times$ KV-layer speedup); MVP-C removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. \textbf{Projected at scale:} multi-model throughput targets on A100-80GB suggest 22.4\% gains over vLLM and 37.8\% over SGLang (Table~\ref{tab:multi_model}); full GPU harness integration is ongoing. Quality targets show perplexity within 0.15\% of baseline (Table~\ref{tab:quality}).
+Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) a reproducible evaluation stack (MVP-A/B/C) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} MVP-A rewrites oversized KV block attributes and matches a numeric reference; MVP-B demonstrates ShareGPT-shaped prefix reuse ($\sim$4--5$\times$ KV-layer speedup); MVP-C removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. \textbf{Projected at scale:} Table~\ref{tab:multi_model} lists design-target throughput on A100-80GB (not yet measured end-to-end by our GPU harness). PPL/MMLU rows in Table~\ref{tab:quality} are illustrative until a quality harness is checked in.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -325,26 +325,24 @@ While LLMIR optimizes at compile time, a thin runtime layer handles inherently d
 
 \subsection{Experimental Setup}
 
-\textbf{Hardware}: We evaluate on three configurations:
+\textbf{Target evaluation environment} (for projected tables and future GPU harness):
 \begin{itemize}
-    \item \textbf{Single GPU}: NVIDIA A100-80GB with PCIe 4.0
-    \item \textbf{Multi-GPU}: 8× NVIDIA A100-80GB with NVLink 3.0 (600 GB/s bidirectional)
-    \item \textbf{CPU}: Intel Xeon Platinum 8380 (40 cores, 2.3 GHz)
+    \item \textbf{Single GPU}: NVIDIA A100-80GB; \textbf{Multi-GPU}: 8× A100-80GB with NVLink
+    \item \textbf{CPU harness}: commodity Linux host (gpt2 measurements in \texttt{paper\_results.json})
+    \item \textbf{Models at scale}: LLaMA-2 7B/13B/70B, Phi-3, Qwen-2, DeepSeek-V2 \cite{b1}
+    \item \textbf{Baselines (target)}: vLLM, SGLang, TensorRT-LLM, MLC-LLM
+    \item \textbf{Benchmarks (target)}: ShareGPT-shaped workloads \cite{b18}, C4 perplexity, MMLU \cite{b19}
 \end{itemize}
 
-\textbf{Models}: We evaluate across diverse architectures:
+\textbf{Completed measurements in the open-source tree} (see \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}):
 \begin{itemize}
-    \item LLaMA-2: 7B, 13B, 70B parameters \cite{b1}
-    \item Phi-3: 3.8B parameters (small efficient model)
-    \item Qwen-2: 7B, 14B, 72B parameters
-    \item DeepSeek-V2: 16B parameters (MoE architecture)
+    \item \textbf{MVP-A/B/C}: compiler passes, prefix reuse, GPU KV path (Fig.~\ref{fig:mvp_eval})
+    \item \textbf{gpt2 decode}: HF vs \texttt{llmir\_paged} on CPU (Table~\ref{tab:measured_harness}, Fig.~\ref{fig:gpt2_latency})
+    \item \textbf{Prefix / TTFT proxies}: KV simulation at 2048-token system prompt; gpt2 \texttt{warm\_prefix} prefill savings (Fig.~\ref{fig:prefix_ttft})
+    \item \textbf{External reference}: Qwen2.5-7B vLLM/HF from official benchmark (\texttt{external\_baselines.json})
 \end{itemize}
 
-\textbf{Baselines}: vLLM v0.4.2, SGLang v0.1.14, TensorRT-LLM v0.9.0, MLC-LLM v0.1.0
-
-\textbf{Benchmarks}: ShareGPT dataset \cite{b18} for throughput evaluation, C4 validation set for perplexity measurement, MMLU \cite{b19} for accuracy validation.
-
-\textbf{Metrics}: Tokens/sec throughput, time-to-first-token (TTFT) latency, memory utilization, perplexity, MMLU accuracy.
+\textbf{Metrics}: Tokens/sec, TTFT / prefill-token proxies, \texttt{prefix\_hit\_tokens}, MVP pass correctness.
 
 \subsection{Reproducible Evaluation Pipeline (MVP-A/B/C)}
 
@@ -359,7 +357,7 @@ To separate \emph{verified} compiler/serving artifacts from \emph{projected} lar
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/mvp_evaluation_nature.pdf}
-\caption{Verified MVP evaluation (Nature-style panels). \textbf{a,} MVP-A block-size rewrite. \textbf{b,} MVP-B normalized latency with prefix reuse. \textbf{c,} MVP-C relative decode throughput (GPU path vs NumPy reference). Reproduce via \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}.}
+\caption{MVP evaluation (Nature-style). \textbf{a,b,} Verified: MVP-A block-size rewrite; MVP-B normalized latency with prefix reuse. \textbf{c,} Illustrative MVP-C relative decode targets (GPU vs NumPy reference). Reproduce via \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}.}
 \label{fig:mvp_eval}
 \end{figure}
 
@@ -391,8 +389,6 @@ Qwen-2-14B & 48,600 & 39,700 & 35,200 & 46,100 & 37,200 \\
 Qwen-2-72B & 11,200 & 9,150 & 8,100 & 10,650 & 8,450 \\
 \hline
 DeepSeek-16B & 52,400 & 42,800 & 37,900 & 49,600 & 40,100 \\
-\hline
-\textbf{Avg Improv.} & - & \textbf{22.4\%} & \textbf{38.1\%} & \textbf{4.8\%} & \textbf{25.9\%} \\
 \hline
 \end{tabular}
 \label{tab:multi_model}
@@ -427,12 +423,12 @@ Qwen2.5-7B\textsuperscript{*} & 40 & --- & 84 & \texttt{external\_baselines.json
 
 Key observations: (1) \textsuperscript{‡}Measured gpt2 row (Table~\ref{tab:measured_harness}) shows HF can beat \texttt{llmir-paged} on short CPU prompts; LLMIR value is compile-time optimization plus prefix reuse (Fig.~\ref{fig:prefix_ttft}). (2) Projected rows suggest LLMIR targets gains over runtime systems when GPU harness completes. (3) \textsuperscript{*}Cited Qwen2.5-7B vLLM throughput (84 tok/s, A100 batch=1) from the official Qwen benchmark anchors an external reference column, distinct from LLMIR measurements.
 
-\subsection{Quality Metrics}
+\subsection{Quality Metrics (Illustrative Targets)}
 
-Table \ref{tab:quality} demonstrates that LLMIR maintains model quality:
+Table \ref{tab:quality} lists \emph{design targets} for quality preservation once a C4/MMLU harness is integrated; values are not yet measured in CI:
 
 \begin{table}[htbp]
-\caption{Quality Metrics (Perplexity on C4, MMLU Accuracy)}
+\caption{Quality Targets (Perplexity on C4, MMLU Accuracy)\textsuperscript{$\dagger$}}
 \begin{center}
 \begin{tabular}{|l|c|c|c|c|}
 \hline
@@ -451,27 +447,28 @@ DeepSeek-16B & 6.58 & 6.59 & 62.3\% & 62.2\% \\
 \end{tabular}
 \label{tab:quality}
 \end{center}
+\textsuperscript{$\dagger$}\footnotesize Illustrative targets; run \texttt{scripts/paper\_benchmark\_collect.py} extensions + quality harness before citing as results.
 \end{table}
 
-Perplexity differences are within 0.15\% across all models, and MMLU accuracy differences are within 0.1 percentage points, confirming LLMIR's optimizations preserve model quality.
+We expect compile-time KV and precision passes to keep perplexity within $\sim$0.15\% and MMLU within $\sim$0.1 percentage points of baseline; this remains to be verified.
 
 \subsection{Block Size Optimization Analysis}
 
-Figure \ref{fig:block_optimization} shows block size optimization impact on LLaMA-2-13B. The benchmark uses ShareGPT workload with mixed sequence lengths (128-4096 tokens) on A100-80GB.
+Figure \ref{fig:block_optimization} illustrates block-size sensitivity aligned with Algorithm~\ref{alg:block_opt}; the sweep uses illustrative KV-append microbench numbers until MVP-A JSON drives the plot.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/block_size_optimization_nature.pdf}
-\caption{Block-size sweep (Nature style; MVP-A aligned). \textbf{a,} Throughput vs block size on LLaMA-2-13B (ShareGPT-shaped workload, A100-80GB). \textbf{b,} Fragmentation metric $F(B)$ from Algorithm~\ref{alg:block_opt}. MVP-A verified rewrite: oversized attributes (e.g., 1024) reduce to 32 for short sequences in CI.}
+\caption{Block-size sweep (illustrative; MVP-A aligned). \textbf{a,} Throughput vs block size (KV-append microbench lineage, not A100 LLaMA e2e). \textbf{b,} Fragmentation metric $F(B)$ from Algorithm~\ref{alg:block_opt}. Verified: MVP-A rewrites oversized attributes (e.g., 1024$\rightarrow$32) in CI.}
 \label{fig:block_optimization}
 \end{figure}
 
-\subsection{Memory Configuration Analysis}
+\subsection{Memory Configuration Analysis (Illustrative)}
 
-Table \ref{tab:memory} details memory configuration performance on LLaMA-2-13B:
+Table \ref{tab:memory} shows illustrative KV-cache memory-configuration targets derived from KV-append microbenchmarks (not end-to-end LLaMA-2-13B on A100):
 
 \begin{table}[htbp]
-\caption{Memory Configuration Performance (LLaMA-2-13B, A100-80GB)}
+\caption{Memory Configuration Targets (KV-append microbench lineage)\textsuperscript{$\dagger$}}
 \begin{center}
 \begin{tabular}{|l|c|c|c|}
 \hline
@@ -490,16 +487,17 @@ Unified(128KB) only & 48,963 & 56.4 GB & 6.6\% \\
 \end{tabular}
 \label{tab:memory}
 \end{center}
+\textsuperscript{$\dagger$}\footnotesize Illustrative; see \texttt{benchmark/LLM/results/benchmark\_summary.txt} banner for hardware scope.
 \end{table}
 
-The performance drop with 256KB unified memory (vs 128KB) occurs because larger unified memory blocks cause increased fragmentation when sequences have varied lengths, leading to more frequent compaction operations. The 128KB configuration balances allocation overhead with fragmentation avoidance.
+The 256KB vs 128KB unified-memory trade-off is design rationale for fragmentation vs allocation overhead; end-to-end validation on A100 is pending.
 
-\subsection{Multi-GPU Scaling}
+\subsection{Multi-GPU Scaling (Illustrative Targets)}
 
-Table \ref{tab:scaling} shows scaling efficiency on LLaMA-2-70B:
+Table \ref{tab:scaling} lists projected scaling efficiency for LLaMA-2-70B (not yet measured in our harness):
 
 \begin{table}[htbp]
-\caption{Multi-GPU Scaling (LLaMA-2-70B, A100-80GB×8)}
+\caption{Multi-GPU Scaling Targets (LLaMA-2-70B, A100-80GB×8)\textsuperscript{$\dagger$}}
 \begin{center}
 \begin{tabular}{|l|c|c|c|c|}
 \hline
@@ -514,9 +512,8 @@ Hybrid (TP+PP) & 1.95× & 3.82× & 7.56× & 94.5\% \\
 \end{tabular}
 \label{tab:scaling}
 \end{center}
+\textsuperscript{$\dagger$}\footnotesize Illustrative targets for hybrid TP+PP placement (GPUs 0--3 / 4--7 layer groups).
 \end{table}
-
-In hybrid mode, GPU allocation follows: GPUs 0-3 form one tensor-parallel group handling layers 0-39, GPUs 4-7 form another group handling layers 40-79. Pipeline stages overlap computation and communication, achieving 94.5\% scaling efficiency.
 
 \subsection{Prefix Cache and ShareGPT Workload}
 
@@ -554,16 +551,16 @@ Figure \ref{fig:attention_speedup} compares attention optimization techniques ac
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/attention_speedup_nature.pdf}
-\caption{Attention optimization speedups (Nature style, log-scaled sequence length). Sliding window reaches 2.15$\times$ at 4096 tokens; Flash Attention yields 1.5--1.7$\times$. Micro-benchmark: A100-80GB, head dim 128, batch 8.}
+\caption{Attention optimization speedups (illustrative; standalone C++ microbench, not production LLMIR Flash kernels). Log-scaled sequence length; regenerate from \texttt{benchmark/attention/} before citing hardware-specific numbers.}
 \label{fig:attention_speedup}
 \end{figure}
 
-\subsection{Ablation Study}
+\subsection{Ablation Study (Illustrative Targets)}
 
-Table \ref{tab:ablation} shows individual optimization contributions:
+Table \ref{tab:ablation} lists projected per-pass contributions pending GPU ablation harness:
 
 \begin{table}[htbp]
-\caption{Ablation Study on LLaMA-2-13B}
+\caption{Ablation Targets on LLaMA-2-13B\textsuperscript{$\dagger$}}
 \begin{center}
 \begin{tabular}{|l|c|c|}
 \hline
@@ -582,13 +579,14 @@ Baseline (no LLMIR opt.) & 32,500 & - \\
 \end{tabular}
 \label{tab:ablation}
 \end{center}
+\textsuperscript{$\dagger$}\footnotesize Illustrative cumulative targets; not measured in CI.
 \end{table}
 
 \section{Discussion}
 
 \subsection{Compile-Time Benefits}
 
-Our results demonstrate that compile-time optimization provides significant benefits beyond what runtime systems achieve alone:
+Compile-time optimization can provide benefits beyond runtime-only systems when the full GPU harness is complete; our verified MVP stack already shows compiler-to-serving linkage:
 
 \textbf{Cross-Operation Analysis}: The compiler identifies optimization opportunities spanning multiple operations. For example, when \texttt{llm.append\_kv} feeds directly into \texttt{llm.paged\_attention}, the compiler can fuse memory allocation with attention computation setup, eliminating intermediate barriers. Our analysis shows this fusion reduces kernel launch overhead by 15-20\% on average.
 
@@ -600,7 +598,7 @@ Our results demonstrate that compile-time optimization provides significant bene
 
 \subsection{Limitations and Future Work}
 
-\textbf{Measurement gap}: Table~\ref{tab:multi_model} and several micro-benchmark figures use illustrative targets until the multi-model GPU harness feeds \texttt{llmir-benchmark} JSON into \texttt{scripts/plot\_from\_results.py}. Verified claims are scoped to MVP-A/B/C (Fig.~\ref{fig:mvp_eval}).
+\textbf{Measurement gap}: Tables~\ref{tab:multi_model}, \ref{tab:quality}, \ref{tab:memory}, \ref{tab:scaling}, \ref{tab:ablation}, and several figures use illustrative targets until the multi-model GPU harness feeds \texttt{llmir-benchmark} JSON into \texttt{scripts/plot\_from\_results.py}. Verified claims are scoped to MVP-A/B/C (Fig.~\ref{fig:mvp_eval}), gpt2 measurements, and prefix proxies (Fig.~\ref{fig:prefix_ttft}).
 
 \textbf{Short-prompt overhead}: Routing KV through LLMIR adds integration cost on tiny prompts; gains concentrate on prefix reuse (MVP-B) and compile-time block sizing (MVP-A), not raw single-token latency vs HuggingFace \texttt{generate()}.
 
@@ -614,7 +612,7 @@ Our results demonstrate that compile-time optimization provides significant bene
 
 This paper presented LLMIR, a compiler infrastructure that brings systematic optimization to LLM inference through LLM-specific MLIR dialect design and compile-time analysis of previously runtime-only patterns. Our key technical contributions include: (1) formal type specifications for PagedKVCache, ShardedTensor, and QuantizedTensor with semantic invariants enabling static analysis; (2) block size optimization using combined fragmentation and GPU utilization metrics; (3) quantization safety analysis with error bound estimation; and (4) a multi-stage compilation pipeline from PyTorch/ONNX to optimized CUDA kernels.
 
-Our open-source stack verifies the compiler-to-serving path through MVP-A/B/C, while projected multi-model results indicate 22.4\% over vLLM and 37.8\% over SGLang at scale. LLMIR's compile-time optimization with minimal runtime overhead is a promising direction for LLM inference systems; figures use Nature-style visualization and link to reproducible harnesses in the repository.
+Our open-source stack verifies the compiler-to-serving path through MVP-A/B/C, gpt2 CPU measurements, and prefix-heavy workloads; large-scale multi-model rows in Table~\ref{tab:multi_model} remain design targets until GPU CI lands. LLMIR's compile-time optimization with minimal runtime overhead is a promising direction for LLM inference systems; Nature-style figures separate measured panels from illustrative projections via \texttt{generate\_all\_nature\_figures.py} vs \texttt{generate\_projected\_figures.py}.
 
 \section*{Acknowledgment}
 This work was supported by anonymous funding sources.
