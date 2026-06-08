@@ -84,6 +84,11 @@ test-results/
 # Benchmark results
 benchmark_results.json
 results/
+benchmark/attention/results/*.txt
+!benchmark/attention/results/.gitkeep
+benchmark/LLM/results/*.png
+benchmark/LLM/results/kvcache_benchmark_results.txt
+benchmark/LLM/results/llama31/*.csv
 
 # C++ test binary (build artifact)
 test_llmir_cpp

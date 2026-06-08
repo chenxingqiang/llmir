@@ -57,6 +57,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 - Legacy matplotlib v1/v2 figure scripts — **removed** (use `create_*_nature.py` + generators above).
 - HF-only GPU scripts (`run_real_benchmark.sh`, `comprehensive_benchmark.sh`, etc.) — **removed**; use `cpu_inference_compare.py` / `gpu_inference_compare.py` / `paper_benchmark_collect.py`.
 - `IEEE-conference/figures/paper-only/` — hard-coded arrays; run only via `generate_projected_figures.py`.
+- Committed raw benchmark logs / plots under `benchmark/**/results/` — **removed**; regenerate via harness scripts. `benchmark_summary.txt` retained with scope banner for appendix lineage.
 
 ## Figure generation
 

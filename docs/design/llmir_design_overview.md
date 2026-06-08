@@ -4,6 +4,8 @@
 
 LLMIR (Large Language Model Intermediate Representation) is a compiler infrastructure based on MLIR designed to optimize LLM inference workloads. This document provides an overview of the system design and architecture.
 
+Implementation status: [`CAPABILITY_MATRIX.md`](../CAPABILITY_MATRIX.md) (authoritative; supersedes older design drafts).
+
 ## Core Design Principles
 
 ### 1. Multi-Level Abstraction
