@@ -58,6 +58,40 @@ def test_torch_gpu_cache_append_lookup_numpy(kv_config):
     assert np.allclose(v_out.cpu().numpy(), values)
 
 
+def test_torch_gpu_cache_block_paging_spans_blocks(kv_config):
+    """Tokens larger than block_size use multiple physical blocks."""
+    pytest.importorskip("torch")
+    import torch
+
+    kv_config.block_size = 4
+    cache = TorchGpuPagedKVCache(kv_config, device="cpu")
+    keys = torch.randn(1, 10, kv_config.num_heads, kv_config.head_dim)
+    values = torch.randn(1, 10, kv_config.num_heads, kv_config.head_dim)
+    cache.append(keys, values, np.array([0], dtype=np.int32))
+    assert cache.get_sequence_length(0) == 10
+    # 10 tokens with block_size 4 => 3 blocks
+    state = cache._sequences[0]
+    assert len(state.block_ids) == 3
+    k_out, v_out = cache.lookup(
+        np.zeros((1, 1), dtype=np.int32), np.array([10], dtype=np.int32)
+    )
+    assert torch.allclose(k_out[0], keys[0])
+    assert torch.allclose(v_out[0], values[0])
+
+
+def test_torch_gpu_import_export_dense(kv_config):
+    pytest.importorskip("torch")
+    import torch
+
+    cache = TorchGpuPagedKVCache(kv_config, device="cpu")
+    keys = torch.randn(1, 6, kv_config.num_heads, kv_config.head_dim)
+    values = torch.randn(1, 6, kv_config.num_heads, kv_config.head_dim)
+    cache.import_dense(keys, values, 0)
+    ek, ev = cache.export_dense(0, 6)
+    assert torch.allclose(ek, keys)
+    assert torch.allclose(ev, values)
+
+
 def test_torch_gpu_cache_append_lookup_torch(kv_config):
     pytest.importorskip("torch")
     import torch

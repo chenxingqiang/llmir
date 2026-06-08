@@ -54,6 +54,35 @@ def test_paged_decoder_torch_kv_path(tiny_llama, monkeypatch):
         os.environ.pop("LLMIR_KV_BACKEND", None)
 
 
+def test_paged_decoder_chains_past_key_values_without_repeated_lookup(
+    tiny_llama, monkeypatch
+):
+    """Decode reuses HF past_key_values instead of rebuilding DynamicCache each step."""
+    pytest.importorskip("torch")
+    model, tokenizer, _ = tiny_llama
+    os.environ["LLMIR_KV_BACKEND"] = "torch_cuda"
+    try:
+        from llmir.runtime.paged_decoder import PagedKVDecoder
+
+        lookup_calls = {"n": 0}
+        real_lookup = PagedKVDecoder._lookup_dynamic_cache
+
+        def counted_lookup(self, layer_caches, past_len):
+            lookup_calls["n"] += 1
+            return real_lookup(self, layer_caches, past_len)
+
+        monkeypatch.setattr(
+            PagedKVDecoder, "_lookup_dynamic_cache", counted_lookup
+        )
+
+        decoder = PagedKVDecoder(model, tokenizer, enable_prefix_cache=False)
+        decoder.decode(["hello world"], max_new_tokens=4)
+        # At most one lookup (prefill start); decode steps must chain past_key_values.
+        assert lookup_calls["n"] <= 1
+    finally:
+        os.environ.pop("LLMIR_KV_BACKEND", None)
+
+
 def test_cuda_probe_summarize():
     from llmir.runtime.cuda_probe import summarize_cuda_stack
 

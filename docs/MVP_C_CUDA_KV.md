@@ -58,8 +58,10 @@ flowchart LR
 - **Performance (GPU)**: `torch_cuda` tok/s ≥ `numpy` on the same prompt (MVP-C bench); larger gap on longer prompts / more layers.
 - **Optional**: `native` backend matches or beats `torch_cuda` when `libMLIRLLMRuntime` is built with CUDA.
 
-## Honesty
+## Implementation notes
 
-- `TorchGpuPagedKVCache` is a **concat-list** store (MVP), not full block-paged GPU memory from the C++ runtime.
-- Prefix restore still serializes to NumPy in `PrefixKVStore`; GPU path re-uploads on restore (acceptable for MVP-C).
+- `TorchGpuPagedKVCache` uses **block-paged** GPU tensors (free-list block allocator, aligned with C++ `KVCache.cpp` layout).
+- `PrefixKVStore` keeps **GPU clones** for torch backends (`export_dense` / `import_dense`); NumPy path unchanged for CPU reference.
+- `PagedKVDecoder` **chains** HuggingFace `past_key_values` across decode steps (no per-step `lookup` → DynamicCache rebuild).
+- Native `libMLIRLLMRuntime` CUDA blocks remain optional via `LLMIR_KV_BACKEND=native`.
 - Paper Table II multi-model vLLM numbers are still out of scope.

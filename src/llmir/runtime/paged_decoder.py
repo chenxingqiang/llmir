@@ -347,7 +347,7 @@ class PagedKVDecoder:
 
         if self._prefix_store is not None:
             prefix_hit_tokens, restored = self._prefix_store.lookup_restore(
-                prompt_token_ids, self.kv_config
+                prompt_token_ids, self.kv_config, device=self._kv_device()
             )
             if restored is not None:
                 layer_caches = restored
@@ -358,9 +358,10 @@ class PagedKVDecoder:
         finish_reason = "length"
         prefill_tokens_computed = 0
 
+        past_key_values: Any = None
         with torch.no_grad():
             if prefill_start < prompt_len:
-                logits = self._prefill_suffix(
+                logits, past_key_values = self._prefill_suffix(
                     input_ids,
                     attention_mask,
                     layer_caches,
@@ -369,7 +370,7 @@ class PagedKVDecoder:
                 )
                 prefill_tokens_computed = prompt_len - prefill_start
             else:
-                logits = self._logits_after_cached_prefix(
+                logits, past_key_values = self._logits_after_cached_prefix(
                     input_ids,
                     attention_mask,
                     layer_caches,
@@ -403,10 +404,6 @@ class PagedKVDecoder:
                 )
 
                 for _ in range(max_new_tokens - 1):
-                    past_len = layer_caches[0].get_sequence_length(0)
-                    past_key_values = self._lookup_dynamic_cache(
-                        layer_caches, past_len
-                    )
                     outputs = self.model(
                         input_ids=next_input_ids,
                         attention_mask=attention_mask,
@@ -420,6 +417,7 @@ class PagedKVDecoder:
                         seq_ids,
                         append_only_new=True,
                     )
+                    past_key_values = getattr(outputs, "past_key_values", None)
                     next_token = int(outputs.logits[:, -1].argmax(dim=-1).item())
                     generated.append(next_token)
 
@@ -461,7 +459,7 @@ class PagedKVDecoder:
         seq_ids: np.ndarray,
         *,
         start_pos: int,
-    ) -> Any:
+    ) -> Tuple[Any, Any]:
         """Forward prompt tokens ``[start_pos:prompt_len]`` and append KV."""
         import torch
 
@@ -502,7 +500,7 @@ class PagedKVDecoder:
                 seq_ids,
                 append_only_new=False,
             )
-        return outputs.logits
+        return outputs.logits, getattr(outputs, "past_key_values", None)
 
     def _logits_after_cached_prefix(
         self,
@@ -512,7 +510,7 @@ class PagedKVDecoder:
         seq_ids: np.ndarray,
         *,
         prompt_len: int,
-    ) -> Any:
+    ) -> Tuple[Any, Any]:
         """Sample logits for the last prompt token when the full prefix is cached."""
         import torch
 
@@ -542,7 +540,7 @@ class PagedKVDecoder:
             seq_ids,
             append_only_new=True,
         )
-        return outputs.logits
+        return outputs.logits, getattr(outputs, "past_key_values", None)
 
     # --------------------------------------------------------- KV plumbing
 
