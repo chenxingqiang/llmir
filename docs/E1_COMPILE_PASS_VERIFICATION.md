@@ -2,7 +2,7 @@
 
 Paper **E1** verifies that compile-time KV block optimization (Algorithm 1) is applied in IR and matches a numeric reference kernel.
 
-Repository harness (legacy CLI): `llmir-compile --mvp-a-e2e`, `tests/test_mvp_a_e2e.py`, `IEEE-conference/benchmarks/gpt2_mvp_a_snippet.mlir`.
+Repository harness (legacy CLI): `llmir-compile --mvp-a-e2e`, `tests/test_mvp_a_e2e.py`, `IEEE-conference/benchmarks/gpt2_e1_snippet.mlir`.
 
 ## Commands
 

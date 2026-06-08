@@ -8,7 +8,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 
 | Reviewer theme | Response in paper | Repo evidence |
 |----------------|-------------------|---------------|
-| Implementation / compile path | §4, Algorithm 1, **E1** | `BlockSizeAnalysis.cpp`, `tests/test_mvp_a_e2e.py`, `gpt2_mvp_a_snippet.mlir` |
+| Implementation / compile path | §4, Algorithm 1, **E1** | `BlockSizeAnalysis.cpp`, `tests/test_mvp_a_e2e.py`, `gpt2_e1_snippet.mlir` |
 | Model → IR → runtime | §3.1 pipeline, E1 lowering | `llmir-compile --mvp-a-e2e`, lit tests |
 | Prefix / ShareGPT workload | **E2**, Fig. prefix TTFT | `sharegpt_prefix_bench.py`, `sharegpt_2048_sim.json`, `paper_results.json` |
 | GPU KV without NumPy round-trip | **E3** | `TorchGpuPagedKVCache`, `tests/test_mvp_c_e2e.py` |

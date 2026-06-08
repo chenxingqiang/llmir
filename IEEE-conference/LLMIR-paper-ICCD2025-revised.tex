@@ -346,7 +346,7 @@ Isolated attention microbenchmarks and multi-model throughput \emph{design targe
 
 \subsection{Compiler Verification (E1--E3)}
 
-Fig.~\ref{fig:mvp_eval} summarizes the three evaluation experiments that connect compiler passes to serving behavior.\footnote{Repository CLI flags retain legacy names: E1 $\leftrightarrow$ \texttt{--mvp-a-e2e}, E2 $\leftrightarrow$ \texttt{--sharegpt-prefix-bench}, E3 $\leftrightarrow$ \texttt{--mvp-c-bench}.}
+Fig.~\ref{fig:e1_e3_eval} summarizes the three evaluation experiments that connect compiler passes to serving behavior.\footnote{Repository CLI flags retain legacy names: E1 $\leftrightarrow$ \texttt{--mvp-a-e2e}, E2 $\leftrightarrow$ \texttt{--sharegpt-prefix-bench}, E3 $\leftrightarrow$ \texttt{--mvp-c-bench}.}
 
 \textbf{E1 (compile-time pass verification):} \texttt{llmir-compile --mvp-a-e2e} runs Algorithm~\ref{alg:block_opt} on single-layer IR, lowering to runtime calls; CI asserts block size reduction (e.g., 1024$\rightarrow$32) and numeric agreement with a reference kernel.
 
@@ -356,9 +356,9 @@ Fig.~\ref{fig:mvp_eval} summarizes the three evaluation experiments that connect
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.48\textwidth]{figures/mvp_evaluation_nature.pdf}
+\includegraphics[width=0.48\textwidth]{figures/e1_e3_evaluation_nature.pdf}
 \caption{Compiler verification experiments (E1--E3). \textbf{a,b,} Verified: E1 block-size IR rewrite; E2 normalized latency with prefix reuse. \textbf{c,} Illustrative E3 GPU vs NumPy targets. Reproduce via \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}.}
-\label{fig:mvp_eval}
+\label{fig:e1_e3_eval}
 \end{figure}
 
 \subsection{Serving Proxies}

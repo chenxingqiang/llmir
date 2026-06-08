@@ -13,7 +13,7 @@ HERE = Path(__file__).resolve().parent
 # generate_projected_figures.py
 SCRIPTS = [
     HERE / "create_architecture_diagram_nature.py",
-    HERE / "create_mvp_evaluation_nature.py",
+    HERE / "create_e1_e3_evaluation_nature.py",
     HERE / "create_measured_figures_nature.py",
 ]
 

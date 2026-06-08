@@ -68,8 +68,8 @@ def main() -> None:
     )
     fig.subplots_adjust(bottom=0.2, wspace=0.42)
 
-    save_figure(fig, "mvp_evaluation_nature", out_dir=HERE)
-    print(f"Wrote {HERE / 'mvp_evaluation_nature.pdf'}")
+    save_figure(fig, "e1_e3_evaluation_nature", out_dir=HERE)
+    print(f"Wrote {HERE / 'e1_e3_evaluation_nature.pdf'}")
 
 
 if __name__ == "__main__":

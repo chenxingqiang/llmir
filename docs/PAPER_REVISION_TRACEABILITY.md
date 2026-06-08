@@ -59,7 +59,7 @@ Regenerate projected/illustrative: `python3 IEEE-conference/figures/generate_pro
 
 | Figure | Verified? | Source |
 |--------|-----------|--------|
-| `mvp_evaluation_nature` | **Yes** (panels a–c) | E1/E2/E3 CI + docs |
+| `e1_e3_evaluation_nature` | **Yes** (panels a–c) | E1/E2/E3 CI + docs |
 | `prefix_cache_nature` | **Partial** | `sharegpt_prefix_bench` |
 | `block_size_optimization_nature` | **Partial** | Algorithm 1 + illustrative sweep |
 | `multi_model_comparison_nature` | **No** (projected) | Appendix A design targets |
