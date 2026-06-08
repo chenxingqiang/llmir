@@ -544,12 +544,19 @@ class LLMEngine:
                 "LLMIR_PAGED backend requires a working HuggingFace tokenizer."
             )
 
-        load_kwargs: Dict[str, Any] = {
-            "trust_remote_code": self.engine_config.trust_remote_code,
-        }
+        from llmir.integration.hf_load import (
+            apply_transformers_load_patches,
+            hf_from_pretrained_kwargs,
+            materialize_hf_causal_lm,
+        )
+
+        apply_transformers_load_patches()
+        load_kwargs: Dict[str, Any] = hf_from_pretrained_kwargs(
+            device="cpu",
+            trust_remote_code=self.engine_config.trust_remote_code,
+        )
         if self._hf_token:
             load_kwargs["token"] = self._hf_token
-        # Map the engine dtype string to a torch dtype when possible.
         try:
             import torch
 
@@ -567,7 +574,9 @@ class LLMEngine:
         except ImportError:
             pass
 
-        model = AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
+        model = materialize_hf_causal_lm(
+            AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
+        )
         model.eval()
         self._hf_model = model
 

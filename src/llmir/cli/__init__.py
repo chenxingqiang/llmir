@@ -230,6 +230,34 @@ Examples:
         action="store_true",
         help="Run prefix cache microbenchmark (lookup + KV reuse simulation)",
     )
+    parser.add_argument(
+        "--sharegpt-prefix-bench",
+        action="store_true",
+        help="MVP-B: ShareGPT-style shared system prompt + N user requests",
+    )
+    parser.add_argument(
+        "--sharegpt-system-tokens",
+        type=int,
+        default=128,
+        help="Approx shared system prompt tokens for --sharegpt-prefix-bench",
+    )
+    parser.add_argument(
+        "--sharegpt-requests",
+        type=int,
+        default=32,
+        help="Number of user-variant requests for --sharegpt-prefix-bench",
+    )
+    parser.add_argument(
+        "--sharegpt-suffix-tokens",
+        type=int,
+        default=8,
+        help="Approx per-request user suffix tokens",
+    )
+    parser.add_argument(
+        "--sharegpt-simulation-only",
+        action="store_true",
+        help="KV simulation only (no HuggingFace E2E)",
+    )
     args = parser.parse_args()
 
     if args.compare:
@@ -262,6 +290,33 @@ Examples:
             json.dump(out, f, indent=2)
         print(f"\nResults saved to {args.output}")
         return 0
+
+    if args.sharegpt_prefix_bench:
+        from llmir.benchmark.sharegpt_prefix_bench import (
+            ShareGPTPrefixBenchConfig,
+            print_sharegpt_results,
+            run_sharegpt_prefix_benchmark,
+        )
+
+        cfg = ShareGPTPrefixBenchConfig(
+            model=args.model,
+            system_prompt_tokens=args.sharegpt_system_tokens,
+            num_requests=args.sharegpt_requests,
+            user_suffix_tokens=args.sharegpt_suffix_tokens,
+            max_new_tokens=min(args.compare_max_tokens, 16),
+        )
+        print("LLMIR ShareGPT-style prefix benchmark (MVP-B)")
+        print("=" * 50)
+        payload = run_sharegpt_prefix_benchmark(
+            cfg,
+            run_simulation=True,
+            run_llmir_paged=not args.sharegpt_simulation_only,
+        )
+        print_sharegpt_results(payload)
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+        print(f"\nResults saved to {args.output}")
+        return 0 if not payload.get("llmir_paged_error") else 1
 
     if args.prefix_bench:
         from llmir.benchmark.prefix_cache_bench import (
