@@ -557,7 +557,6 @@ class LLMEngine:
         )
         if self._hf_token:
             load_kwargs["token"] = self._hf_token
-        # Map the engine dtype string to a torch dtype when possible.
         try:
             import torch
 
@@ -575,8 +574,9 @@ class LLMEngine:
         except ImportError:
             pass
 
-        model = AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
-        model = materialize_hf_causal_lm(model)
+        model = materialize_hf_causal_lm(
+            AutoModelForCausalLM.from_pretrained(self.model_path, **load_kwargs)
+        )
         model.eval()
         self._hf_model = model
 

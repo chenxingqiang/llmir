@@ -10,7 +10,8 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | §3.1 model → IR → kernel (single layer) | `llmir-compile --mvp-a-e2e`, `src/llmir/compiler/mvp_pipeline.py` | MVP-A |
 | Lower to runtime calls | `-llm-lower-kv-cache-ops` → `@mlir_llm_*` | Implemented (needs `llmir-opt`) |
 | Reference correctness | `tests/test_mvp_a_e2e.py`, `tests/test_compile_e2e.py` | CI (Python) |
-| §5 ShareGPT throughput vs vLLM | — | **Not in MVP-A** (see MVP-B roadmap) |
+| §5 ShareGPT prefix / TTFT workload | `scripts/sharegpt_prefix_bench.py`, `llmir-benchmark --sharegpt-prefix-bench` | **MVP-B** (sim + llmir_paged E2E) |
+| §5 ShareGPT throughput vs vLLM | vLLM baseline in same harness | Planned (needs vLLM + GPU CI) |
 | Table III PPL / MMLU | — | Planned |
 | Multi-model Table II | — | Planned (requires GPU harness) |
 
