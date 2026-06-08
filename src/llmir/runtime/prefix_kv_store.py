@@ -91,6 +91,18 @@ class PrefixKVStore:
         return 0, None
 
 
+def _kv_to_numpy(data: object) -> np.ndarray:
+    """Normalize torch or NumPy KV tensors for prefix-store persistence."""
+    try:
+        import torch
+
+        if isinstance(data, torch.Tensor):
+            return data.detach().cpu().numpy()
+    except ImportError:
+        pass
+    return np.asarray(data).copy()
+
+
 def _capture_layer_kv(
     layer_caches: List[PagedKVCache],
     seq_len: int,
@@ -102,7 +114,7 @@ def _capture_layer_kv(
     captured: List[Tuple[np.ndarray, np.ndarray]] = []
     for layer_cache in layer_caches:
         keys, values = layer_cache.lookup(block_indices, seq_lens)
-        captured.append((keys.copy(), values.copy()))
+        captured.append((_kv_to_numpy(keys), _kv_to_numpy(values)))
     return captured
 
 

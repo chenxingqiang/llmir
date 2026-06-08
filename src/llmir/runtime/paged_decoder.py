@@ -163,6 +163,8 @@ class PagedKVDecoder:
             # Trust the model — KVCache must match its layer count.
             self.kv_config.num_layers = self._num_layers
 
+        self.kv_config.enable_gpu = self._device.type == "cuda"
+
         self.enable_prefix_cache = enable_prefix_cache
         self._prefix_store: Optional[PrefixKVStore] = None
         if enable_prefix_cache:
@@ -206,10 +208,7 @@ class PagedKVDecoder:
             )
 
         token_ids = [int(t) for t in input_ids[0].tolist()]
-        layer_caches = [
-            create_paged_kv_cache(self.kv_config)
-            for _ in range(self.kv_config.num_layers)
-        ]
+        layer_caches = self._create_layer_caches()
         seq_ids = np.zeros(input_ids.shape[0], dtype=np.int32)
 
         with torch.no_grad():
@@ -233,6 +232,24 @@ class PagedKVDecoder:
         return len(token_ids)
 
     # ------------------------------------------------------------------ utils
+
+    def _kv_device(self) -> str:
+        """Device string for :func:`create_paged_kv_cache`."""
+        return str(self._device)
+
+    def _create_layer_caches(self) -> List[PagedKVCache]:
+        return [
+            create_paged_kv_cache(self.kv_config, device=self._kv_device())
+            for _ in range(self.kv_config.num_layers)
+        ]
+
+    @staticmethod
+    def _uses_torch_kv(layer_caches: List[PagedKVCache]) -> bool:
+        if not layer_caches:
+            return False
+        from llmir.runtime.torch_gpu_kv_cache import TorchGpuPagedKVCache
+
+        return isinstance(layer_caches[0], TorchGpuPagedKVCache)
 
     def _detect_device(self) -> Any:
         import torch
@@ -324,10 +341,7 @@ class PagedKVDecoder:
         prompt_token_ids = [int(t) for t in input_ids[0].tolist()]
         prompt_len = input_ids.shape[1]
 
-        layer_caches: List[PagedKVCache] = [
-            create_paged_kv_cache(self.kv_config)
-            for _ in range(self.kv_config.num_layers)
-        ]
+        layer_caches: List[PagedKVCache] = self._create_layer_caches()
         prefix_hit_tokens = 0
         prefill_start = 0
 
@@ -542,6 +556,10 @@ class PagedKVDecoder:
     ) -> None:
         """Append per-layer K/V from the model's cache into LLMIR's PagedKVCache."""
 
+        use_torch = self._uses_torch_kv(layer_caches)
+        if use_torch:
+            from llmir.runtime.torch_gpu_kv_cache import hf_kv_to_llmir_layout
+
         layers = self._iter_layers(past_key_values)
         for layer_idx, (k, v) in enumerate(layers):
             if layer_idx >= len(layer_caches):
@@ -552,9 +570,17 @@ class PagedKVDecoder:
                 k = k[:, :, -1:, :]
                 v = v[:, :, -1:, :]
             # PagedKVCache.append expects (batch, seq_len, num_heads, head_dim).
-            k_np = k.detach().to("cpu").float().numpy().transpose(0, 2, 1, 3)
-            v_np = v.detach().to("cpu").float().numpy().transpose(0, 2, 1, 3)
-            layer_caches[layer_idx].append(k_np, v_np, seq_ids)
+            if use_torch:
+                k_ll, v_ll = hf_kv_to_llmir_layout(k, v)
+                layer_caches[layer_idx].append(
+                    k_ll.to(dtype=self._dtype),
+                    v_ll.to(dtype=self._dtype),
+                    seq_ids,
+                )
+            else:
+                k_np = k.detach().to("cpu").float().numpy().transpose(0, 2, 1, 3)
+                v_np = v.detach().to("cpu").float().numpy().transpose(0, 2, 1, 3)
+                layer_caches[layer_idx].append(k_np, v_np, seq_ids)
 
     def _lookup_dynamic_cache(
         self,
@@ -566,6 +592,10 @@ class PagedKVDecoder:
         import torch
         from transformers import DynamicCache
 
+        use_torch = self._uses_torch_kv(layer_caches)
+        if use_torch:
+            from llmir.runtime.torch_gpu_kv_cache import llmir_kv_to_hf_layout
+
         batch_size = 1
         block_indices = np.zeros(
             (batch_size, self.kv_config.num_layers), dtype=np.int32
@@ -573,15 +603,20 @@ class PagedKVDecoder:
         seq_lens = np.full(batch_size, past_len, dtype=np.int32)
         layer_data: List[Tuple[Any, Any]] = []
         for lc in layer_caches:
-            k_np, v_np = lc.lookup(block_indices, seq_lens)
+            k_out, v_out = lc.lookup(block_indices, seq_lens)
             # PagedKVCache returns (batch, seq_len, num_heads, head_dim);
             # transformers wants (batch, num_heads, seq_len, head_dim).
-            k_t = torch.from_numpy(k_np.transpose(0, 2, 1, 3)).to(
-                device=self._device, dtype=self._dtype
-            )
-            v_t = torch.from_numpy(v_np.transpose(0, 2, 1, 3)).to(
-                device=self._device, dtype=self._dtype
-            )
+            if use_torch:
+                k_t, v_t = llmir_kv_to_hf_layout(k_out, v_out)
+                k_t = k_t.to(device=self._device, dtype=self._dtype)
+                v_t = v_t.to(device=self._device, dtype=self._dtype)
+            else:
+                k_t = torch.from_numpy(k_out.transpose(0, 2, 1, 3)).to(
+                    device=self._device, dtype=self._dtype
+                )
+                v_t = torch.from_numpy(v_out.transpose(0, 2, 1, 3)).to(
+                    device=self._device, dtype=self._dtype
+                )
             layer_data.append((k_t, v_t))
         # transformers >= 4.40 supports the kwarg constructor; older versions
         # expose ``key_cache`` / ``value_cache`` lists. Try both.
