@@ -1,0 +1,57 @@
+name: GPU inference compare (optional)
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: HuggingFace model id
+        required: false
+        default: facebook/opt-125m
+      backends:
+        description: Comma-separated backends
+        required: false
+        default: hf,llmir-paged
+
+jobs:
+  gpu-compare:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install LLMIR and deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[full]"
+          pip install pytest
+
+      - name: Run unit tests (no network)
+        run: pytest tests/ -m "not network" -q
+
+      - name: GPU inference compare
+        if: runner.gpu == 'true' || false
+        run: |
+          python scripts/gpu_inference_compare.py \
+            --model "${{ github.event.inputs.model }}" \
+            --backends "${{ github.event.inputs.backends }}" \
+            --device cuda \
+            -o gpu_compare.json
+
+      - name: CPU fallback compare
+        run: |
+          python scripts/gpu_inference_compare.py \
+            --model "${{ github.event.inputs.model }}" \
+            --backends "llmir-paged" \
+            --device cpu \
+            -o gpu_compare_cpu.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: inference-compare-json
+          path: gpu_compare*.json
+          if-no-files-found: ignore

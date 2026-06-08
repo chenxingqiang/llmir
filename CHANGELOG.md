@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (P5)
+
+- **CUDA kernels**: `CUDAKernels.cu` wired into `MLIRLLMRuntime` via `LLMIR_ENABLE_CUDA`.
+- MQA / GQA / pruned attention launchers implemented (MVP block kernel).
+- C API: `llmir_cuda_runtime_available`, `llmir_cuda_device_count`.
+- Python: `llmir.runtime.cuda_probe`, native ctypes bindings.
+- `scripts/build_native_runtime.sh` auto-enables CUDA when `nvcc` is present.
+- `scripts/package_native_lib.sh` for dev wheel bundling; `docs/P5_CUDA_NATIVE.md`.
+
+### Added (P4)
+
+- **vLLM KV connector**: `LLMIRConnector` + `LLMIRKVStorage` (`llmir.integration.vllm_connector`).
+- `register_llmir_vllm_connector()` for vLLM V1 factory registration.
+- **GPU compare**: `--compare-device` / `--compare-dtype` on `llmir-benchmark --compare`.
+- `scripts/gpu_inference_compare.py`, `scripts/vllm_kv_connector_smoke.py`.
+- Optional workflow `.github/workflows/gpu-benchmark.yml` (workflow_dispatch).
+
 ### Added (prefix on `llmir_paged`)
 
 - `PrefixKVStore` + `PagedKVDecoder.warm_prefix` / decode-time longest-prefix restore.
