@@ -35,7 +35,19 @@ llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \
 mlir-opt test/Dialect/LLM/mvp_single_layer_pipeline.mlir -llm-optimize-kv-cache
 ```
 
+## Paper figures (Nature style)
+
+Regenerate: `python3 IEEE-conference/figures/generate_all_nature_figures.py`
+
+| Figure | Verified? | Source |
+|--------|-----------|--------|
+| `mvp_evaluation_nature` | **Yes** (panels a–c) | MVP-A/B/C CI + docs |
+| `prefix_cache_nature` | **Partial** | `sharegpt_prefix_bench` |
+| `block_size_optimization_nature` | **Partial** | Algorithm 1 + illustrative sweep |
+| `multi_model_comparison_nature` | **No** (projected) | Table II targets |
+| `attention_speedup_nature` | **No** (micro-bench) | Illustrative arrays |
+
 ## Honesty notes
 
-- Throughput figures in `IEEE-conference/figures/paper-only/` are **not** produced by this pipeline.
+- Throughput heatmap / Table II remain **projected** until GPU harness feeds JSON.
 - MVP-A proves **compile-time block sizing + single-layer IR lowering + numeric reference**; it does not claim vLLM-scale serving wins.

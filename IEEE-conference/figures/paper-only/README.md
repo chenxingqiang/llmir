@@ -11,3 +11,11 @@ For reproducible measurements use:
 
 Do not cite throughput numbers from these scripts without re-running the
 corresponding benchmark harness on your hardware.
+
+## Nature-style figures (recommended)
+
+```bash
+cd IEEE-conference/figures && python3 generate_all_nature_figures.py
+```
+
+See [`FIGURES_NATURE.md`](../FIGURES_NATURE.md). Used by `LLMIR-paper-ICCD2025-revised.tex`.
