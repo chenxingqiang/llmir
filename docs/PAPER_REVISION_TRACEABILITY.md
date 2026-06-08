@@ -13,10 +13,10 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | §5 ShareGPT prefix / TTFT workload | `scripts/sharegpt_prefix_bench.py`, `llmir-benchmark --sharegpt-prefix-bench` | **MVP-B** (sim + llmir_paged E2E) |
 | GPU KV without CPU NumPy round-trip | `TorchGpuPagedKVCache`, `PagedKVDecoder` GPU path, `llmir-benchmark --mvp-c-bench` | **MVP-C** |
 | Native CUDA KV kernels | `libMLIRLLMRuntime` + `cuda_probe`, `LLMIR_KV_BACKEND=native` | **MVP-C** (optional build) |
-| §5 ShareGPT throughput vs vLLM | vLLM baseline in same harness | Planned (needs vLLM + GPU CI) |
-| Table III PPL / MMLU | — | Planned |
-| Main-text throughput | Table measured_harness only | **gpt2 CPU** + **cited Qwen** (`paper_results.json`, `external_baselines.json`) |
-| Appendix projected tables | Table II/VI design targets | **Illustrative** — `appendix` in `revised.tex` |
+| §5 evaluation scope | Main text: compiler verification + serving proxies only | **No operator-level claims** |
+| Operator / FlashAttention speedup | Appendix `app:future_ops` only | **Not LLMIR kernels** — `benchmark/attention/` toys |
+| Main-text throughput | Table measured_harness only | **gpt2 CPU** + **cited Qwen** |
+| Appendix scale-out | `app:projected` design targets | **Illustrative** |
 | Prefix TTFT Fig (2048) | `sharegpt_2048_sim.json` | **KV sim measured** |
 
 ## Quick commands
@@ -53,9 +53,10 @@ Regenerate projected/illustrative: `python3 IEEE-conference/figures/generate_pro
 | `prefix_cache_nature` | **Partial** | `sharegpt_prefix_bench` |
 | `block_size_optimization_nature` | **Partial** | Algorithm 1 + illustrative sweep |
 | `multi_model_comparison_nature` | **No** (projected) | Appendix A design targets |
-| `attention_speedup_nature` | **No** (micro-bench) | Illustrative arrays |
+| `attention_speedup_nature` | **No** (future work) | Appendix `app:future_ops`; not LLMIR lowered kernels |
 
 ## Honesty notes
 
-- Throughput heatmap / Table II remain **projected** until GPU harness feeds JSON.
-- MVP-A proves **compile-time block sizing + single-layer IR lowering + numeric reference**; it does not claim vLLM-scale serving wins.
+- Main text §5: **MVP-A/B/C + serving proxies only**; no operator-level kernel claims.
+- Throughput heatmap / scale-out tables: **projected** in Appendix `app:projected`.
+- Attention figure: **future operator work** in Appendix `app:future_ops`; not evidence for LLMIR codegen today.

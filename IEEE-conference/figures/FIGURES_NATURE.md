@@ -29,7 +29,7 @@ Requires `matplotlib`. Outputs PDF + PNG (300 dpi).
 | `prefix_ttft_nature.pdf` | `create_measured_figures_nature.py` | Measured / sim JSON |
 | `gpt2_measured_latency_nature.pdf` | `create_measured_figures_nature.py` | Measured |
 | `block_size_optimization_nature.pdf` | `create_block_size_chart_nature.py` | **Projected** — KV microbench lineage |
-| `attention_speedup_nature.pdf` | `create_attention_speedup_nature.py` | **Projected** — standalone C++ microbench |
+| `attention_speedup_nature.pdf` | `create_attention_speedup_nature.py` | **Future work** — Appendix `app:future_ops` |
 | `paper-only/multi_model_comparison_nature.pdf` | `paper-only/...` | **Projected** — Table II targets |
 | `paper-only/prefix_cache_nature.pdf` | `paper-only/...` | **Projected** — hand-tuned curves |
 
