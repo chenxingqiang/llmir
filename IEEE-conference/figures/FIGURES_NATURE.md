@@ -7,7 +7,7 @@ cd IEEE-conference/figures
 python3 generate_all_nature_figures.py
 ```
 
-Produces CI-verified / measured panels: architecture, MVP evaluation, prefix TTFT, gpt2 latency.
+Produces CI-verified / measured panels: architecture, E1–E3 evaluation, prefix TTFT, gpt2 latency.
 
 ## Generate projected / illustrative figures
 
@@ -25,7 +25,7 @@ Requires `matplotlib`. Outputs PDF + PNG (300 dpi).
 | File | Script | Status |
 |------|--------|--------|
 | `llmir_architecture_nature.pdf` | `create_architecture_diagram_nature.py` | Measured pipeline diagram |
-| `mvp_evaluation_nature.pdf` | `create_mvp_evaluation_nature.py` | MVP a,b verified; panel c illustrative |
+| `mvp_evaluation_nature.pdf` | `create_mvp_evaluation_nature.py` | E1/E2 verified; E3 panel illustrative |
 | `prefix_ttft_nature.pdf` | `create_measured_figures_nature.py` | Measured / sim JSON |
 | `gpt2_measured_latency_nature.pdf` | `create_measured_figures_nature.py` | Measured |
 | `block_size_optimization_nature.pdf` | `create_block_size_chart_nature.py` | **Projected** — KV microbench lineage |

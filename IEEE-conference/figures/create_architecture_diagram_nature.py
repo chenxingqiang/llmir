@@ -64,14 +64,14 @@ def main() -> None:
                 )
             )
 
-    # MVP traceability strip
-    mvps = [
-        ("MVP-A", "Block-size IR + reference", NATURE_COLORS[1]),
-        ("MVP-B", "ShareGPT prefix reuse", NATURE_COLORS[2]),
-        ("MVP-C", "GPU block-paged KV", NATURE_COLORS[0]),
+    # E1–E3 traceability strip
+    experiments = [
+        ("E1", "Compile-time pass verification", NATURE_COLORS[1]),
+        ("E2", "Prefix-aware serving eval.", NATURE_COLORS[2]),
+        ("E3", "GPU-resident KV integration", NATURE_COLORS[0]),
     ]
     bw = 2.85
-    for j, (tag, desc, c) in enumerate(mvps):
+    for j, (tag, desc, c) in enumerate(experiments):
         bx = 0.35 + j * (bw + 0.25)
         ax.add_patch(
             FancyBboxPatch(

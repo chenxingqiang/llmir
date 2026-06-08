@@ -1,23 +1,23 @@
 # Scripts
 
-Reproducible benchmarks and MVP harnesses for LLMIR. Run from repository root.
+Reproducible benchmarks and paper evaluation harnesses (E1–E3) for LLMIR. Run from repository root.
 
 ## Paper / CI harnesses
 
 | Script | Description |
 |--------|-------------|
 | `paper_benchmark_collect.py` | Writes `IEEE-conference/benchmarks/paper_results.json` |
-| `sharegpt_prefix_bench.py` | MVP-B ShareGPT-shaped prefix benchmark |
+| `sharegpt_prefix_bench.py` | E2 ShareGPT-shaped prefix benchmark |
 | `plot_from_results.py` | Plots benchmark JSON (no hard-coded throughput) |
 | `cpu_inference_compare.py` | CPU HF vs `llmir-paged` vs optional vLLM |
 | `gpu_inference_compare.py` | GPU-oriented compare wrapper (CI workflow) |
 
-## MVP / native runtime
+## E1 / E3 / native runtime
 
 | Script | Description |
 |--------|-------------|
-| `mvp_a_single_layer_e2e.sh` | MVP-A single-layer compile + reference |
-| `mvp_c_cuda_kv_bench.py` | MVP-C CUDA KV microbench |
+| `mvp_a_single_layer_e2e.sh` | E1 single-layer compile + reference |
+| `mvp_c_cuda_kv_bench.py` | E3 CUDA KV microbench |
 | `build_native_runtime.sh` | Build `libMLIRLLMRuntime` |
 | `package_native_lib.sh` | Package native runtime for pip path |
 | `kv_backend_compare.py` | NumPy vs native KV microbench |

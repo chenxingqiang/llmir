@@ -65,7 +65,7 @@
 \maketitle
 
 \begin{abstract}
-Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) a reproducible evaluation stack (MVP-A/B/C) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} MVP-A rewrites oversized KV block attributes and matches a numeric reference; MVP-B demonstrates ShareGPT-shaped prefix reuse ($\sim$4--5$\times$ KV-layer speedup); MVP-C removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. Our evaluation focuses on \textbf{compiler verification and serving-integration proxies}, not operator-level kernel speedups (Appendix~\ref{app:future_ops}).
+Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) three reproducible evaluation experiments (E1--E3) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} E1 (compile-time pass verification) rewrites oversized KV block attributes and matches a numeric reference; E2 (prefix-aware serving evaluation) demonstrates ShareGPT-shaped prefix reuse ($\sim$4--5$\times$ KV-layer speedup); E3 (GPU-resident KV integration) removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. Our evaluation focuses on \textbf{compiler verification and serving-integration proxies}, not operator-level kernel speedups (Appendix~\ref{app:future_ops}).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -89,7 +89,7 @@ This paper presents LLMIR (Large Language Model Intermediate Representation), a 
     
     \item \textbf{Multi-Stage Compilation Pipeline}: A detailed transformation flow from PyTorch/ONNX models through LLM dialect to optimized CUDA kernels, with clear separation of optimization concerns at each level.
     
-    \item \textbf{Reproducible MVP Evaluation}: An open-source harness (MVP-A/B/C) linking compiler passes to serving benchmarks---block-size IR rewrites, ShareGPT-shaped prefix reuse, and GPU KV paths---with JSON artifacts checked into the repository (\texttt{IEEE-conference/benchmarks/}).
+    \item \textbf{Reproducible Evaluation Experiments (E1--E3)}: An open-source harness linking compiler passes to serving benchmarks---compile-time pass verification, prefix-aware serving evaluation, and GPU-resident KV integration---with JSON artifacts checked into the repository (\texttt{IEEE-conference/benchmarks/}).
 \end{itemize}
 
 \section{Related Work}
@@ -146,7 +146,7 @@ Figure \ref{fig:architecture} illustrates LLMIR's architecture and the complete 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/llmir_architecture_nature.pdf}
-\caption{LLMIR compilation and serving path (Nature-style diagram). Four stages connect model import to a thin runtime. MVP-A (compile-time block sizing), MVP-B (ShareGPT-shaped prefix reuse), and MVP-C (GPU block-paged KV) map to verifiable repository artifacts.}
+\caption{LLMIR compilation and serving path (Nature-style diagram). Four stages connect model import to a thin runtime. E1 (compile-time pass verification), E2 (prefix-aware serving evaluation), and E3 (GPU-resident KV integration) map to verifiable repository artifacts.}
 \label{fig:architecture}
 \end{figure}
 
@@ -327,8 +327,8 @@ While LLMIR optimizes at compile time, a thin runtime layer handles inherently d
 
 We do \emph{not} claim operator-level superiority over FlashAttention, cuBLAS, or vLLM CUDA kernels in the main text. Evidence is organized at two levels:
 \begin{enumerate}
-    \item \textbf{Compiler verification (MVP-A/B/C):} IR passes, numeric reference agreement, prefix reuse, and GPU KV integration---linking dialect design to runnable serving paths.
-    \item \textbf{Serving proxies:} Honest decode baselines (Table~\ref{tab:measured_harness}), prefix/TTFT proxies (Fig.~\ref{fig:prefix_ttft}), and a gpt2 integration case study (Listing~\ref{lst:mvp_a_mlir}, Fig.~\ref{fig:gpt2_latency}).
+    \item \textbf{Compiler verification (E1--E3):} IR passes, numeric reference agreement, prefix reuse, and GPU KV integration---linking dialect design to runnable serving paths.
+    \item \textbf{Serving proxies:} Honest decode baselines (Table~\ref{tab:measured_harness}), prefix/TTFT proxies (Fig.~\ref{fig:prefix_ttft}), and a gpt2 integration case study (Listing~\ref{lst:e1_mlir}, Fig.~\ref{fig:gpt2_latency}).
 \end{enumerate}
 Isolated attention microbenchmarks and multi-model throughput \emph{design targets} appear only in Appendix~\ref{app:future_ops} and Appendix~\ref{app:projected}.
 
@@ -338,26 +338,26 @@ Isolated attention microbenchmarks and multi-model throughput \emph{design targe
 
 \textbf{Verified in CI} (see \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}):
 \begin{itemize}
-    \item MVP-A/B/C harnesses and JSON under \texttt{IEEE-conference/benchmarks/}
+    \item E1--E3 harnesses and JSON under \texttt{IEEE-conference/benchmarks/}
     \item gpt2 HF vs \texttt{llmir\_paged} decode; prefix/TTFT proxies; external Qwen citation
 \end{itemize}
 
 \textbf{Metrics:} Pass correctness, \texttt{prefix\_hit\_tokens}, prefill-token proxies, tokens/sec on integration harnesses.
 
-\subsection{Compiler Verification (MVP-A/B/C)}
+\subsection{Compiler Verification (E1--E3)}
 
-Fig.~\ref{fig:mvp_eval} summarizes the three minimum viable products that connect compiler passes to serving behavior:
+Fig.~\ref{fig:mvp_eval} summarizes the three evaluation experiments that connect compiler passes to serving behavior.\footnote{Repository CLI flags retain legacy names: E1 $\leftrightarrow$ \texttt{--mvp-a-e2e}, E2 $\leftrightarrow$ \texttt{--sharegpt-prefix-bench}, E3 $\leftrightarrow$ \texttt{--mvp-c-bench}.}
 
-\textbf{MVP-A (compile correctness):} \texttt{llmir-compile --mvp-a-e2e} runs Algorithm~\ref{alg:block_opt} on single-layer IR, lowering to runtime calls; CI asserts block size reduction (e.g., 1024$\rightarrow$32) and numeric agreement with a reference kernel.
+\textbf{E1 (compile-time pass verification):} \texttt{llmir-compile --mvp-a-e2e} runs Algorithm~\ref{alg:block_opt} on single-layer IR, lowering to runtime calls; CI asserts block size reduction (e.g., 1024$\rightarrow$32) and numeric agreement with a reference kernel.
 
-\textbf{MVP-B (prefix product value):} \texttt{llmir-benchmark --sharegpt-prefix-bench} simulates a long shared system prompt plus $N$ user variants. KV-layer simulation shows $\sim$4--5$\times$ speedup; \texttt{llmir\_paged} runs report rising \texttt{prefix\_hit\_tokens} after \texttt{warm\_prefix}.
+\textbf{E2 (prefix-aware serving evaluation):} \texttt{llmir-benchmark --sharegpt-prefix-bench} simulates a long shared system prompt plus $N$ user variants. KV-layer simulation shows $\sim$4--5$\times$ speedup; \texttt{llmir\_paged} runs report rising \texttt{prefix\_hit\_tokens} after \texttt{warm\_prefix}.
 
-\textbf{MVP-C (GPU KV path):} \texttt{TorchGpuPagedKVCache} implements block-paged GPU storage; \texttt{PagedKVDecoder} chains HuggingFace \texttt{past\_key\_values} to avoid per-step cache rebuild. \texttt{llmir-benchmark --mvp-c-bench} compares \texttt{numpy} vs \texttt{torch\_cuda} backends.
+\textbf{E3 (GPU-resident KV integration):} \texttt{TorchGpuPagedKVCache} implements block-paged GPU storage; \texttt{PagedKVDecoder} chains HuggingFace \texttt{past\_key\_values} to avoid per-step cache rebuild. \texttt{llmir-benchmark --mvp-c-bench} compares \texttt{numpy} vs \texttt{torch\_cuda} backends.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/mvp_evaluation_nature.pdf}
-\caption{Compiler verification (MVP-A/B/C). \textbf{a,b,} Verified: block-size IR rewrite; normalized latency with prefix reuse. \textbf{c,} Illustrative MVP-C GPU vs NumPy targets. Reproduce via \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}.}
+\caption{Compiler verification experiments (E1--E3). \textbf{a,b,} Verified: E1 block-size IR rewrite; E2 normalized latency with prefix reuse. \textbf{c,} Illustrative E3 GPU vs NumPy targets. Reproduce via \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}.}
 \label{fig:mvp_eval}
 \end{figure}
 
@@ -385,20 +385,20 @@ Qwen2.5-7B\textsuperscript{*} & 40 & --- & 84 & \texttt{external\_baselines.json
 \footnotesize \textsuperscript{‡}CPU, 64 prompt + 8 gen tokens. \textsuperscript{*}Qwen official A100 benchmark~\cite{qwen25speed}; not LLMIR.
 \end{table}
 
-\subsubsection{Prefix-heavy workloads (MVP-B)}
+\subsubsection{Prefix-heavy workloads (E2)}
 
-Figure~\ref{fig:prefix_ttft} reports measured MVP-B proxies: KV simulation at a 2048-token shared system prompt ($7.4\times$ latency reduction, \texttt{sharegpt\_2048\_sim.json}); reduced \texttt{prefill\_tokens\_computed} on gpt2 after \texttt{warm\_prefix} (\texttt{paper\_results.json}). The product win is prefill savings under prefix-heavy chat, not raw short-prompt throughput.
+Figure~\ref{fig:prefix_ttft} reports measured E2 proxies: KV simulation at a 2048-token shared system prompt ($7.4\times$ latency reduction, \texttt{sharegpt\_2048\_sim.json}); reduced \texttt{prefill\_tokens\_computed} on gpt2 after \texttt{warm\_prefix} (\texttt{paper\_results.json}). The product win is prefill savings under prefix-heavy chat, not raw short-prompt throughput.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/prefix_ttft_nature.pdf}
-\caption{Prefix / TTFT proxies (MVP-B). \textbf{a,} KV simulation, 2048-token system prompt. \textbf{b,} Cold vs \texttt{warm\_prefix} prefill tokens on gpt2 \texttt{llmir\_paged}.}
+\caption{Prefix / TTFT proxies (E2). \textbf{a,} KV simulation, 2048-token system prompt. \textbf{b,} Cold vs \texttt{warm\_prefix} prefill tokens on gpt2 \texttt{llmir\_paged}.}
 \label{fig:prefix_ttft}
 \end{figure}
 
 \subsubsection{Integration case study: gpt2}
 
-Listing~\ref{lst:mvp_a_mlir} shows MLIR after MVP-A (\texttt{block\_size} 1024$\rightarrow$32). Fig.~\ref{fig:gpt2_latency} gives the same harness decode comparison; together they demonstrate compiler pass output wired into \texttt{llmir\_paged}, with overhead on tiny prompts motivating prefix evaluation above.
+Listing~\ref{lst:e1_mlir} shows MLIR after E1 (\texttt{block\_size} 1024$\rightarrow$32). Fig.~\ref{fig:gpt2_latency} gives the same harness decode comparison; together they demonstrate compiler pass output wired into \texttt{llmir\_paged}, with overhead on tiny prompts motivating prefix evaluation above.
 
 \begin{figure}[htbp]
 \centering
@@ -407,8 +407,8 @@ Listing~\ref{lst:mvp_a_mlir} shows MLIR after MVP-A (\texttt{block\_size} 1024$\
 \label{fig:gpt2_latency}
 \end{figure}
 
-\begin{lstlisting}[style=mlir,caption={Single-layer KV micro-pipeline after MVP-A block-size rewrite (excerpt).},label=lst:mvp_a_mlir]
-% block_size = 32 : i32  (was 1024 before MVP-A)
+\begin{lstlisting}[style=mlir,caption={Single-layer KV micro-pipeline after E1 block-size rewrite (excerpt).},label=lst:e1_mlir]
+% block_size = 32 : i32  (was 1024 before E1)
 %llm.append_kv %cache, %keys, %values, %seq_ids { block_size = 32 : i32 }
 %llm.lookup_kv %new_cache, %block_indices, %seq_lens
 %llm.paged_attention %query, %new_cache, %block_indices, %seq_lens
@@ -416,13 +416,13 @@ Listing~\ref{lst:mvp_a_mlir} shows MLIR after MVP-A (\texttt{block\_size} 1024$\
 
 \subsection{Verified Claims Summary}
 
-Main-text results support: (1) compile-time KV block sizing is applied and checkable (MVP-A); (2) prefix reuse reduces repeated prefill work (MVP-B); (3) GPU KV can stay on-device without NumPy round-trips (MVP-C); (4) honest integration decode shows where overhead remains. Operator/kernel comparisons and multi-GPU throughput tables are deferred to appendices until lowered MLIR kernels execute on the hot path.
+Main-text results support: (1) compile-time KV block sizing is applied and checkable (E1); (2) prefix reuse reduces repeated prefill work (E2); (3) GPU KV can stay on-device without NumPy round-trips (E3); (4) honest integration decode shows where overhead remains. Operator/kernel comparisons and multi-GPU throughput tables are deferred to appendices until lowered MLIR kernels execute on the hot path.
 
 \section{Discussion}
 
 \subsection{Compile-Time Benefits}
 
-Compile-time optimization can provide benefits beyond runtime-only systems when the full GPU harness is complete; our verified MVP stack already shows compiler-to-serving linkage:
+Compile-time optimization can provide benefits beyond runtime-only systems when the full GPU harness is complete; our verified E1--E3 stack already shows compiler-to-serving linkage:
 
 \textbf{Cross-Operation Analysis}: The compiler identifies optimization opportunities spanning multiple operations. For example, when \texttt{llm.append\_kv} feeds directly into \texttt{llm.paged\_attention}, the compiler can fuse memory allocation with attention computation setup, eliminating intermediate barriers (expected kernel-launch savings; end-to-end GPU measurement pending).
 
@@ -434,11 +434,11 @@ Compile-time optimization can provide benefits beyond runtime-only systems when 
 
 \subsection{Limitations and Future Work}
 
-\textbf{Measurement gap}: Appendix~\ref{app:projected} lists scale-out design targets; Appendix~\ref{app:future_ops} holds standalone attention microbenchmarks \emph{not} wired to lowered \texttt{llm.paged\_attention} kernels. Verified claims are MVP-A/B/C, Table~\ref{tab:measured_harness}, and Fig.~\ref{fig:prefix_ttft}.
+\textbf{Measurement gap}: Appendix~\ref{app:projected} lists scale-out design targets; Appendix~\ref{app:future_ops} holds standalone attention microbenchmarks \emph{not} wired to lowered \texttt{llm.paged\_attention} kernels. Verified claims are E1--E3, Table~\ref{tab:measured_harness}, and Fig.~\ref{fig:prefix_ttft}.
 
 \textbf{Operator-level evaluation}: Future work will compare compiled \texttt{llm.append\_kv}/\texttt{llm.paged\_attention} against SDPA/vLLM kernels on identical shapes \emph{after} MLIR execution is on the hot path---not via disconnected C++ toys.
 
-\textbf{Short-prompt overhead}: Routing KV through LLMIR adds integration cost on tiny prompts; gains concentrate on prefix reuse (MVP-B) and compile-time block sizing (MVP-A), not raw single-token latency vs HuggingFace \texttt{generate()}.
+\textbf{Short-prompt overhead}: Routing KV through LLMIR adds integration cost on tiny prompts; gains concentrate on prefix reuse (E2) and compile-time block sizing (E1), not raw single-token latency vs HuggingFace \texttt{generate()}.
 
 \textbf{Dynamic Sequence Lengths}: Extremely variable workloads may not benefit fully from compile-time optimization. Future work will explore adaptive compilation with runtime feedback.
 
@@ -450,7 +450,7 @@ Compile-time optimization can provide benefits beyond runtime-only systems when 
 
 This paper presented LLMIR, a compiler infrastructure that brings systematic optimization to LLM inference through LLM-specific MLIR dialect design and compile-time analysis of previously runtime-only patterns. Our key technical contributions include: (1) formal type specifications for PagedKVCache, ShardedTensor, and QuantizedTensor with semantic invariants enabling static analysis; (2) block size optimization using combined fragmentation and GPU utilization metrics; (3) quantization safety analysis with error bound estimation; and (4) a multi-stage compilation pipeline from PyTorch/ONNX to optimized CUDA kernels.
 
-Our open-source stack verifies the compiler-to-serving path through MVP-A/B/C and serving proxies in \S5; operator-level and scale-out numbers remain in appendices until GPU CI lands.
+Our open-source stack verifies the compiler-to-serving path through evaluation experiments E1--E3 and serving proxies in \S5; operator-level and scale-out numbers remain in appendices until GPU CI lands.
 
 \appendix
 \section{Projected Scale-Out Targets}
@@ -526,7 +526,7 @@ DeepSeek-16B & 6.58 & 6.59 & 62.3\% & 62.2\% \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{figures/block_size_optimization_nature.pdf}
-\caption{Block-size sweep (KV-append microbench lineage). MVP-A block rewrite verified in CI.}
+\caption{Block-size sweep (KV-append microbench lineage). E1 block rewrite verified in CI.}
 \label{fig:block_optimization}
 \end{figure}
 
