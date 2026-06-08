@@ -1,6 +1,6 @@
 #!/bin/bash
-# LLMIR Real Model Benchmark Script
-# 在A800 GPU上运行真实模型推理测试
+# HuggingFace GPU inference baseline (NOT llmir-paged / NOT LLMIR compiler output).
+# Historical name retained for scripts/README.md; runs transformers generate() only.
 
 set -e
 
@@ -160,7 +160,7 @@ def main():
     
     results = []
     
-    # 测试配置 - 根据80GB A800优化
+    # Test matrix for HF generate() baseline (tune batch for your GPU memory)
     test_configs = [
         # (model_name, batch_size, seq_len, gen_tokens)
         # Qwen2.5-7B ~14GB

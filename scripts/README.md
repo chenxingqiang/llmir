@@ -6,10 +6,10 @@ Benchmark and utility scripts for LLMIR.
 |--------|-------------|
 | `comprehensive_benchmark.sh` | Compare PyTorch, vLLM, and SGLang inference performance |
 | `quick_benchmark.sh` | Quick benchmark for Qwen models |
-| `run_real_benchmark.sh` | Run real model benchmarks |
+| `run_real_benchmark.sh` | HF `generate()` GPU baseline only (not LLMIR) |
 | `vllm_comparison.sh` | vLLM comparison benchmarks |
 | `llmir_model_benchmark.py` | Python benchmark for LLMIR KV cache and model optimization |
-| `real_model_benchmark.py` | Benchmark with real LLM models |
+| `real_model_benchmark.py` | HF `generate()` baseline only (not LLMIR) |
 | `docker_run_benchmark.sh` | Run Llama 3.1 benchmark in Docker (GPU required) |
 | `mps_full_pipeline.py` | MPS validation: config, KV micro-bench, model.generate, **LLMIR E2E** (KV round-trip) |
 

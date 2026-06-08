@@ -52,7 +52,7 @@ def main() -> None:
     fig.text(
         0.5,
         0.02,
-        "Illustrative LLaMA-2-13B sweep; verified MVP-A rewrites oversized blocks (e.g. 1024→32 for short seq).",
+        "ILLUSTRATIVE — KV-append microbench lineage (see benchmark_summary.txt); not A100 LLaMA e2e.",
         ha="center",
         fontsize=6.5,
         color="#666666",

@@ -1,6 +1,7 @@
-# Benchmarking Llama-3.1-8B-Instruct with LLMIR Optimizations
+# Llama-3.1-8B-Instruct vLLM baseline (experimental)
 
-This directory contains scripts for benchmarking the [Meta Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct) model with LLMIR optimizations to measure performance improvements. The benchmark uses vLLM as the serving engine and applies LLMIR's optimizations for attention and KV cache operations.
+Experimental harness for [Meta Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct) using **vLLM only**.
+Verified LLMIR `llmir-paged` speedups are **not** checked in for this path yet; treat results as baseline exploration, not paper claims.
 
 ## Prerequisites
 

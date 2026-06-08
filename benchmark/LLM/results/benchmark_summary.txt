@@ -1,4 +1,8 @@
 === KVCache Benchmark Summary ===
+# SCOPE: KV-append microbenchmark only (NOT end-to-end LLM decode).
+# Hardware: Apple Mac M3 (see kvcache_benchmark_results.txt header).
+# Do NOT cite these tok/s numbers as A100 LLaMA serving or LLMIR e2e throughput.
+# Paper Table IV / block-size figures use illustrative lineage from this file.
 
 Overall Statistics:
 Total benchmarks: 42
@@ -24,4 +28,3 @@ Batch size 1: 78628.10 tokens/sec
 Batch size 2: 83765.07 tokens/sec
 Batch size 4: 84197.25 tokens/sec
 Batch size 8: 84403.07 tokens/sec
-

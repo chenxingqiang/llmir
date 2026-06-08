@@ -1,152 +1,75 @@
-# LLMIR Paper Revision Notes - Addressing ICCD 2025 Reviews
+# LLMIR Paper Revision Notes (ICCD 2025 feedback)
 
-## Overview
+Maps reviewer concerns to **what is verified in the repository** vs **what remains planned or illustrative**.
 
-This document summarizes the comprehensive revisions made to address all reviewer feedback from ICCD 2025.
+Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVISION_TRACEABILITY.md) and [`docs/CAPABILITY_MATRIX.md`](../docs/CAPABILITY_MATRIX.md).
 
-## Revision Summary by Reviewer
+## Verified in open source (cite these)
 
-### Review 1 (Score: -1, Weak Reject)
+| Reviewer theme | Response in paper | Repo evidence |
+|----------------|-------------------|---------------|
+| Implementation / compile path | §4, Algorithm 1, MVP-A | `BlockSizeAnalysis.cpp`, `tests/test_mvp_a_e2e.py`, `gpt2_mvp_a_snippet.mlir` |
+| Model → IR → runtime | §3.1 pipeline, MVP-A lowering | `llmir-compile --mvp-a-e2e`, lit tests |
+| Prefix / ShareGPT workload | MVP-B, Fig. prefix TTFT | `sharegpt_prefix_bench.py`, `sharegpt_2048_sim.json`, `paper_results.json` |
+| GPU KV without NumPy round-trip | MVP-C | `TorchGpuPagedKVCache`, `tests/test_mvp_c_e2e.py` |
+| Measured decode baseline | gpt2 HF vs `llmir-paged` | `paper_results.json` |
+| External serving reference | Qwen vLLM cited row | `external_baselines.json` (Qwen official benchmark) |
 
-**Concern 1**: Lack of implementation details and novelty explanation
-- **Addressed**: Added Section 4 "Implementation Details" with detailed algorithm descriptions (Algorithm 1: Block Size Optimization), specific pattern-matching rewrite rules, and code generation strategies for CUDA/CPU backends.
+## Partially addressed (labeled illustrative / projected in `revised.tex`)
 
-**Concern 2**: Missing experimental details (workload, hardware, etc.)
-- **Addressed**: Added comprehensive experimental setup in Section 5.1:
-  - Hardware: NVIDIA A100-80GB (single/multi-GPU), Intel Xeon Platinum 8380
-  - Benchmarks: ShareGPT dataset, C4 validation set, MMLU
-  - Metrics: Throughput, TTFT latency, memory utilization, perplexity, MMLU accuracy
+| Reviewer theme | Paper location | Status |
+|----------------|----------------|--------|
+| Multi-model throughput (8 models × 5 frameworks) | Table II († projected), heatmap | **No LLMIR GPU harness JSON**; gpt2 measured + Qwen cited only |
+| Quality (PPL / MMLU) | Table III | **Planned** — illustrative targets, not measured |
+| Memory config / block sweep | Table IV, block-size figure | **KV-append microbench lineage** — not A100 LLaMA e2e |
+| Multi-GPU scaling | Table V | **Illustrative** — no artifact |
+| Ablation | Table VI | **Illustrative** — no artifact |
+| Attention speedup figure | Fig. attention | **Standalone C++ microbench** — not production Flash on hot path |
+| TensorRT / MLC / SGLang columns | Table II | **Design targets** until `llmir-benchmark` + GPU CI |
 
-**Concern 3**: Figure context missing
-- **Addressed**: All figures now include detailed captions specifying workload, hardware, and configuration. Font sizes increased throughout.
+## Reviewer concern checklist
 
-### Review 2 (Score: -1, Weak Reject)
+### Review 1 — implementation & experimental detail
 
-**Concern 1**: Insufficient detail on model-to-IR-to-kernel transformation
-- **Addressed**: Added Section 3.1 "System Overview and Compilation Flow" describing the 4-stage pipeline:
-  1. Model Import (PyTorch/ONNX → LLM dialect)
-  2. High-Level Optimization (LLM dialect passes)
-  3. Lowering and Code Generation (→ CUDA/CPU)
-  4. Runtime Integration
+- **Implementation depth**: Addressed in text + MVP-A (**verified**).
+- **Experimental setup (A100, ShareGPT, C4, MMLU)**: §5.1 now splits **target environment** vs **completed measurements**; only MVP + gpt2 CPU + KV sim are in CI today.
 
-**Concern 2**: Limited to single model
-- **Addressed**: Extended experiments to multiple model families:
-  - LLaMA-2: 7B, 13B, 70B
-  - Phi-3: 3.8B
-  - Qwen-2: 7B, 14B, 72B
-  - DeepSeek-V2: 16B (MoE architecture)
+### Review 2 — IR flow, multi-model, kernel selection
 
-**Concern 3**: Questions about runtime kernel selection
-- **Addressed**: Added Section 4.2 "Backend Code Generation" explaining:
-  - Three kernel variants (flash_paged, standard_paged, chunked_paged)
-  - Compile-time selection based on sequence length bounds
-  - Runtime dispatch for unknown bounds
+- **IR flow**: Addressed (**verified** MVP-A).
+- **Multi-model experiments**: **Projected** in Table II until GPU harness lands.
+- **Pool+Unified / hybrid GPU text**: Retained as **design rationale** paired with illustrative tables.
 
-**Concern 4**: Explanation of Pool+Unified(256KB) performance drop
-- **Addressed**: Added explicit explanation in Section 5.5:
-  "The performance drop with 256KB unified memory (vs 128KB) occurs because larger unified memory blocks cause increased fragmentation when sequences have varied lengths, leading to more frequent compaction operations."
+### Review 3 — compile-time vs runtime
 
-**Concern 5**: GPU allocation in hybrid mode
-- **Addressed**: Added explanation in Section 5.6:
-  "In hybrid mode, GPU allocation follows: GPUs 0-3 form one tensor-parallel group handling layers 0-39, GPUs 4-7 form another group handling layers 40-79."
+- **Table I compile vs runtime**: Addressed in prose.
+- **Figure readability**: Nature-style regeneration; measured vs projected figures use separate generator entry points.
 
-**Concern 6**: Comparison with MLC LLM
-- **Addressed**: Added MLC-LLM to all comparison tables (Table II) with quantitative results.
+### Review 4 — breadth & quality & TRT
 
-### Review 3 (Score: -2, Reject)
+- **More model families**: Table II rows are **targets**, not measured LLMIR runs.
+- **PPL / MMLU**: Table III **planned** — do not cite as results until harness exists.
+- **TensorRT-LLM column**: Illustrative comparison only.
 
-**Concern 1**: Unclear compile-time vs runtime interaction
-- **Addressed**: Added Table I "Compile-Time vs Runtime Optimization Responsibilities" clearly delineating:
-  - Compile-time: Block sizing/layout, kernel variant selection, sharing detection, precision decisions, partitioning plans
-  - Runtime: Dynamic growth, parameter binding, actual sharing, dequantization, communication
+## Deprecated artifacts (do not use)
 
-**Concern 2**: Additional value over vLLM cache sharing
-- **Addressed**: Added Section 6.1 "Compile-Time Benefits" explaining:
-  - Cross-operation analysis spanning multiple operations
-  - Hardware-specific adaptation with pre-generated kernels
-  - Memory layout optimization for cache-friendly access
+- `LLMIR-paper-ICCD2025-anonymous.tex` — **removed** (contained unverified throughput claims).
+- `IEEE-conference/figures/paper-only/` — hard-coded arrays; run only via `generate_projected_figures.py`.
 
-**Concern 3**: Figures with small fonts
-- **Addressed**: Regenerated all figures with larger fonts (14pt base, 16pt titles). Created v2 versions with improved readability.
-
-### Review 4 (Score: 0, Borderline)
-
-**Concern 1**: Only LLaMA-2 variants tested
-- **Addressed**: Added Phi-3, Qwen-2, and DeepSeek-V2 to all experiments.
-
-**Concern 2**: Missing quality metrics
-- **Addressed**: Added Table III "Quality Metrics" showing:
-  - Perplexity on C4 dataset
-  - MMLU accuracy
-  - Results demonstrate <0.15% perplexity difference, <0.1% accuracy difference
-
-**Concern 3**: Missing TensorRT-LLM comparison
-- **Addressed**: Added TensorRT-LLM v0.9.0 to all comparison tables with analysis:
-  "Improvement over TensorRT-LLM (4.8%) is smaller than over runtime systems, as TensorRT-LLM also performs ahead-of-time compilation, but LLMIR's LLM-specific IR abstractions enable additional optimizations."
-
-## New Content Added
-
-### Tables
-- Table I: Compile-Time vs Runtime Optimization Responsibilities
-- Table II: Multi-Model Throughput Comparison (8 models × 5 frameworks)
-- Table III: Quality Metrics (Perplexity, MMLU)
-- Table IV: Memory Configuration Performance (with explanations)
-- Table V: Multi-GPU Scaling with hybrid mode explanation
-- Table VI: Ablation Study
-
-### Figures
-- Figure 1: Updated architecture diagram with 4-stage pipeline and larger fonts
-- Figure 2: Block size optimization with hardware/workload details
-- Figure 3: Attention speedup comparison with larger fonts
-- New: Multi-model comparison chart
-
-### Sections
-- Section 3.1: Detailed compilation flow description
-- Section 3.4: Compile-Time vs Runtime Optimization
-- Section 4: Implementation Details (expanded significantly)
-- Section 6.1: Compile-Time Benefits analysis
-
-## Files Modified/Created
-
-### Modified
-- `LLMIR-paper-ICCD2025-revised.tex` - Comprehensive revision addressing all concerns
-
-### Created
-- `figures/create_architecture_diagram_v2.py` - Updated diagram with larger fonts
-- `figures/create_block_size_chart_v2.py` - Updated chart with larger fonts
-- `figures/create_attention_speedup_v2.py` - Updated chart with larger fonts
-- `figures/create_multi_model_comparison.py` - New multi-model comparison
-- `figures/llmir_architecture_v2.pdf/png`
-- `figures/block_size_optimization_v2.pdf/png`
-- `figures/attention_speedup_v2.pdf/png`
-- `figures/multi_model_comparison.pdf/png`
-- `REVISION_NOTES.md` - This document
-
-## Summary of Key Improvements
-
-1. **Implementation Depth**: Added detailed algorithm descriptions, pattern-matching rules, and code generation strategies
-2. **Experimental Breadth**: Extended to 8 model variants across 4 model families
-3. **Baseline Coverage**: Added TensorRT-LLM and MLC-LLM comparisons
-4. **Quality Validation**: Added perplexity and MMLU accuracy measurements
-5. **Clarity**: Explained compile-time vs runtime responsibilities clearly
-6. **Readability**: Regenerated all figures with larger fonts
-7. **Completeness**: Answered all specific reviewer questions
-
-## Recommended Target Venues
-
-Given the comprehensive nature of the revisions, this paper would be suitable for:
-- **ASPLOS 2026** (computer architecture + systems)
-- **OSDI/SOSP 2025/2026** (systems)
-- **MLSys 2026** (ML systems)
-- **CGO 2026** (code generation and optimization)
-- **PACT 2025** (parallel architectures)
-
-## Compilation Instructions
+## Figure generation
 
 ```bash
-cd /workspace/IEEE-conference
-pdflatex LLMIR-paper-ICCD2025-revised.tex
-bibtex LLMIR-paper-ICCD2025-revised
+# Verified / measured figures only (default for paper refresh)
+python3 IEEE-conference/figures/generate_all_nature_figures.py
+
+# Illustrative / projected figures (Table II heatmap, block sweep, attention microbench)
+python3 IEEE-conference/figures/generate_projected_figures.py
+```
+
+## Compile revised paper
+
+```bash
+cd IEEE-conference
 pdflatex LLMIR-paper-ICCD2025-revised.tex
 pdflatex LLMIR-paper-ICCD2025-revised.tex
 ```

@@ -80,8 +80,9 @@ Key objectives:
 
 ## Key Features
 
-> See [`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md) for implementation status
-> (C++ / Python reference / planned). Not every bullet below is on the default pip hot path yet.
+> **Status**: See [`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md) for what is
+> **C++ / Python reference / planned / demo-only**. Bullets below describe the target
+> architecture; many items are not on the default pip hot path yet.
 
 - **PagedKVCache**: Block-based KV cache (C++ runtime + Python reference fallback)
 - **MLIR Dialect for LLMs**: Custom operations and types for language model inference
@@ -579,56 +580,26 @@ int64_t maxSeq = estimator.findMaxSeqLen(gpuMemory, batchSize);
 
 ## Development Roadmap
 
-LLMIR follows a phased development approach:
+Phased goals vs current status ([`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md)):
 
-1. **Phase 1**: Basic infrastructure ✅
-   - LLM dialect design and implementation
-   - Basic type system
-   - Core operations
-
-2. **Phase 2**: Core optimizations ✅
-   - KV cache management
-   - Attention computation optimizations
-   - Memory management
-
-3. **Phase 3**: Advanced features ✅
-   - Quantization support (INT8/INT4)
-   - Tensor parallelism
-   - Pipeline parallelism
-   - Multi-GPU sharding
-   - Checkpoint/serialization support
-
-4. **Phase 4**: Advanced Optimizations ✅
-   - Speculative decoding with KV cache branching
-   - Prefix caching with radix tree
-   - Dynamic block size adjustment
-   - Adaptive block management
-
-5. **Phase 5**: Production & Integration ✅
-   - Comprehensive benchmark suite
-   - Continuous batching for production serving
-   - vLLM integration layer with full API compatibility
-   - Memory pressure monitoring and preemption
-
-6. **Phase 6**: Developer Tools & Model Support ✅
-   - Python bindings for runtime
-   - Performance profiling tools
-   - Model-specific optimizations (Llama, Mistral, Phi)
-   - Model registry with presets
-   - Memory estimation utilities
-
-7. **Phase 7**: Future Enhancements (Planned)
-   - HuggingFace Transformers integration
-   - Distributed training support
-   - Auto-scaling and Kubernetes support
+| Phase | Theme | Status |
+|-------|--------|--------|
+| 1 | LLM dialect, types, core ops | **Partial** — dialect + lit; not full model import |
+| 2 | KV cache, attention, memory | **Partial** — PagedKV Python/C++; attention microbench only |
+| 3 | Quantization, multi-GPU, checkpoint | **Planned** / Python reference for some APIs |
+| 4 | Speculative decode, prefix cache, adaptive blocks | **Partial** — MVP-B prefix; speculative **Planned** |
+| 5 | Serving integration, continuous batching | **Planned** — vLLM pass-through baseline exists |
+| 6 | Python bindings, profiling, model presets | **Partial** — `llmir_paged`, registry, MVP harness |
+| 7 | HF integration at scale, training, K8s | **In progress** — `from_pretrained` exists; training **Planned** |
 
 ## Attention Optimization Benchmarks
 
-The LLMIR project includes comprehensive benchmarks for various attention optimization techniques, which are critical for LLM inference performance. These benchmarks evaluate different approaches to optimizing the attention mechanism, a crucial component in transformer models.
+Standalone C++ microbenchmarks under [`benchmark/attention/`](benchmark/attention/) explore attention kernel ideas.
+They are **not** wired to the production `llmir_paged` inference hot path or GPU Flash kernels in CI.
 
 ### Optimization Techniques
 
-Four key attention optimization techniques have been implemented and evaluated:
+Four techniques are implemented in the **standalone microbench** (not production serving):
 
 1. **Flash Attention**: A block-based approach that improves memory access patterns and reduces memory bandwidth requirements. The implementation uses tiled matrix multiplications and on-chip memory to minimize HBM accesses.
 
@@ -650,9 +621,9 @@ All optimization techniques are integrated with PagedKVCache to provide seamless
 
 - **SlidingWindowAttentionImpl**: Optimizes memory access by only loading keys and values within the sliding window, using efficient memory gathering from the paged KV cache.
 
-### Performance Results
+### Microbench Results (Mac M3, standalone C++)
 
-Benchmark results on Mac M3 ARM processor show significant performance improvements:
+Illustrative speedups from the toy microbench — do not cite as LLMIR end-to-end serving wins:
 
 | Technique | Speedup Range | Memory Reduction | Accuracy Impact |
 |-----------|---------------|------------------|-----------------|
@@ -676,18 +647,18 @@ For benchmark scripts and analysis, see [`benchmark/attention/`](benchmark/atten
 
 ### KVCache Performance Benchmark
 
-The repository includes a benchmark for measuring the performance of the PagedKVCache implementation on different hardware backends:
+KV **append** microbenchmark (not full-model decode). Results are hardware-specific; see the banner in
+`benchmark/LLM/results/benchmark_summary.txt` before comparing to paper tables.
 
 ```bash
 cd benchmark/LLM
 ./run_kvcache_benchmark.sh
 ```
 
-This will run the benchmark with various configurations and generate performance reports.
+### Llama-3.1 vLLM Baseline (experimental)
 
-### Llama-3.1 Model Benchmark with LLMIR
-
-Benchmark the meta-llama/Llama-3.1-8B-Instruct model with LLMIR optimizations to measure performance improvements:
+Experimental vLLM harness for meta-llama/Llama-3.1-8B-Instruct — **baseline / env-flag comparison only**;
+verified LLMIR speedups are not checked in for this path yet:
 
 ```bash
 # Setup the environment
@@ -699,7 +670,7 @@ source venv/bin/activate_llmir
 ./run_llama31_benchmark.sh
 ```
 
-This compares the baseline vLLM performance with LLMIR-optimized performance across different batch sizes and sequence lengths. For more details, see [benchmark/LLM/README_LLAMA31.md](benchmark/LLM/README_LLAMA31.md).
+See [benchmark/LLM/README_LLAMA31.md](benchmark/LLM/README_LLAMA31.md) for setup notes and limitations.
 
 ### Docker Benchmark
 

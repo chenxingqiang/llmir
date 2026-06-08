@@ -43,7 +43,9 @@ mlir-opt test/Dialect/LLM/mvp_single_layer_pipeline.mlir -llm-optimize-kv-cache
 
 ## Paper figures (Nature style)
 
-Regenerate: `python3 IEEE-conference/figures/generate_all_nature_figures.py`
+Regenerate measured: `python3 IEEE-conference/figures/generate_all_nature_figures.py`
+
+Regenerate projected/illustrative: `python3 IEEE-conference/figures/generate_projected_figures.py`
 
 | Figure | Verified? | Source |
 |--------|-----------|--------|
