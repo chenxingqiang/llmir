@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/LLM/IR/LLM.h"
+#include "mlir/Dialect/LLM/Transforms/BlockSizeAnalysis.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -57,19 +58,29 @@ struct HardwareConfig {
 // Block Size Analysis Result
 //===----------------------------------------------------------------------===//
 
-/// Result of block size analysis.
-struct BlockSizeAnalysisResult {
+namespace {
+
+struct BlockSizeAnalysisDetail {
   int64_t optimalBlockSize;
   double fragmentationScore;
   double gpuUtilization;
   double memoryAlignmentScore;
   double combinedScore;
   std::string reasoning;
-  
-  BlockSizeAnalysisResult()
-      : optimalBlockSize(128), fragmentationScore(0.0),
-        gpuUtilization(0.0), memoryAlignmentScore(0.0),
-        combinedScore(0.0), reasoning("default") {}
+
+  BlockSizeAnalysisDetail()
+      : optimalBlockSize(128), fragmentationScore(0.0), gpuUtilization(0.0),
+        memoryAlignmentScore(0.0), combinedScore(0.0), reasoning("default") {}
+
+  BlockSizeAnalysisResult toPublic() const {
+    BlockSizeAnalysisResult out;
+    out.optimalBlockSize = optimalBlockSize;
+    out.fragmentationScore = fragmentationScore;
+    out.gpuUtilization = gpuUtilization;
+    out.memoryAlignmentScore = memoryAlignmentScore;
+    out.combinedScore = combinedScore;
+    return out;
+  }
 };
 
 //===----------------------------------------------------------------------===//
@@ -83,7 +94,7 @@ public:
       : hw_(hw) {}
   
   /// Analyze operations and determine optimal block size.
-  BlockSizeAnalysisResult analyze(Operation *rootOp) {
+  BlockSizeAnalysisDetail analyze(Operation *rootOp) {
     // Collect sequence length information
     llvm::SmallVector<int64_t> seqLengths;
     collectSequenceLengths(rootOp, seqLengths);
@@ -96,11 +107,11 @@ public:
     // Candidate block sizes (powers of 2 for alignment)
     llvm::SmallVector<int64_t> candidates = {16, 32, 64, 128, 256};
     
-    BlockSizeAnalysisResult best;
+    BlockSizeAnalysisDetail best;
     best.combinedScore = -1.0;
     
     for (int64_t blockSize : candidates) {
-      BlockSizeAnalysisResult result;
+      BlockSizeAnalysisDetail result;
       result.optimalBlockSize = blockSize;
       
       // Compute metrics
@@ -186,12 +197,6 @@ private:
         }
       }
       
-      // Check KV cache type for max_seq_len
-      for (Type type : inner->getResultTypes()) {
-        if (auto kvCacheType = type.dyn_cast<PagedKVCacheType>()) {
-          lengths.push_back(kvCacheType.getMaxSeqLen());
-        }
-      }
     });
   }
   
@@ -255,8 +260,8 @@ private:
   }
   
   /// Get default result when no static information is available.
-  BlockSizeAnalysisResult getDefaultResult() {
-    BlockSizeAnalysisResult result;
+  BlockSizeAnalysisDetail getDefaultResult() {
+    BlockSizeAnalysisDetail result;
     result.optimalBlockSize = 128;  // Conservative default
     result.fragmentationScore = 0.15;
     result.gpuUtilization = 0.95;
@@ -269,7 +274,7 @@ private:
   }
   
   /// Format reasoning string.
-  std::string formatReasoning(const BlockSizeAnalysisResult &result,
+  std::string formatReasoning(const BlockSizeAnalysisDetail &result,
                                int64_t blockSize,
                                llvm::ArrayRef<int64_t> seqLengths) {
     std::string reasoning;
@@ -313,7 +318,7 @@ struct BlockSizeAnalysisPass
     HardwareConfig hw = HardwareConfig::getA100();
     BlockSizeAnalyzer analyzer(hw);
     
-    BlockSizeAnalysisResult result = analyzer.analyze(func);
+    BlockSizeAnalysisDetail result = analyzer.analyze(func);
     
     // Print analysis results
     llvm::errs() << "Block Size Analysis for function '" << func.getName() << "':\n";
@@ -356,38 +361,7 @@ struct BlockSizeOptimizationPass
   }
   
   void runOnOperation() override {
-    func::FuncOp func = getOperation();
-    
-    // Get optimal block size from analysis or use default
-    int64_t optimalBlockSize = 128;
-    if (auto attr = func->getAttrOfType<IntegerAttr>("llm.optimal_block_size")) {
-      optimalBlockSize = attr.getInt();
-    } else {
-      // Run analysis first
-      BlockSizeAnalyzer analyzer;
-      BlockSizeAnalysisResult result = analyzer.analyze(func);
-      optimalBlockSize = result.optimalBlockSize;
-    }
-    
-    // Update operations with optimal block size
-    // This would typically involve creating new operations with updated types
-    llvm::errs() << "Applying block size " << optimalBlockSize 
-                 << " to KV cache operations\n";
-    
-    // Note: Full implementation would rewrite operations with new block sizes
-    // This is a simplified version that just annotates
-    func.walk([&](Operation *op) {
-      if (op->hasAttr("block_size")) {
-        auto currentSize = op->getAttrOfType<IntegerAttr>("block_size").getInt();
-        if (currentSize != optimalBlockSize) {
-          op->setAttr("block_size",
-                      IntegerAttr::get(IntegerType::get(&getContext(), 64),
-                                      optimalBlockSize));
-          llvm::errs() << "  Updated " << op->getName() << " from " 
-                       << currentSize << " to " << optimalBlockSize << "\n";
-        }
-      }
-    });
+    applyBlockSizeOptimizationToFunc(getOperation());
   }
 };
 
@@ -403,6 +377,30 @@ std::unique_ptr<Pass> createBlockSizeAnalysisPass() {
 
 std::unique_ptr<Pass> createBlockSizeOptimizationPass() {
   return std::make_unique<BlockSizeOptimizationPass>();
+}
+
+BlockSizeAnalysisResult analyzeBlockSizeForFunc(func::FuncOp func) {
+  BlockSizeAnalyzer analyzer(HardwareConfig::getA100());
+  return analyzer.analyze(func).toPublic();
+}
+
+void applyBlockSizeOptimizationToFunc(func::FuncOp func) {
+  BlockSizeAnalysisDetail result =
+      BlockSizeAnalyzer(HardwareConfig::getA100()).analyze(func);
+  func->setAttr(
+      "llm.optimal_block_size",
+      IntegerAttr::get(IntegerType::get(func.getContext(), 64),
+                       result.optimalBlockSize));
+  func.walk([&](Operation *op) {
+    if (!op->hasAttr("block_size"))
+      return;
+    auto currentSize = op->getAttrOfType<IntegerAttr>("block_size").getInt();
+    if (currentSize == result.optimalBlockSize)
+      return;
+    op->setAttr("block_size",
+                IntegerAttr::get(IntegerType::get(func.getContext(), 64),
+                                 result.optimalBlockSize));
+  });
 }
 
 } // namespace llm

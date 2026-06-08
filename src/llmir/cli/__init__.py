@@ -412,6 +412,17 @@ Examples:
         help="Emit concrete llm.append_kv / lookup / paged_attention MLIR",
     )
     parser.add_argument(
+        "--mvp-a-e2e",
+        action="store_true",
+        help="Run MVP-A single-layer pipeline (block size + opt + reference)",
+    )
+    parser.add_argument(
+        "--mvp-json",
+        type=str,
+        default="",
+        help="Write MVP-A JSON summary (used with --mvp-a-e2e)",
+    )
+    parser.add_argument(
         "--import-toy-attention",
         action="store_true",
         help="Import toy PyTorch SDPA module to MLIR (requires torch)",
@@ -433,15 +444,46 @@ Examples:
     parser.add_argument("--head-dim", type=int, default=8)
     args = parser.parse_args()
 
-    if not args.emit_kv_pipeline and not args.import_toy_attention:
-        parser.error("Specify --emit-kv-pipeline and/or --import-toy-attention")
+    if not args.emit_kv_pipeline and not args.import_toy_attention and not args.mvp_a_e2e:
+        parser.error("Specify --emit-kv-pipeline, --import-toy-attention, or --mvp-a-e2e")
 
     from llmir.compiler.kv_emit import KVMicroPipelineConfig
     from llmir.compiler.pipeline import compile_kv_micro_pipeline
     from llmir.importers.toy_attention import import_toy_attention_to_mlir, ToyAttentionSpec
 
     mlir_text = ""
-    if args.import_toy_attention:
+    if args.mvp_a_e2e:
+        from llmir.compiler.kv_emit import KVMicroPipelineConfig
+        from llmir.compiler.mvp_pipeline import mvp_result_to_json, run_mvp_single_layer_e2e
+
+        cfg = KVMicroPipelineConfig(
+            batch_size=args.batch_size,
+            seq_len=args.seq_len,
+            num_heads=args.num_heads,
+            head_dim=args.head_dim,
+        )
+        mvp = run_mvp_single_layer_e2e(
+            cfg,
+            run_mlir_passes=args.run_opt,
+            run_reference=args.run_reference or args.compare_torch,
+            compare_torch=args.compare_torch,
+        )
+        mlir_text = mvp.mlir_after_block_size
+        print(
+            f"MVP-A block_size {mvp.block_size_before} -> {mvp.block_size_after} "
+            f"(score={mvp.block_analysis.get('combined_score', 'n/a')})"
+        )
+        if mvp.opt_lower and mvp.opt_lower.success:
+            print("lowered MLIR contains runtime calls")
+        if mvp.reference_backend:
+            print(f"reference backend: {mvp.reference_backend}")
+        if mvp.torch_max_abs_diff is not None:
+            print(f"max |ref - torch| = {mvp.torch_max_abs_diff:.6e}")
+        if args.mvp_json:
+            with open(args.mvp_json, "w", encoding="utf-8") as f:
+                f.write(mvp_result_to_json(mvp))
+            print(f"Wrote MVP-A JSON: {args.mvp_json}")
+    elif args.import_toy_attention:
         spec = ToyAttentionSpec(
             batch_size=args.batch_size,
             seq_len=args.seq_len,

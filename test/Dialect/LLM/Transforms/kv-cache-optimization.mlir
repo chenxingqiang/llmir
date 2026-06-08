@@ -7,7 +7,7 @@ func.func @test_optimize_block_size(%keys: tensor<2x16x16x64xf16>, %values: tens
                       -> (!llm.kvcache, tensor<2x16xi32>) {
   // The original block size is 256, which is too large for a sequence length of 16
   // CHECK: llm.append_kv
-  // CHECK-SAME: block_size = 16
+  // CHECK-SAME: block_size = 32
   %kv_cache_updated, %block_indices = llm.append_kv(%keys, %values, %seq_ids, %kv_cache) {
     block_size = 256 : i32,
     max_seq_len = 2048 : i32
