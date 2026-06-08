@@ -15,8 +15,8 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | Native CUDA KV kernels | `libMLIRLLMRuntime` + `cuda_probe`, `LLMIR_KV_BACKEND=native` | **MVP-C** (optional build) |
 | §5 ShareGPT throughput vs vLLM | vLLM baseline in same harness | Planned (needs vLLM + GPU CI) |
 | Table III PPL / MMLU | — | Planned |
-| Multi-model Table II | Partial: gpt2 + Qwen2.5-7B measured rows | **Partial** (`paper_results.json`, `a800_qwen_inference.json`) |
-| Measured harness Table | `IEEE-conference/benchmarks/paper_results.json` | **gpt2 CPU** |
+| Multi-model Table II | Partial: gpt2 measured + Qwen cited external | **Partial** (`paper_results.json`, `external_baselines.json`) |
+| Measured harness Table | `paper_results.json` (gpt2); Qwen from `external_baselines.json` | **gpt2 CPU** + **cited external** |
 | Prefix TTFT Fig (2048) | `sharegpt_2048_sim.json` | **KV sim measured** |
 
 ## Quick commands

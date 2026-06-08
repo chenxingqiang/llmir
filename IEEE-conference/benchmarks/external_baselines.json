@@ -1,0 +1,60 @@
+{
+  "collected_at": "2026-06-08T12:00:00+00:00",
+  "harness": "manual-curation-from-public-sources",
+  "notes": "Third-party published benchmarks. Not LLMIR measurements. Use for context only.",
+  "sources": [
+    {
+      "id": "qwen25_speed_benchmark",
+      "title": "Qwen2.5 Speed Benchmark",
+      "url": "https://qwen.readthedocs.io/en/v2.5/benchmark/speed_benchmark.html",
+      "publisher": "Qwen Team (Alibaba Cloud)",
+      "hardware": "NVIDIA A100 80GB",
+      "cuda": "12.1",
+      "batch_size": 1,
+      "workload": "Generate 2048 output tokens; input length varies per row",
+      "vllm_version": "0.6.3",
+      "pytorch_version": "2.4.0",
+      "transformers_version": "4.46.0",
+      "vllm_config": "gpu_memory_utilization=0.9 max_model_len=32768 enforce_eager=False"
+    }
+  ],
+  "entries": [
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "engine": "huggingface-transformers",
+      "quantization": "BF16",
+      "input_length_tokens": 1,
+      "output_length_tokens": 2048,
+      "throughput_tokens_s": 40.38,
+      "gpu_memory_gb": 14.38,
+      "source_id": "qwen25_speed_benchmark"
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "engine": "vllm",
+      "quantization": "BF16",
+      "input_length_tokens": 1,
+      "output_length_tokens": 2048,
+      "throughput_tokens_s": 84.28,
+      "source_id": "qwen25_speed_benchmark"
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "engine": "vllm",
+      "quantization": "BF16",
+      "input_length_tokens": 6144,
+      "output_length_tokens": 2048,
+      "throughput_tokens_s": 80.7,
+      "source_id": "qwen25_speed_benchmark"
+    },
+    {
+      "model": "Qwen/Qwen2.5-7B-Instruct",
+      "engine": "vllm",
+      "quantization": "BF16",
+      "input_length_tokens": 30720,
+      "output_length_tokens": 2048,
+      "throughput_tokens_s": 70.33,
+      "source_id": "qwen25_speed_benchmark"
+    }
+  ]
+}

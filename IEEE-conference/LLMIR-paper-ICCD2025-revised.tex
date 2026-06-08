@@ -382,7 +382,7 @@ LLaMA-2-70B & 12,450 & 10,200 & 9,050 & 11,800 & 9,400 \\
 \hline
 Phi-3-3.8B & 142,300 & 116,500 & 103,200 & 135,800 & 109,400 \\
 \hline
-Qwen2.5-7B (meas.\textsuperscript{‡}) & --- & 94 & --- & --- & --- \\
+Qwen2.5-7B (cited\textsuperscript{*}) & --- & 84 & --- & --- & --- \\
 \hline
 gpt2 (meas.\textsuperscript{‡}) & 27 & --- & --- & --- & --- \\
 \hline
@@ -397,25 +397,25 @@ DeepSeek-16B & 52,400 & 42,800 & 37,900 & 49,600 & 40,100 \\
 \end{tabular}
 \label{tab:multi_model}
 \end{center}
-\textsuperscript{$\dagger$}\footnotesize Projected rows (A100-80GB, batch 8). \textsuperscript{‡}Measured: gpt2 \texttt{llmir-paged} 27 tok/s vs HF 70 tok/s (CPU, batch 1, 64 prompt tok) from \texttt{paper\_results.json}; Qwen2.5-7B vLLM 93.7 tok/s (A800, batch 1) from \texttt{a800\_qwen\_inference.json}. LLMIR \texttt{llmir-paged} on Qwen pending GPU CI.
+\textsuperscript{$\dagger$}\footnotesize Projected rows (A100-80GB, batch 8). \textsuperscript{‡}Measured: gpt2 \texttt{llmir-paged} 27 tok/s vs HF 70 tok/s (CPU, batch 1, 64 prompt tok) from \texttt{paper\_results.json}. \textsuperscript{*}Cited external: Qwen2.5-7B vLLM 84.3 tok/s (A100-80GB, batch 1, gen 2048, input len 1) from Qwen official speed benchmark~\cite{qwen25speed}, recorded in \texttt{external\_baselines.json}. LLMIR \texttt{llmir-paged} on Qwen pending GPU CI.
 \end{table}
 
 \begin{table}[htbp]
-\caption{Measured Harness: HF vs LLMIR-paged vs vLLM (same prompt length)}
+\caption{Measured vs Cited Baselines (tokens/sec)}
 \begin{center}
 \small
 \begin{tabular}{|l|c|c|c|l|}
 \hline
 \textbf{Model} & \textbf{HF} & \textbf{LLMIR-paged} & \textbf{vLLM} & \textbf{Source} \\
 \hline
-gpt2 & 70 & 27 & --- & \texttt{paper\_results.json} \\
+gpt2\textsuperscript{‡} & 70 & 27 & --- & \texttt{paper\_results.json} \\
 \hline
-Qwen2.5-7B & 46 & --- & 94 & A800 batch=1 \\
+Qwen2.5-7B\textsuperscript{*} & 40 & --- & 84 & \texttt{external\_baselines.json} \\
 \hline
 \end{tabular}
 \label{tab:measured_harness}
 \end{center}
-\footnotesize Tokens/sec; gpt2 on CPU (64 prompt, 8 gen). Qwen on A800-80GB (Feb 2026). vLLM skipped on CPU harness.
+\footnotesize \textsuperscript{‡}gpt2 measured on CPU (64 prompt, 8 gen). \textsuperscript{*}Qwen cited from Qwen official A100 benchmark (batch 1, gen 2048, input len 1)~\cite{qwen25speed}; not an LLMIR harness run.
 \end{table}
 
 \begin{figure}[htbp]
@@ -425,7 +425,7 @@ Qwen2.5-7B & 46 & --- & 94 & A800 batch=1 \\
 \label{fig:multi_model}
 \end{figure}
 
-Key observations: (1) \textsuperscript{‡}Measured rows (Table~\ref{tab:measured_harness}) show HF can beat \texttt{llmir-paged} on short CPU prompts; LLMIR value is compile-time optimization plus prefix reuse (Fig.~\ref{fig:prefix_ttft}). (2) Projected rows suggest LLMIR targets gains over runtime systems when GPU harness completes. (3) Qwen2.5-7B vLLM throughput (94 tok/s, A800 batch=1) anchors one real baseline column.
+Key observations: (1) \textsuperscript{‡}Measured gpt2 row (Table~\ref{tab:measured_harness}) shows HF can beat \texttt{llmir-paged} on short CPU prompts; LLMIR value is compile-time optimization plus prefix reuse (Fig.~\ref{fig:prefix_ttft}). (2) Projected rows suggest LLMIR targets gains over runtime systems when GPU harness completes. (3) \textsuperscript{*}Cited Qwen2.5-7B vLLM throughput (84 tok/s, A100 batch=1) from the official Qwen benchmark anchors an external reference column, distinct from LLMIR measurements.
 
 \subsection{Quality Metrics}
 
@@ -657,6 +657,8 @@ This work was supported by anonymous funding sources.
 \bibitem{b18} ShareGPT Team, "ShareGPT: Share your ChatGPT conversations," sharegpt.com, 2023.
 
 \bibitem{b19} D. Hendrycks et al., "Measuring massive multitask language understanding," ICLR, 2021.
+
+\bibitem{qwen25speed} Qwen Team, "Qwen2.5 Speed Benchmark," Qwen Documentation, 2024. [Online]. Available: https://qwen.readthedocs.io/en/v2.5/benchmark/speed\_benchmark.html
 
 \end{thebibliography}
 
