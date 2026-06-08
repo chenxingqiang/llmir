@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/LLM/IR/LLM.h"
+#include "mlir/Dialect/LLM/Transforms/BlockSizeAnalysis.h"
 #include "mlir/Dialect/LLM/Transforms/Passes.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -182,6 +183,9 @@ struct KVCacheOptimizationPass
   void runOnOperation() override {
     auto func = getOperation();
     auto context = &getContext();
+
+    // Paper Algorithm 1: block size selection from static sequence shapes.
+    applyBlockSizeOptimizationToFunc(func);
 
     RewritePatternSet patterns(context);
     

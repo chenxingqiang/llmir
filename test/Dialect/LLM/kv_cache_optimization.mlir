@@ -7,7 +7,7 @@ func.func @test_block_size_optimization(%cache: !llm.paged_kv_cache<f16, 12, 16,
                                         %keys: tensor<2x1x16x64xf16>, 
                                         %values: tensor<2x1x16x64xf16>, 
                                         %seq_ids: tensor<2xi32>) -> !llm.paged_kv_cache<f16, 12, 16, 64, 16, 4096> {
-  // CHECK: %{{.*}}, %{{.*}} = llm.append_kv %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} {block_size = 256 : i32, max_seq_len = 4096 : i32}
+  // CHECK: %{{.*}}, %{{.*}} = llm.append_kv %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} {block_size = 32 : i32, max_seq_len = 4096 : i32}
   %new_cache, %block_indices = llm.append_kv %cache, %keys, %values, %seq_ids {
     block_size = 1024 : i32, // Too large block size, should be optimized
     max_seq_len = 4096 : i32

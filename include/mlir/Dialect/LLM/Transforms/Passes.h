@@ -44,6 +44,9 @@ void registerLLMPasses();
 /// Register just the KV cache lowering passes.
 void registerLowerKVCacheOpsPasses();
 
+/// Register ``llm-optimization-pipeline`` and related pipelines.
+void registerLLMOptimizationPipeline();
+
 //===----------------------------------------------------------------------===//
 // Passes
 //===----------------------------------------------------------------------===//
