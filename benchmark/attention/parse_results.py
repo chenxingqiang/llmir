@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
@@ -338,7 +339,7 @@ def generate_test_report():
     threshold_results = parse_threshold_results()
     topk_results = parse_topk_results()
     
-    report_path = '../docs/attention_optimization_test_report.md'
+    report_path = Path(__file__).resolve().parent / 'report.md'
     
     with open(report_path, 'w') as f:
         f.write('# Attention Optimization Techniques Benchmark Report\n\n')
@@ -424,10 +425,10 @@ def generate_test_report():
         
         f.write('The benefits of all optimization techniques increase with sequence length, making them particularly valuable for LLM inference with long context windows.\n\n')
     
-    print("Test report generated: ../docs/attention_optimization_test_report.md")
+    print(f"Test report generated: {report_path}")
 
 # Run the main functions
 if __name__ == '__main__':
     generate_visualizations()
     generate_test_report()
-    print("Benchmark analysis completed. Check the plots directory and ../docs/attention_optimization_test_report.md for results.") 
+    print("Benchmark analysis completed. Check the plots directory and report.md for results.") 

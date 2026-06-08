@@ -670,7 +670,7 @@ All optimization techniques show better performance as sequence length increases
 - **For accuracy-speed balance**: Flash Attention provides good speedup with minimal accuracy impact
 - **For scalability**: Benefits of all optimization techniques increase with sequence length
 
-For detailed information, see the [attention optimization test procedure](docs/attention_optimization_test_procedure.md), [comprehensive benchmark report](docs/attention_optimization_test_report.md), and [benchmark source code](benchmark/attention/).
+For benchmark scripts and analysis, see [`benchmark/attention/`](benchmark/attention/).
 
 ## Benchmarks
 

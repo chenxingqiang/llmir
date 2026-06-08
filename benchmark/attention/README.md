@@ -83,7 +83,7 @@ python3 parse_results.py
 
 This will:
 1. Generate plots in the `plots/` directory
-2. Create a markdown report at `../docs/attention_optimization_test_report.md`
+2. Create a markdown report at `report.md` in this directory
 
 ## Directory Structure
 
