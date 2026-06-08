@@ -1,0 +1,48 @@
+{
+  "mode": "sharegpt_prefix",
+  "config": {
+    "system_prompt_tokens": 2048,
+    "num_requests": 32,
+    "user_suffix_tokens": 8,
+    "max_new_tokens": 4,
+    "model": "gpt2",
+    "device": "auto",
+    "warmup_requests": 0
+  },
+  "results": [
+    {
+      "scenario": "sharegpt_kv_baseline",
+      "num_requests": 32,
+      "system_prompt_tokens": 2048,
+      "user_suffix_tokens": 8,
+      "total_elapsed_s": 0.008991383001557551,
+      "avg_latency_ms": 0.2809807187986735,
+      "ttft_proxy_ms": 0.2809807187986735,
+      "prefix_hit_tokens_total": 0,
+      "prefill_tokens_computed_total": 0,
+      "generated_tokens_total": 65792,
+      "throughput_tok_s": 7317228.060310971,
+      "speedup_vs_baseline": 1.0,
+      "details": {}
+    },
+    {
+      "scenario": "sharegpt_kv_prefix_cached",
+      "num_requests": 32,
+      "system_prompt_tokens": 2048,
+      "user_suffix_tokens": 8,
+      "total_elapsed_s": 0.0011661419994197786,
+      "avg_latency_ms": 0.03644193748186808,
+      "ttft_proxy_ms": 0.03644193748186808,
+      "prefix_hit_tokens_total": 0,
+      "prefill_tokens_computed_total": 0,
+      "generated_tokens_total": 2312,
+      "throughput_tok_s": 1982605.8928932757,
+      "speedup_vs_baseline": 7.7103671817251,
+      "details": {
+        "prefix_len": 2048,
+        "suffix_len": 8,
+        "num_requests": 32
+      }
+    }
+  ]
+}

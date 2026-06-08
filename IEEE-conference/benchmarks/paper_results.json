@@ -1,0 +1,212 @@
+{
+  "collected_at": "2026-06-08T04:23:05.104935+00:00",
+  "harness": "scripts/paper_benchmark_collect.py",
+  "model": "gpt2",
+  "inference_compare": [
+    {
+      "engine": "hf",
+      "model": "gpt2",
+      "batch_size": 1,
+      "prompt_tokens": 64,
+      "generated_tokens": 8,
+      "elapsed_s": 0.11439726401295047,
+      "throughput_tokens_s": 69.93174241557342,
+      "latency_ms_per_token": 14.299658001618809,
+      "note": "HuggingFace generate() baseline"
+    },
+    {
+      "engine": "llmir-paged",
+      "model": "gpt2",
+      "batch_size": 1,
+      "prompt_tokens": 64,
+      "generated_tokens": 8,
+      "elapsed_s": 0.2963484840001911,
+      "throughput_tokens_s": 26.99524523295635,
+      "latency_ms_per_token": 37.04356050002389,
+      "note": "LLMIR PagedKVCache on critical path"
+    }
+  ],
+  "sharegpt_prefix": {
+    "mode": "sharegpt_prefix",
+    "config": {
+      "system_prompt_tokens": 256,
+      "num_requests": 6,
+      "user_suffix_tokens": 8,
+      "max_new_tokens": 4,
+      "model": "gpt2",
+      "device": "auto",
+      "warmup_requests": 0
+    },
+    "results": [
+      {
+        "scenario": "sharegpt_kv_baseline",
+        "num_requests": 6,
+        "system_prompt_tokens": 256,
+        "user_suffix_tokens": 8,
+        "total_elapsed_s": 0.00015006099420133978,
+        "avg_latency_ms": 0.025010165700223297,
+        "ttft_proxy_ms": 0.025010165700223297,
+        "prefix_hit_tokens_total": 0,
+        "prefill_tokens_computed_total": 0,
+        "generated_tokens_total": 1584,
+        "throughput_tok_s": 10555707.753573298,
+        "speedup_vs_baseline": 1.0,
+        "details": {}
+      },
+      {
+        "scenario": "sharegpt_kv_prefix_cached",
+        "num_requests": 6,
+        "system_prompt_tokens": 256,
+        "user_suffix_tokens": 8,
+        "total_elapsed_s": 3.278399526607245e-05,
+        "avg_latency_ms": 0.005463999211012076,
+        "ttft_proxy_ms": 0.005463999211012076,
+        "prefix_hit_tokens_total": 0,
+        "prefill_tokens_computed_total": 0,
+        "generated_tokens_total": 312,
+        "throughput_tok_s": 9516838.855906101,
+        "speedup_vs_baseline": 4.57726378324106,
+        "details": {
+          "prefix_len": 256,
+          "suffix_len": 8,
+          "num_requests": 6
+        }
+      },
+      {
+        "scenario": "sharegpt_llmir_no_prefix",
+        "num_requests": 6,
+        "system_prompt_tokens": 256,
+        "user_suffix_tokens": 8,
+        "total_elapsed_s": 1.0929605650162557,
+        "avg_latency_ms": 182.16009416937595,
+        "ttft_proxy_ms": 199.67552299203817,
+        "prefix_hit_tokens_total": 0,
+        "prefill_tokens_computed_total": 1608,
+        "generated_tokens_total": 24,
+        "throughput_tok_s": 21.958706259125684,
+        "speedup_vs_baseline": 1.0,
+        "details": {
+          "prefix_cache": "disabled"
+        }
+      },
+      {
+        "scenario": "sharegpt_llmir_warm_prefix",
+        "num_requests": 6,
+        "system_prompt_tokens": 256,
+        "user_suffix_tokens": 8,
+        "total_elapsed_s": 22.91922192001948,
+        "avg_latency_ms": 3819.870320003247,
+        "ttft_proxy_ms": 3727.8079480020097,
+        "prefix_hit_tokens_total": 1541,
+        "prefill_tokens_computed_total": 67,
+        "generated_tokens_total": 24,
+        "throughput_tok_s": 1.0471559673252469,
+        "speedup_vs_baseline": 0.04768750740449773,
+        "details": {
+          "prefix_cache": "warm_prefix"
+        }
+      }
+    ],
+    "per_request": {
+      "baseline": [
+        {
+          "request_index": 0,
+          "elapsed_s": 0.19967552299203817,
+          "prefix_hit_tokens": 0,
+          "prefill_tokens_computed": 268,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 1,
+          "elapsed_s": 0.18193556800542865,
+          "prefix_hit_tokens": 0,
+          "prefill_tokens_computed": 268,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 2,
+          "elapsed_s": 0.17725258799328003,
+          "prefix_hit_tokens": 0,
+          "prefill_tokens_computed": 268,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 3,
+          "elapsed_s": 0.17251692101126537,
+          "prefix_hit_tokens": 0,
+          "prefill_tokens_computed": 268,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 4,
+          "elapsed_s": 0.1737245310068829,
+          "prefix_hit_tokens": 0,
+          "prefill_tokens_computed": 268,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 5,
+          "elapsed_s": 0.1878554340073606,
+          "prefix_hit_tokens": 0,
+          "prefill_tokens_computed": 268,
+          "generated_tokens": 4
+        }
+      ],
+      "warmed": [
+        {
+          "request_index": 0,
+          "elapsed_s": 3.7278079480020097,
+          "prefix_hit_tokens": 256,
+          "prefill_tokens_computed": 12,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 1,
+          "elapsed_s": 3.8071608190075494,
+          "prefix_hit_tokens": 257,
+          "prefill_tokens_computed": 11,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 2,
+          "elapsed_s": 3.98492570000235,
+          "prefix_hit_tokens": 257,
+          "prefill_tokens_computed": 11,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 3,
+          "elapsed_s": 3.877522807000787,
+          "prefix_hit_tokens": 257,
+          "prefill_tokens_computed": 11,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 4,
+          "elapsed_s": 3.7376756919984473,
+          "prefix_hit_tokens": 257,
+          "prefill_tokens_computed": 11,
+          "generated_tokens": 4
+        },
+        {
+          "request_index": 5,
+          "elapsed_s": 3.784128954008338,
+          "prefix_hit_tokens": 257,
+          "prefill_tokens_computed": 11,
+          "generated_tokens": 4
+        }
+      ]
+    }
+  },
+  "mvp_a": {
+    "block_size_before": 1024,
+    "block_size_after": 32,
+    "reference_backend": "numpy",
+    "mlir_snippet_path": "IEEE-conference/benchmarks/gpt2_mvp_a_snippet.mlir"
+  },
+  "notes": {
+    "prompt_tokens": 64,
+    "max_tokens": 8,
+    "sharegpt_system_tokens": 256
+  }
+}

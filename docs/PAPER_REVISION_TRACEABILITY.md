@@ -15,7 +15,9 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | Native CUDA KV kernels | `libMLIRLLMRuntime` + `cuda_probe`, `LLMIR_KV_BACKEND=native` | **MVP-C** (optional build) |
 | §5 ShareGPT throughput vs vLLM | vLLM baseline in same harness | Planned (needs vLLM + GPU CI) |
 | Table III PPL / MMLU | — | Planned |
-| Multi-model Table II | — | Planned (requires GPU harness) |
+| Multi-model Table II | Partial: gpt2 measured + Qwen cited external | **Partial** (`paper_results.json`, `external_baselines.json`) |
+| Measured harness Table | `paper_results.json` (gpt2); Qwen from `external_baselines.json` | **gpt2 CPU** + **cited external** |
+| Prefix TTFT Fig (2048) | `sharegpt_2048_sim.json` | **KV sim measured** |
 
 ## Quick commands
 
@@ -27,6 +29,10 @@ pytest tests/test_mvp_a_e2e.py -m "not network" -q
 pytest tests/test_torch_gpu_kv_cache.py tests/test_mvp_c_e2e.py -m "not network" -q
 llmir-benchmark --mvp-c-bench --model gpt2 -o mvp_c.json
 
+# Paper measured JSON + figures
+python3 scripts/paper_benchmark_collect.py --model gpt2
+python3 IEEE-conference/figures/create_measured_figures_nature.py
+
 # Full path when llmir-opt is on PATH
 llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \
   --seq-len 8 --mvp-json /tmp/mvp_a.json -o /tmp/mvp_a.mlir
@@ -35,7 +41,19 @@ llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \
 mlir-opt test/Dialect/LLM/mvp_single_layer_pipeline.mlir -llm-optimize-kv-cache
 ```
 
+## Paper figures (Nature style)
+
+Regenerate: `python3 IEEE-conference/figures/generate_all_nature_figures.py`
+
+| Figure | Verified? | Source |
+|--------|-----------|--------|
+| `mvp_evaluation_nature` | **Yes** (panels a–c) | MVP-A/B/C CI + docs |
+| `prefix_cache_nature` | **Partial** | `sharegpt_prefix_bench` |
+| `block_size_optimization_nature` | **Partial** | Algorithm 1 + illustrative sweep |
+| `multi_model_comparison_nature` | **No** (projected) | Table II targets |
+| `attention_speedup_nature` | **No** (micro-bench) | Illustrative arrays |
+
 ## Honesty notes
 
-- Throughput figures in `IEEE-conference/figures/paper-only/` are **not** produced by this pipeline.
+- Throughput heatmap / Table II remain **projected** until GPU harness feeds JSON.
 - MVP-A proves **compile-time block sizing + single-layer IR lowering + numeric reference**; it does not claim vLLM-scale serving wins.
