@@ -3,11 +3,48 @@
 from __future__ import annotations
 
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Callable, Dict, List, Optional
 
 from llmir import LLMEngine, SamplingParams
+from llmir.benchmark.device import (
+    DtypeChoice,
+    DeviceChoice,
+    InferenceDeviceConfig,
+    cuda_available,
+    resolve_inference_device,
+    resolve_torch_dtype,
+    torch_dtype_from_string,
+    vllm_dtype_string,
+)
+from llmir.integration.hf_load import (
+    apply_transformers_load_patches,
+    hf_from_pretrained_kwargs,
+    materialize_hf_causal_lm,
+)
 from llmir.serving.config import BackendType
+
+
+@dataclass
+class InferenceCompareConfig:
+    """Runtime options for :func:`run_inference_compare`."""
+
+    device: DeviceChoice = "auto"
+    dtype: DtypeChoice = "auto"
+    resolved: InferenceDeviceConfig = field(init=False)
+
+    def __post_init__(self) -> None:
+        base = resolve_inference_device(self.device)
+        dtype_str = resolve_torch_dtype(self.dtype, base)
+        object.__setattr__(
+            self,
+            "resolved",
+            InferenceDeviceConfig(
+                device=base.device,
+                torch_dtype=dtype_str,
+                note=base.note,
+            ),
+        )
 
 
 @dataclass
@@ -23,6 +60,8 @@ class BenchmarkResult:
     throughput_tokens_s: float
     latency_ms_per_token: float
     note: str = ""
+    device: str = ""
+    dtype: str = ""
 
 
 def build_prompts(batch_size: int, prompt_tokens: int) -> List[str]:
@@ -45,6 +84,9 @@ def make_result(
     generated_tokens: int,
     elapsed_s: float,
     note: str = "",
+    *,
+    device: str = "",
+    dtype: str = "",
 ) -> BenchmarkResult:
     throughput = generated_tokens / elapsed_s if elapsed_s > 0 else 0.0
     latency = elapsed_s * 1000 / generated_tokens if generated_tokens > 0 else 0.0
@@ -58,6 +100,8 @@ def make_result(
         throughput_tokens_s=throughput,
         latency_ms_per_token=latency,
         note=note,
+        device=device,
+        dtype=dtype,
     )
 
 
@@ -67,6 +111,7 @@ def run_llmir_smoke(
     prompt_tokens: int,
     max_tokens: int,
     warmup: int,
+    compare_config: Optional[InferenceCompareConfig] = None,
 ) -> BenchmarkResult:
     prompts = build_prompts(batch_size, prompt_tokens)
     params = SamplingParams(max_tokens=max_tokens, temperature=0.0)
@@ -97,6 +142,7 @@ def run_hf_transformers(
     prompt_tokens: int,
     max_tokens: int,
     warmup: int,
+    compare_config: Optional[InferenceCompareConfig] = None,
 ) -> Optional[BenchmarkResult]:
     try:
         import torch
@@ -104,15 +150,28 @@ def run_hf_transformers(
     except ImportError:
         return None
 
+    cfg = compare_config or InferenceCompareConfig()
+    torch_dtype = torch_dtype_from_string(cfg.resolved.torch_dtype) or torch.float32
+
+    apply_transformers_load_patches()
     tokenizer = AutoTokenizer.from_pretrained(model, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    torch_model = AutoModelForCausalLM.from_pretrained(
-        model, torch_dtype=torch.float32, device_map="cpu", trust_remote_code=True
+    load_kwargs = hf_from_pretrained_kwargs(
+        device=cfg.resolved.device,
+        torch_dtype=torch_dtype,
+        trust_remote_code=True,
     )
+    torch_model = materialize_hf_causal_lm(
+        AutoModelForCausalLM.from_pretrained(model, **load_kwargs)
+    )
+    if cfg.resolved.device == "cuda":
+        torch_model = torch_model.to("cuda")
     torch_model.eval()
     prompts = build_prompts(batch_size, prompt_tokens)
     inputs = tokenizer(prompts, return_tensors="pt", padding=True)
+    if cfg.resolved.device == "cuda":
+        inputs = {k: v.to(torch_model.device) for k, v in inputs.items()}
 
     for _ in range(warmup):
         with torch.no_grad():
@@ -137,6 +196,7 @@ def run_hf_transformers(
 
     elapsed_s, generated_tokens = time_call(_run)
     del torch_model
+    note = f"HuggingFace generate() ({cfg.resolved.note})"
     return make_result(
         "hf",
         model,
@@ -144,7 +204,9 @@ def run_hf_transformers(
         prompt_tokens,
         generated_tokens,
         elapsed_s,
-        note="HuggingFace generate() baseline",
+        note=note,
+        device=cfg.resolved.device,
+        dtype=cfg.resolved.torch_dtype,
     )
 
 
@@ -154,6 +216,7 @@ def run_vllm(
     prompt_tokens: int,
     max_tokens: int,
     warmup: int,
+    compare_config: Optional[InferenceCompareConfig] = None,
 ) -> Optional[BenchmarkResult]:
     try:
         from vllm import LLM
@@ -161,14 +224,18 @@ def run_vllm(
     except ImportError:
         return None
 
+    cfg = compare_config or InferenceCompareConfig()
     prompts = build_prompts(batch_size, prompt_tokens)
     sampling_params = VLLMSamplingParams(max_tokens=max_tokens, temperature=0.0)
-    llm = LLM(
-        model=model,
-        dtype="float32",
-        trust_remote_code=True,
-        enforce_eager=True,
-    )
+    llm_kwargs: Dict[str, object] = {
+        "model": model,
+        "dtype": vllm_dtype_string(cfg.resolved.torch_dtype),
+        "trust_remote_code": True,
+        "enforce_eager": True,
+    }
+    if cfg.resolved.device == "cpu":
+        llm_kwargs["device"] = "cpu"
+    llm = LLM(**llm_kwargs)
     for _ in range(warmup):
         llm.generate(prompts[:1], sampling_params)
     elapsed_s, generated_tokens = time_call(
@@ -183,7 +250,9 @@ def run_vllm(
         prompt_tokens,
         generated_tokens,
         elapsed_s,
-        note="vLLM baseline",
+        note=f"vLLM baseline ({cfg.resolved.note})",
+        device=cfg.resolved.device,
+        dtype=cfg.resolved.torch_dtype,
     )
 
 
@@ -193,16 +262,21 @@ def run_llmir_vllm_backend(
     prompt_tokens: int,
     max_tokens: int,
     warmup: int,
+    compare_config: Optional[InferenceCompareConfig] = None,
 ) -> Optional[BenchmarkResult]:
     try:
         import vllm  # noqa: F401
     except ImportError:
         return None
 
+    cfg = compare_config or InferenceCompareConfig()
     prompts = build_prompts(batch_size, prompt_tokens)
     params = SamplingParams(max_tokens=max_tokens, temperature=0.0)
     engine = LLMEngine.from_pretrained(
-        model, backend=BackendType.VLLM, dtype="float32", trust_remote_code=True
+        model,
+        backend=BackendType.VLLM,
+        dtype=cfg.resolved.torch_dtype,
+        trust_remote_code=True,
     )
     for _ in range(warmup):
         engine.generate(prompts[:1], params, use_tqdm=False)
@@ -220,7 +294,9 @@ def run_llmir_vllm_backend(
         prompt_tokens,
         generated_tokens,
         elapsed_s,
-        note="LLMIR engine forwarding to vLLM",
+        note=f"LLMIR→vLLM ({cfg.resolved.note})",
+        device=cfg.resolved.device,
+        dtype=cfg.resolved.torch_dtype,
     )
 
 
@@ -230,6 +306,7 @@ def run_llmir_paged(
     prompt_tokens: int,
     max_tokens: int,
     warmup: int,
+    compare_config: Optional[InferenceCompareConfig] = None,
 ) -> Optional[BenchmarkResult]:
     try:
         import torch  # noqa: F401
@@ -237,11 +314,24 @@ def run_llmir_paged(
     except ImportError:
         return None
 
+    cfg = compare_config or InferenceCompareConfig()
     prompts = build_prompts(batch_size, prompt_tokens)
     params = SamplingParams(max_tokens=max_tokens, temperature=0.0)
     engine = LLMEngine.from_pretrained(
-        model, backend=BackendType.LLMIR_PAGED, dtype="float32", trust_remote_code=True
+        model,
+        backend=BackendType.LLMIR_PAGED,
+        dtype=cfg.resolved.torch_dtype,
+        trust_remote_code=True,
     )
+    if cfg.resolved.device == "cuda":
+        import torch
+
+        engine._ensure_llmir_paged()
+        assert engine._hf_model is not None
+        dev = torch.device("cuda")
+        engine._hf_model.to(dev)
+        if engine._paged_decoder is not None:
+            engine._paged_decoder._device = dev
     for _ in range(warmup):
         engine.generate(prompts[:1], params, use_tqdm=False)
     elapsed_s, generated_tokens = time_call(
@@ -258,7 +348,9 @@ def run_llmir_paged(
         prompt_tokens,
         generated_tokens,
         elapsed_s,
-        note="LLMIR PagedKVCache on critical path",
+        note=f"LLMIR PagedKV ({cfg.resolved.note})",
+        device=cfg.resolved.device,
+        dtype=cfg.resolved.torch_dtype,
     )
 
 
@@ -287,8 +379,11 @@ def run_inference_compare(
     prompt_tokens: int = 16,
     max_tokens: int = 16,
     warmup: int = 1,
+    device: DeviceChoice = "auto",
+    dtype: DtypeChoice = "auto",
 ) -> List[BenchmarkResult]:
     """Run one or more backends; skip unavailable ones with a warning."""
+    compare_config = InferenceCompareConfig(device=device, dtype=dtype)
     results: List[BenchmarkResult] = []
     aliases = {
         "huggingface": "hf",
@@ -303,7 +398,14 @@ def run_inference_compare(
         if runner is None:
             print(f"Unknown backend {raw!r}; known: {sorted(set(_BACKEND_RUNNERS))}")
             continue
-        row = runner(model, batch_size, prompt_tokens, max_tokens, warmup)
+        row = runner(
+            model,
+            batch_size,
+            prompt_tokens,
+            max_tokens,
+            warmup,
+            compare_config,
+        )
         if row is None:
             print(f"Skipping {raw}: dependencies not installed")
         else:
@@ -312,11 +414,27 @@ def run_inference_compare(
 
 
 def print_inference_results(results: List[BenchmarkResult]) -> None:
+    try:
+        from llmir.runtime.cuda_probe import summarize_cuda_stack
+
+        stack = summarize_cuda_stack()
+        print(
+            f"CUDA stack: torch={stack['torch_cuda']} "
+            f"native_built={stack['native_cuda_built']} "
+            f"native_runtime={stack['native_cuda_runtime']} "
+            f"devices={stack['device_count']}"
+        )
+    except ImportError:
+        pass
+    if results:
+        print(f"Device: {results[0].device or 'n/a'}  dtype: {results[0].dtype or 'n/a'}")
+        if cuda_available():
+            print("(CUDA available for compare)")
     print(
         f"{'Engine':<12} {'Batch':>5} {'Prompt':>6} {'Gen':>6} "
         f"{'Time(s)':>9} {'Tok/s':>12} {'ms/tok':>10}  Note"
     )
-    print("-" * 90)
+    print("-" * 100)
     for result in results:
         print(
             f"{result.engine:<12} {result.batch_size:>5} "

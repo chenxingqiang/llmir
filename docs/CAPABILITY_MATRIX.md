@@ -16,6 +16,7 @@ Legend:
 |---------|--------|-------|
 | `backend="llmir_paged"` | **Python (ref)** / **Python (native)** | Default; HF forward + per-layer KV via `create_paged_kv_cache` |
 | `backend="vllm"` | Pass-through | vLLM owns hot path |
+| vLLM KV connector (`LLMIRConnector`) | **Python (ref)** | `llmir.integration.vllm_connector`; disk prefix KV for disagg prefill |
 | `backend="llmir"` | **Demo only** | Placeholder tokens; warns on construction |
 | Continuous batching + real model | **Planned** | Scheduler exists; not wired to HF/vLLM yet |
 
@@ -29,7 +30,8 @@ Legend:
 | INT8/INT4 KV | **C++** / **Python (ref)** | Real quant in C++; Python returns ratio constants only |
 | Prefix cache (radix) | **Python (ref)** | `PrefixCache` + `llmir-benchmark --prefix-bench`; C++ in `PrefixCache.cpp` |
 | Prefix cache on `llmir_paged` | **Python (ref)** | `PagedKVDecoder.warm_prefix` + `PrefixKVStore`; metrics on `RequestOutput` |
-| `llmir-benchmark --compare` | **Python (ref)** | E2E `hf,vllm,llmir-paged` JSON compare |
+| `llmir-benchmark --compare` | **Python (ref)** | E2E `hf,vllm,llmir-paged`; `--compare-device auto\|cuda\|cpu` |
+| `scripts/gpu_inference_compare.py` | **Python (ref)** | GPU-oriented compare wrapper + optional CI workflow |
 | Distributed KV | **Planned** | Python shard-0 only |
 | Speculative KV branches | **Planned** | Python `verify()` stub |
 
@@ -42,7 +44,8 @@ Legend:
 | PyTorch → MLIR import | **Python (ref)** | `llmir.importers` + toy SDPA; emits MLIR text |
 | `llmir-compile` KV micro-pipeline | **Python (ref)** | Emit + optional `mlir-opt` + NumPy/native reference |
 | `mlir-opt` → execute e2e | **Planned** | Lowering works; full execution JIT not wired |
-| CUDA Flash kernels | **Planned** | `CUDAKernels.cu` not in CMake build |
+| CUDA MQA kernels | **C++** (optional) | `CUDAKernels.cu` when `LLMIR_ENABLE_CUDA=ON` |
+| Prebuilt native wheel | **Planned** | `scripts/package_native_lib.sh` for local bundling |
 
 ## Benchmarks & docs
 

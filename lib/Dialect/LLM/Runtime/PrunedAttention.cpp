@@ -1,5 +1,7 @@
 #include "mlir/Dialect/LLM/Runtime/AttentionOpt.h"
+#if defined(LLMIR_ENABLE_CUDA)
 #include "mlir/Dialect/LLM/Runtime/CUDAKernels.h"
+#endif
 #include <algorithm>
 #include <numeric>
 #include <cmath>
