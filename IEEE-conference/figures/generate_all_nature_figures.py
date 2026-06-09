@@ -9,11 +9,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-# Measured or MVP-verified panels only. For illustrative sweeps/heatmaps, use
+# Measured or E1–E3-verified panels only. For illustrative sweeps/heatmaps, use
 # generate_projected_figures.py
 SCRIPTS = [
     HERE / "create_architecture_diagram_nature.py",
-    HERE / "create_mvp_evaluation_nature.py",
+    HERE / "create_e1_e3_evaluation_nature.py",
     HERE / "create_measured_figures_nature.py",
 ]
 

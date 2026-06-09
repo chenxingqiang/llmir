@@ -50,7 +50,7 @@ def main() -> None:
     fig.text(
         0.5,
         0.01,
-        "Micro-benchmark on A100-80GB (head dim 128, batch 8).",
+        "Future operator work — standalone C++ microbench; not LLMIR lowered kernels.",
         ha="center",
         fontsize=6.5,
         color="#666666",

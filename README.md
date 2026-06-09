@@ -587,9 +587,9 @@ Phased goals vs current status ([`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_
 | 1 | LLM dialect, types, core ops | **Partial** — dialect + lit; not full model import |
 | 2 | KV cache, attention, memory | **Partial** — PagedKV Python/C++; attention microbench only |
 | 3 | Quantization, multi-GPU, checkpoint | **Planned** / Python reference for some APIs |
-| 4 | Speculative decode, prefix cache, adaptive blocks | **Partial** — MVP-B prefix; speculative **Planned** |
+| 4 | Speculative decode, prefix cache, adaptive blocks | **Partial** — E2 prefix; speculative **Planned** |
 | 5 | Serving integration, continuous batching | **Planned** — vLLM pass-through baseline exists |
-| 6 | Python bindings, profiling, model presets | **Partial** — `llmir_paged`, registry, MVP harness |
+| 6 | Python bindings, profiling, model presets | **Partial** — `llmir_paged`, registry, E1–E3 harness |
 | 7 | HF integration at scale, training, K8s | **In progress** — `from_pretrained` exists; training **Planned** |
 
 ## Attention Optimization Benchmarks
@@ -672,11 +672,11 @@ source venv/bin/activate_llmir
 
 See [benchmark/LLM/README_LLAMA31.md](benchmark/LLM/README_LLAMA31.md) for setup notes and limitations.
 
-### Docker Benchmark
+### Docker Benchmark (experimental vLLM baseline)
 
 ```bash
-./scripts/docker_run_benchmark.sh   # Requires NVIDIA GPU, HUGGINGFACE_TOKEN
-# or: docker-compose up llama31-benchmark
+cd benchmark/LLM && ./docker_run_benchmark.sh   # NVIDIA GPU, HUGGINGFACE_TOKEN
+# or from repo root: docker-compose up llama31-benchmark
 ```
 
 ### Additional Scripts

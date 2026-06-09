@@ -1,6 +1,8 @@
-# MVP-C: Native CUDA KV (GPU-resident path)
+# E3: GPU-Resident KV Integration
 
-Removes the **CPU NumPy round-trip** in `PagedKVDecoder` when the model runs on CUDA. This is the main latency fix for `llmir-paged` on GPU; paper-scale wins still come from prefix reuse (MVP-B) and compile-time block sizing (MVP-A).
+Paper **E3** removes the **CPU NumPy round-trip** in `PagedKVDecoder` when the model runs on CUDA. This is the main latency fix for `llmir-paged` on GPU; paper-scale wins still come from prefix reuse (E2) and compile-time block sizing (E1).
+
+Repository harness (legacy CLI): `llmir-benchmark --mvp-c-bench`, `scripts/mvp_c_cuda_kv_bench.py`, `tests/test_mvp_c_e2e.py`.
 
 ## Device selection
 
@@ -55,7 +57,7 @@ flowchart LR
 ## Success criteria
 
 - **Correctness**: `test_mvp_c_e2e` — decode with `LLMIR_KV_BACKEND=torch_cuda` passes; append receives `torch.Tensor`, not NumPy.
-- **Performance (GPU)**: `torch_cuda` tok/s ≥ `numpy` on the same prompt (MVP-C bench); larger gap on longer prompts / more layers.
+- **Performance (GPU)**: `torch_cuda` tok/s ≥ `numpy` on the same prompt (E3 bench); larger gap on longer prompts / more layers.
 - **Optional**: `native` backend matches or beats `torch_cuda` when `libMLIRLLMRuntime` is built with CUDA.
 
 ## Implementation notes

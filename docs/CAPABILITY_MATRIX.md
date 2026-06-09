@@ -55,6 +55,8 @@ Legend:
 | `scripts/cpu_inference_compare.py` | **Python (ref)** | E2E CPU compare (HF / vLLM / llmir_paged) |
 | `IEEE-conference/figures/paper-only/` | **Demo only** | Hard-coded chart data |
 | `IEEE-conference/benchmarks/external_baselines.json` | **Cited external** | Qwen official speed benchmark (not LLMIR runs) |
+| `benchmark/**/results/*.txt`, `*.png` | **Generated locally** | Re-run harness; not committed (see `.gitignore`) |
+| `benchmark/LLM/results/benchmark_summary.txt` | **Microbench summary** | KV-append scope banner; appendix lineage only |
 
 ## Versioning
 

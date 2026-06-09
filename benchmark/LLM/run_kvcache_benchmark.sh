@@ -29,14 +29,9 @@ if [ ! -f "$BENCHMARK_EXEC" ]; then
     echo "Error: Benchmark executable not found at $BENCHMARK_EXEC"
     echo "Please build the project first using:"
     
-    if $IS_MAC_SILICON; then
-        echo "  ./benchmark/LLM/build_m3_mac.sh"
-    else
-        echo "  mkdir -p $BUILD_DIR"
-        echo "  cd $BUILD_DIR"
-        echo "  cmake -G Ninja .. -DLLMIR_ENABLE_CUDA=ON"
-        echo "  ninja llama3_kvcache_benchmark"
-    fi
+    echo "  mkdir -p $BUILD_DIR && cd $BUILD_DIR"
+    echo "  cmake -G Ninja .. -DLLMIR_ENABLE_CUDA=ON"
+    echo "  ninja llama3_kvcache_benchmark"
     
     exit 1
 fi

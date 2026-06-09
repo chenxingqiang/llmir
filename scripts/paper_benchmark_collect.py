@@ -4,7 +4,7 @@ Collect reproducible benchmark JSON for the ICCD revised paper.
 
 Outputs:
   IEEE-conference/benchmarks/paper_results.json
-  IEEE-conference/benchmarks/gpt2_mvp_a_snippet.mlir
+  IEEE-conference/benchmarks/gpt2_e1_snippet.mlir
 """
 
 from __future__ import annotations
@@ -64,7 +64,7 @@ def _run_sharegpt(
     )
 
 
-def _run_mvp_a_snippet(out_mlir: Path) -> dict:
+def _run_e1_snippet(out_mlir: Path) -> dict:
     from llmir.compiler.kv_emit import KVMicroPipelineConfig
     from llmir.compiler.mvp_pipeline import run_mvp_single_layer_e2e
 
@@ -100,7 +100,7 @@ def main() -> int:
     args = parser.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    mlir_path = OUT_DIR / "gpt2_mvp_a_snippet.mlir"
+    mlir_path = OUT_DIR / "gpt2_e1_snippet.mlir"
 
     payload = {
         "collected_at": datetime.now(timezone.utc).isoformat(),
@@ -116,7 +116,7 @@ def main() -> int:
             args.sharegpt_suffix_tokens,
             simulation_only=args.sharegpt_simulation_only,
         ),
-        "mvp_a": _run_mvp_a_snippet(mlir_path),
+        "e1": _run_e1_snippet(mlir_path),
         "notes": {
             "prompt_tokens": args.prompt_tokens,
             "max_tokens": args.max_tokens,

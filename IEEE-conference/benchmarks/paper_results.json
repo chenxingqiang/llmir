@@ -198,11 +198,11 @@
       ]
     }
   },
-  "mvp_a": {
+  "e1": {
     "block_size_before": 1024,
     "block_size_after": 32,
     "reference_backend": "numpy",
-    "mlir_snippet_path": "IEEE-conference/benchmarks/gpt2_mvp_a_snippet.mlir"
+    "mlir_snippet_path": "IEEE-conference/benchmarks/gpt2_e1_snippet.mlir"
   },
   "notes": {
     "prompt_tokens": 64,

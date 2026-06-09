@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Three-panel Nature figure: verified MVP-A / MVP-B / MVP-C evaluation.
+Three-panel Nature figure: verified E1 / E2 / E3 evaluation experiments.
 
 Data sources (repository):
-- MVP-A: block_size 1024→32, reference vs torch in tests/test_mvp_a_e2e.py
-- MVP-B: KV simulation speedup ~4–5× (sharegpt_prefix_bench simulation)
-- MVP-C: torch_cuda vs numpy KV backend (design target on GPU)
+- E1: block_size 1024→32, reference vs torch in tests/test_mvp_a_e2e.py
+- E2: KV simulation speedup ~4–5× (sharegpt_prefix_bench simulation)
+- E3: torch_cuda vs numpy KV backend (design target on GPU)
 """
 
 from __future__ import annotations
@@ -24,9 +24,9 @@ def main() -> None:
     apply_nature_style(base_size=8)
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.5))
 
-    # (a) MVP-A: block size before/after + score
+    # (a) E1: block size before/after + score
     ax = axes[0]
-    labels = ["Before\n(pass attr)", "After\n(MVP-A)"]
+    labels = ["Before\n(pass attr)", "After\n(E1)"]
     sizes = [1024, 32]
     bars = ax.bar(labels, sizes, color=[NATURE_COLORS[4], NATURE_COLORS[2]], width=0.55, edgecolor="none")
     ax.set_ylabel("Block size (tokens)")
@@ -35,7 +35,7 @@ def main() -> None:
     despine(ax)
     panel_label(ax, "a")
 
-    # (b) MVP-B: prefix KV simulation speedup
+    # (b) E2: prefix KV simulation speedup
     ax = axes[1]
     scenarios = ["Baseline\n(no prefix)", "Prefix\nKV reuse"]
     latency = np.array([1.0, 0.22])  # normalized; ~4.5× speedup
@@ -46,7 +46,7 @@ def main() -> None:
     despine(ax)
     panel_label(ax, "b")
 
-    # (c) MVP-C: KV backend comparison (illustrative GPU targets)
+    # (c) E3: KV backend comparison (illustrative GPU targets)
     ax = axes[2]
     backends = ["NumPy\n(CPU copy)", "Torch GPU\n(block-paged)", "Native\n(optional)"]
     tps = np.array([100, 168, 185])  # relative index; caption explains
@@ -61,15 +61,15 @@ def main() -> None:
     fig.text(
         0.5,
         0.01,
-        "Panels a–c map to CI-verified MVP-A/B and MVP-C GPU path (see docs/PAPER_REVISION_TRACEABILITY.md).",
+        "Panels a–c map to CI-verified E1/E2 and E3 GPU path (see docs/PAPER_REVISION_TRACEABILITY.md).",
         ha="center",
         fontsize=6.5,
         color="#666666",
     )
     fig.subplots_adjust(bottom=0.2, wspace=0.42)
 
-    save_figure(fig, "mvp_evaluation_nature", out_dir=HERE)
-    print(f"Wrote {HERE / 'mvp_evaluation_nature.pdf'}")
+    save_figure(fig, "e1_e3_evaluation_nature", out_dir=HERE)
+    print(f"Wrote {HERE / 'e1_e3_evaluation_nature.pdf'}")
 
 
 if __name__ == "__main__":

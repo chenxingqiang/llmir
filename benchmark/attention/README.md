@@ -25,6 +25,10 @@ cmake ..
 cmake --build .
 ```
 
+## Results directory
+
+`results/*.txt` are **generated locally** (not checked into git). After `run_benchmarks.sh`, run `parse_results.py` to build plots and `report.md`.
+
 ## Running the Benchmarks
 
 ### Running All Benchmarks

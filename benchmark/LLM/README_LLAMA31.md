@@ -73,7 +73,7 @@ Example with custom options:
 
 The benchmark outputs several files and visualizations:
 
-1. `llama31_benchmark_results.csv`: Raw benchmark results
+1. `llama31_benchmark_results.csv`: Raw benchmark results (generated locally; not checked into git)
 2. `llama31_benchmark_summary.csv`: Summary statistics by configuration
 3. `latency_by_batch_size.png`: Plot showing latency across different batch sizes and sequence lengths
 4. `throughput_by_batch_size.png`: Plot showing throughput across different batch sizes and sequence lengths

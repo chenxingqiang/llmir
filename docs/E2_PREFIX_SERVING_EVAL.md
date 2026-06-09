@@ -1,6 +1,8 @@
-# MVP-B: ShareGPT-style prefix benchmark
+# E2: Prefix-Aware Serving Evaluation
 
-Demonstrates **product value** from prefix KV reuse (paper §5.1 workload shape), complementary to MVP-A’s compile-time IR path.
+Paper **E2** demonstrates **product value** from prefix KV reuse (paper §5.1 workload shape), complementary to E1's compile-time IR path.
+
+Repository harness (legacy CLI): `llmir-benchmark --sharegpt-prefix-bench`, `scripts/sharegpt_prefix_bench.py`.
 
 ## Workload
 
@@ -18,7 +20,7 @@ One long **shared system prompt** + **N user-variant** suffixes (synthetic Share
 # KV-layer simulation only (no HuggingFace)
 python scripts/sharegpt_prefix_bench.py --simulation-only
 
-# Full MVP-B (sim + llmir_paged on gpt2)
+# Full E2 harness (sim + llmir_paged on gpt2)
 llmir-benchmark --sharegpt-prefix-bench --model gpt2 \
   --sharegpt-system-tokens 128 --sharegpt-requests 32 -o sharegpt.json
 
@@ -37,6 +39,13 @@ python scripts/vllm_kv_connector_smoke.py --register  # when vLLM installed
 ```
 
 See [VLLM_KV_CONNECTOR.md](./VLLM_KV_CONNECTOR.md).
+
+## Artifacts
+
+| File | Content |
+|------|---------|
+| `IEEE-conference/benchmarks/sharegpt_2048_sim.json` | 2048-token system prompt KV sim |
+| `IEEE-conference/benchmarks/paper_results.json` | gpt2 `warm_prefix` prefill tokens |
 
 ## Success criteria
 
