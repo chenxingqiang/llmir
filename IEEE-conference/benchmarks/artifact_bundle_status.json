@@ -1,0 +1,58 @@
+{
+  "version": "1",
+  "manifest_path": "IEEE-conference/benchmarks/artifact_manifest.json",
+  "all_pass": true,
+  "artifacts": [
+    {
+      "id": "e1_mlir_snippet",
+      "experiment": "E1",
+      "path": "/workspace/IEEE-conference/benchmarks/gpt2_e1_snippet.mlir",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "e2_prefix_sim",
+      "experiment": "E2",
+      "path": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "e4_compositional",
+      "experiment": "E4",
+      "path": "/workspace/IEEE-conference/benchmarks/e4_compositional.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "e5_ablation",
+      "experiment": "E5",
+      "path": "/workspace/IEEE-conference/benchmarks/e5_ablation.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "e6_backend_parity",
+      "experiment": "E6",
+      "path": "/workspace/IEEE-conference/benchmarks/e6_backend_parity.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "m5_lowered_hot_path",
+      "experiment": "M5",
+      "path": "/workspace/IEEE-conference/benchmarks/m5_lowered_hot_path.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "paper_results",
+      "experiment": "paper",
+      "path": "/workspace/IEEE-conference/benchmarks/paper_results.json",
+      "ok": true,
+      "message": "ok"
+    }
+  ],
+  "figures": [],
+  "missing_optional": []
+}

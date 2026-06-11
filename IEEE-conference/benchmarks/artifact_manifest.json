@@ -1,0 +1,73 @@
+{
+  "version": "1",
+  "description": "CPU A-class reproducibility bundle (E1–E6 + M5). No GPU required.",
+  "reproduce_command": "bash scripts/reproduce_paper.sh",
+  "verify_command": "python3 scripts/verify_artifact_bundle.py",
+  "artifacts": [
+    {
+      "id": "e1_mlir_snippet",
+      "experiment": "E1",
+      "path": "IEEE-conference/benchmarks/gpt2_e1_snippet.mlir",
+      "kind": "mlir",
+      "must_contain": ["llm.append_kv", "llm.paged_attention"]
+    },
+    {
+      "id": "e2_prefix_sim",
+      "experiment": "E2",
+      "path": "IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json",
+      "kind": "json",
+      "required_keys": ["mode", "config", "results"]
+    },
+    {
+      "id": "e4_compositional",
+      "experiment": "E4",
+      "path": "IEEE-conference/benchmarks/e4_compositional.json",
+      "kind": "json",
+      "required_keys": ["experiment", "e1_block_sizing", "e2_prefix_prefill", "composite"]
+    },
+    {
+      "id": "e5_ablation",
+      "experiment": "E5",
+      "path": "IEEE-conference/benchmarks/e5_ablation.json",
+      "kind": "json",
+      "required_keys": ["experiment", "configurations", "isolated_contributions"]
+    },
+    {
+      "id": "e6_backend_parity",
+      "experiment": "E6",
+      "path": "IEEE-conference/benchmarks/e6_backend_parity.json",
+      "kind": "json",
+      "required_keys": ["experiment", "summary", "decode_parity"],
+      "assert_true": ["summary.overall_pass"]
+    },
+    {
+      "id": "m5_lowered_hot_path",
+      "experiment": "M5",
+      "path": "IEEE-conference/benchmarks/m5_lowered_hot_path.json",
+      "kind": "json",
+      "required_keys": ["experiment", "matches_reference", "execution_path"],
+      "assert_true": ["matches_reference"]
+    },
+    {
+      "id": "paper_results",
+      "experiment": "paper",
+      "path": "IEEE-conference/benchmarks/paper_results.json",
+      "kind": "json",
+      "required_keys": ["e1"],
+      "optional": true
+    }
+  ],
+  "figures": [
+    "IEEE-conference/figures/e1_e3_evaluation_nature.pdf",
+    "IEEE-conference/figures/prefix_ttft_nature.pdf"
+  ],
+  "pytest_gates": [
+    "tests/test_mvp_a_e2e.py",
+    "tests/test_sharegpt_prefix_bench.py",
+    "tests/test_mvp_c_e2e.py",
+    "tests/test_e4_compositional.py",
+    "tests/test_e5_ablation.py",
+    "tests/test_e6_backend_parity.py",
+    "tests/test_m5_lowered_hot_path.py"
+  ]
+}

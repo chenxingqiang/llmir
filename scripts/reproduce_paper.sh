@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# Reproduce A-class paper evidence (E1–E6) on CPU — no GPU required.
+# M6 CPU artifact bundle: reproduce E1–E6 + M5 and verify manifest.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="${HOME}/.local/bin:${PATH}"
+ROOT="$PWD"
+
+echo "LLMIR A-class artifact reproduce (CPU, no GPU)"
+echo "manifest: IEEE-conference/benchmarks/artifact_manifest.json"
+echo ""
 
 echo "=== E1 compile pass ==="
 pytest tests/test_mvp_a_e2e.py -m "not network" -q
@@ -40,6 +45,21 @@ else
 fi
 
 echo "=== Figures ==="
-python3 IEEE-conference/figures/generate_all_nature_figures.py
+if python3 -c "import matplotlib" 2>/dev/null; then
+  python3 IEEE-conference/figures/generate_all_nature_figures.py
+  FIGURE_CHECK=1
+else
+  echo "skip figures (pip install matplotlib)"
+  FIGURE_CHECK=0
+fi
 
-echo "Done. Artifacts under IEEE-conference/benchmarks/ and figures/"
+echo "=== M6 artifact verify ==="
+if [[ "${FIGURE_CHECK:-0}" == "1" ]]; then
+  python3 scripts/verify_artifact_bundle.py
+else
+  python3 scripts/verify_artifact_bundle.py --skip-figures
+fi
+
+echo ""
+echo "Done. Artifacts: IEEE-conference/benchmarks/"
+echo "Status: IEEE-conference/benchmarks/artifact_bundle_status.json"
