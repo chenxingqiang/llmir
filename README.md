@@ -45,7 +45,7 @@ bash scripts/walkthrough_a_class.sh
 bash scripts/reproduce_paper.sh
 ```
 
-See [`docs/WALKTHROUGH.md`](./docs/WALKTHROUGH.md) for step-by-step evidence checks. Optional B-class GPU bench: [`docs/E8_LAB_RUNBOOK.md`](./docs/E8_LAB_RUNBOOK.md).
+See [`docs/WALKTHROUGH.md`](./docs/WALKTHROUGH.md) for step-by-step evidence checks. Optional B-class GPU bench: [`docs/E8_LAB_RUNBOOK.md`](./docs/E8_LAB_RUNBOOK.md). Python support: [`docs/PYTHON_VERSION_POLICY.md`](./docs/PYTHON_VERSION_POLICY.md).
 
 **Capability matrix** (what is C++ vs reference Python vs demo-only):
 [`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md)
@@ -223,7 +223,7 @@ report.print_summary()
 - LLVM/MLIR development environment
 - CMake 3.13.4 or higher
 - C++17 compatible compiler
-- Python 3.8 or higher (for Python bindings)
+- Python 3.9 or higher (for Python bindings; CI tests 3.9–3.12)
 
 ### Building from Source
 

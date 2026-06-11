@@ -29,6 +29,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R13 | Walkthrough summary JSON + milestone doc |
 | R14 | README CI badges + `EVIDENCE_DASHBOARD.md` |
 | R15 | CI lint hardening + `verify_walkthrough_gates.py` |
+| R16 | Python 3.9+ policy; CI matrix drops 3.8 |
 
 ## Reviewer commands
 

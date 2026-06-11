@@ -213,7 +213,7 @@ python3 IEEE-conference/figures/generate_all_nature_figures.py
 
 **不自动合并**：本地验证失败；合并冲突需人工决策；用户明确「先别合并」「只写文档」。
 
-**关于 GitHub Actions**：`main` 上可能存在与本轮无关的 CI 失败（lint、Python 3.8 等）。**以本地 Loop 验证集为准**；合并后在 PR / 轮次笔记中注明 CI 状态。
+**关于 GitHub Actions**：`main` 上 CI 覆盖 Python **3.9–3.12**（walkthrough/lint 在 3.11）。**以本地 Loop 验证集为准**；合并后在 PR / 轮次笔记中注明 CI 状态。
 
 #### 合并后扫描「下一轮 backlog」
 
@@ -298,7 +298,8 @@ pytest tests/ -m "not network" -q
 - **Loop R13（Walkthrough summary）**：`walkthrough_summary.py` → `walkthrough_summary.json`；`LOOP_MILESTONE_STATUS.md`；walkthrough 末尾自动生成摘要。验证：`pytest tests/test_walkthrough_summary.py -q`。
 - **Loop R14（Evidence dashboard + README badges）**：`generate_evidence_dashboard.py` → `docs/EVIDENCE_DASHBOARD.md`；README CI badges。验证：`pytest tests/test_evidence_dashboard.py -q`。
 - **Loop R15（CI lint + walkthrough gates）**：修复 ruff/black；mypy 收窄至 benchmark+compiler；`verify_walkthrough_gates.py` + `ci_lint_gate.sh`。验证：`bash scripts/ci_lint_gate.sh`；`pytest tests/test_verify_walkthrough_gates.py -q`。
-- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 PyPI 3.8 测试矩阵收敛。
+- **Loop R16（Python 3.9+ 矩阵收敛）**：`requires-python >=3.9`；CI 移除 3.8；`PYTHON_VERSION_POLICY.md`。验证：`pytest tests/test_python_version_policy.py -q`。
+- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 PyPI release 对齐 0.2.x。
 
 ---
 
@@ -378,7 +379,7 @@ ruff check src/llmir
 
 | Service | Required? | Notes |
 |---------|-----------|-------|
-| Python 3.8+ | Yes | CI 含 3.8–3.12 |
+| Python 3.9+ | Yes | CI 含 3.9–3.12 |
 | `llmir` editable | Yes | `pip install -e ".[dev]"` |
 | MLIR native build | No | C++/lit 才需要 |
 | GPU / CUDA | No | E8、MVP-C 可选 |
