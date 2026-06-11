@@ -10,11 +10,17 @@ python3 scripts/e5_ablation_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 
 pytest tests/test_e5_ablation.py -q
+
+# All S1/S2/S3 buckets
+python3 scripts/e4_e5_multi_bucket_verify.py --e5-only
+pytest tests/test_e4_e5_multi_bucket.py -q
 ```
 
 ## Output
 
-`IEEE-conference/benchmarks/e5_ablation.json`
+`IEEE-conference/benchmarks/e5_ablation.json` (S2 primary artifact for M6)
+
+`IEEE-conference/benchmarks/e5_ablation_buckets.json` (S1/S2/S3 aggregate)
 
 | Section | Meaning |
 |---------|---------|

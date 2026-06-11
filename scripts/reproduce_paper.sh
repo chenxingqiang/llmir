@@ -29,6 +29,10 @@ pytest tests/test_e5_ablation.py -q
 python3 scripts/e5_ablation_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 
+echo "=== E4/E5 multi-bucket (S1/S2/S3) ==="
+pytest tests/test_e4_e5_multi_bucket.py -q
+python3 scripts/e4_e5_multi_bucket_verify.py
+
 echo "=== E6 backend parity ==="
 pytest tests/test_e6_backend_parity.py -q
 python3 scripts/e6_backend_parity_verify.py --model toy
