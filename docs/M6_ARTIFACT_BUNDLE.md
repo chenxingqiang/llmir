@@ -31,6 +31,10 @@ python3 scripts/verify_artifact_bundle.py --skip-figures
 | e2 | `shared_prefix_decoder_2048_sim.json` |
 | e4–e6 | `e4_compositional.json`, `e5_ablation.json`, `e6_backend_parity.json` |
 | m5 | `m5_lowered_hot_path.json` |
+| e8 (optional) | `e8_empirical_gpu.json` — B-class; `skipped` on CPU OK |
+| e4/e5 buckets (optional) | `e4_compositional_buckets.json`, `e5_ablation_buckets.json` |
+
+Fast reviewer path (verify only, no full regen): `bash scripts/walkthrough_a_class.sh` — see `docs/WALKTHROUGH.md`.
 
 Status output: `IEEE-conference/benchmarks/artifact_bundle_status.json`
 

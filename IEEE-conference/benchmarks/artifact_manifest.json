@@ -55,6 +55,30 @@
       "kind": "json",
       "required_keys": ["e1"],
       "optional": true
+    },
+    {
+      "id": "e8_empirical_gpu",
+      "experiment": "E8",
+      "path": "IEEE-conference/benchmarks/e8_empirical_gpu.json",
+      "kind": "json",
+      "required_keys": ["experiment", "evidence_class", "status", "claim_scope"],
+      "optional": true
+    },
+    {
+      "id": "e4_compositional_buckets",
+      "experiment": "E4",
+      "path": "IEEE-conference/benchmarks/e4_compositional_buckets.json",
+      "kind": "json",
+      "required_keys": ["experiment", "mode", "buckets"],
+      "optional": true
+    },
+    {
+      "id": "e5_ablation_buckets",
+      "experiment": "E5",
+      "path": "IEEE-conference/benchmarks/e5_ablation_buckets.json",
+      "kind": "json",
+      "required_keys": ["experiment", "mode", "buckets"],
+      "optional": true
     }
   ],
   "figures": [
