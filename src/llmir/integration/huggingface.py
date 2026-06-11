@@ -65,7 +65,7 @@ _MODEL_TYPE_TO_ARCH: Tuple[Tuple[str, ModelArchitecture], ...] = (
     ("qwen2_5", ModelArchitecture.QWEN2),
     ("qwen2_5_vl", ModelArchitecture.QWEN2),
     ("qwen2_5_omni", ModelArchitecture.QWEN2),
-    ("qwen3", ModelArchitecture.QWEN2),
+    ("qwen3", ModelArchitecture.QWEN3),
     ("qwen3_moe", ModelArchitecture.QWEN2),
     ("qwen3_5", ModelArchitecture.QWEN2),
     ("qwen3_5_moe", ModelArchitecture.QWEN2),
@@ -247,7 +247,7 @@ def _create_optimizer(config: ModelConfig) -> ModelOptimizer:
         return MistralOptimizer(config)
     if arch in (ModelArchitecture.PHI, ModelArchitecture.PHI3):
         return PhiOptimizer(config)
-    if arch == ModelArchitecture.QWEN2:
+    if arch in (ModelArchitecture.QWEN2, ModelArchitecture.QWEN3):
         return QwenOptimizer(config)
     if arch in (ModelArchitecture.DEEPSEEK, ModelArchitecture.DEEPSEEK_V2):
         return DeepSeekOptimizer(config)

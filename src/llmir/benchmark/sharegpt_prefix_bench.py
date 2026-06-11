@@ -20,7 +20,7 @@ class ShareGPTPrefixBenchConfig:
     Shared-prefix decoder load (RAG / multi-tenant): one prefix + N suffixes.
 
   Standard length buckets: S1 short (128), S2 RAG (512--2048), S3 long-doc (8k).
-  Pair with ``llama3-8b`` / ``qwen2-7b`` for architecture-representative runs.
+  Pair with ``qwen3-8b`` / ``gemma-3-12b`` / ``deepseek-v3`` for architecture-representative runs.
     """
 
     system_prompt_tokens: int = 128

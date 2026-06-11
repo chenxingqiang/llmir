@@ -23,7 +23,7 @@ print(e.generate('Hello', SamplingParams(max_tokens=8))[0].outputs[0].text)
 "
 
 # KV-cache microbenchmark (not full-model e2e)
-llmir-benchmark --model llama3-8b --batch-sizes 1,4
+llmir-benchmark --model qwen3-8b --batch-sizes 1,4
 
 # P2: emit MLIR + reference numerical check
 llmir-compile --emit-kv-pipeline --run-reference --compare-torch -o /tmp/kv.mlir
@@ -245,7 +245,7 @@ pytest tests/ -v
 pytest tests/test_integration_hf.py -v -m network
 
 # Run KV cache benchmark (Python)
-llmir-benchmark --model llama3-8b --batch-sizes 1,4,8 --output results.json
+llmir-benchmark --model qwen3-8b --batch-sizes 1,4,8 --output results.json
 ```
 
 ## Usage Examples

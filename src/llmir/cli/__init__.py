@@ -152,9 +152,9 @@ def benchmark_main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  llmir-benchmark --model llama3-8b --batch-sizes 1,4,8
+  llmir-benchmark --model qwen3-8b --batch-sizes 1,4,8
   llmir-benchmark --model facebook/opt-125m --compare hf,llmir-paged -o bench.json
-  llmir-benchmark --prefix-bench -m llama3-8b -o prefix.json
+  llmir-benchmark --prefix-bench -m qwen3-8b -o prefix.json
 
   # Plot results (optional matplotlib):
   python scripts/plot_from_results.py -i results.json -o out.png
@@ -165,7 +165,7 @@ Examples:
         "-m",
         type=str,
         required=True,
-        help="Model name from registry (e.g. llama3-8b) or HuggingFace ID (requires llmir[full])",
+        help="Model name from registry (e.g. qwen3-8b) or HuggingFace ID (requires llmir[full])",
     )
     parser.add_argument(
         "--batch-sizes",

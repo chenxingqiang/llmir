@@ -38,6 +38,7 @@ class ModelArchitecture(Enum):
     PHI3 = auto()
     QWEN = auto()
     QWEN2 = auto()
+    QWEN3 = auto()
     DEEPSEEK = auto()
     DEEPSEEK_V2 = auto()
     GEMMA = auto()
@@ -553,6 +554,82 @@ class QwenOptimizer(ModelOptimizer):
             )
         )
 
+    @classmethod
+    def for_qwen2_5_7b(cls) -> "QwenOptimizer":
+        """Qwen2.5 7B. HF: Qwen/Qwen2.5-7B-Instruct."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.QWEN2,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=28,
+                hidden_size=3584,
+                num_attention_heads=28,
+                num_key_value_heads=4,
+                head_dim=128,
+                intermediate_size=18944,
+                vocab_size=152064,
+                max_position_embeddings=32768,
+                rope_theta=1_000_000.0,
+            )
+        )
+
+    @classmethod
+    def for_qwen2_5_72b(cls) -> "QwenOptimizer":
+        """Qwen2.5 72B. HF: Qwen/Qwen2.5-72B-Instruct."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.QWEN2,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=80,
+                hidden_size=8192,
+                num_attention_heads=64,
+                num_key_value_heads=8,
+                head_dim=128,
+                intermediate_size=29568,
+                vocab_size=152064,
+                max_position_embeddings=32768,
+                rope_theta=1_000_000.0,
+            )
+        )
+
+    @classmethod
+    def for_qwen3_8b(cls) -> "QwenOptimizer":
+        """Qwen3 8B. HF: Qwen/Qwen3-8B."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.QWEN3,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=36,
+                hidden_size=4096,
+                num_attention_heads=32,
+                num_key_value_heads=8,
+                head_dim=128,
+                intermediate_size=12288,
+                vocab_size=151936,
+                max_position_embeddings=40960,
+                rope_theta=1_000_000.0,
+            )
+        )
+
+    @classmethod
+    def for_qwen3_14b(cls) -> "QwenOptimizer":
+        """Qwen3 14B. HF: Qwen/Qwen3-14B."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.QWEN3,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=40,
+                hidden_size=5120,
+                num_attention_heads=40,
+                num_key_value_heads=8,
+                head_dim=128,
+                intermediate_size=17408,
+                vocab_size=151936,
+                max_position_embeddings=40960,
+                rope_theta=1_000_000.0,
+            )
+        )
+
 
 class DeepSeekOptimizer(ModelOptimizer):
     """Optimizations for DeepSeek LLM / Coder / V2 decoder stacks."""
@@ -662,6 +739,30 @@ class DeepSeekOptimizer(ModelOptimizer):
             )
         )
 
+    @classmethod
+    def for_deepseek_v3(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-V3 671B MoE (MLA). HF: deepseek-ai/DeepSeek-V3."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK_V2,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=61,
+                hidden_size=7168,
+                num_attention_heads=128,
+                num_key_value_heads=128,
+                head_dim=128,
+                intermediate_size=18432,
+                vocab_size=129280,
+                max_position_embeddings=163840,
+                rope_theta=10000.0,
+            )
+        )
+
+    @classmethod
+    def for_deepseek_r1(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-R1 (same decoder stack as V3). HF: deepseek-ai/DeepSeek-R1."""
+        return cls.for_deepseek_v3()
+
     def get_optimized_block_size(self) -> int:
         """DeepSeek GQA uses 16-token blocks; MHA stacks use 32."""
         return 16 if self.config.is_gqa() else 32
@@ -702,6 +803,63 @@ class GemmaOptimizer(ModelOptimizer):
                 intermediate_size=24576,
                 vocab_size=256000,
                 max_position_embeddings=8192,
+            )
+        )
+
+    @classmethod
+    def for_gemma3_4b(cls) -> "GemmaOptimizer":
+        """Gemma 3 4B (Google open-weight). HF: google/gemma-3-4b-it."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.GEMMA,
+                attention_type=AttentionType.SLIDING_WINDOW,
+                num_layers=34,
+                hidden_size=2560,
+                num_attention_heads=8,
+                num_key_value_heads=4,
+                head_dim=256,
+                intermediate_size=10240,
+                vocab_size=262144,
+                max_position_embeddings=131072,
+                sliding_window_size=1024,
+            )
+        )
+
+    @classmethod
+    def for_gemma3_12b(cls) -> "GemmaOptimizer":
+        """Gemma 3 12B. HF: google/gemma-3-12b-it."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.GEMMA,
+                attention_type=AttentionType.SLIDING_WINDOW,
+                num_layers=48,
+                hidden_size=3840,
+                num_attention_heads=16,
+                num_key_value_heads=8,
+                head_dim=256,
+                intermediate_size=15360,
+                vocab_size=262144,
+                max_position_embeddings=131072,
+                sliding_window_size=1024,
+            )
+        )
+
+    @classmethod
+    def for_gemma3_27b(cls) -> "GemmaOptimizer":
+        """Gemma 3 27B. HF: google/gemma-3-27b-it."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.GEMMA,
+                attention_type=AttentionType.SLIDING_WINDOW,
+                num_layers=62,
+                hidden_size=5376,
+                num_attention_heads=32,
+                num_key_value_heads=16,
+                head_dim=256,
+                intermediate_size=21504,
+                vocab_size=262144,
+                max_position_embeddings=131072,
+                sliding_window_size=1024,
             )
         )
 
@@ -766,44 +924,24 @@ class ModelRegistry:
         return cls._instance
 
     def _register_builtin_models(self):
-        """Register built-in model configurations."""
+        """Register curated latest presets (Qwen / Gemma / DeepSeek only).
+
+        Llama, Mistral, Phi, Falcon optimizers remain importable via HuggingFace
+        ``from_pretrained`` but are not listed in ``llmir-list-models``.
+        """
         self._configs = {
-            # Llama
-            "llama-7b": LlamaOptimizer.for_llama_7b().config,
-            "llama-13b": LlamaOptimizer.for_llama_13b().config,
-            "llama2-7b": LlamaOptimizer.for_llama2_7b().config,
-            "llama2-70b": LlamaOptimizer.for_llama2_70b().config,
-            "llama3-8b": LlamaOptimizer.for_llama3_8b().config,
-            "llama3-70b": LlamaOptimizer.for_llama3_70b().config,
-            "llama3.1-8b": LlamaOptimizer.for_llama31_8b().config,
-            "llama3.1-70b": LlamaOptimizer.for_llama31_70b().config,
-            "llama3.1-405b": LlamaOptimizer.for_llama31_405b().config,
-            # Mistral / Mixtral
-            "mistral-7b": MistralOptimizer.for_mistral_7b().config,
-            "mixtral-8x7b": MistralOptimizer.for_mixtral_8x7b().config,
-            "mixtral-8x22b": MistralOptimizer.for_mixtral_8x22b().config,
-            # Phi
-            "phi-2": PhiOptimizer.for_phi2().config,
-            "phi-3-mini": PhiOptimizer.for_phi3_mini().config,
-            "phi-3-medium": PhiOptimizer.for_phi3_medium().config,
-            # Qwen
-            "qwen2-0.5b": QwenOptimizer.for_qwen2_0_5b().config,
-            "qwen2-1.5b": QwenOptimizer.for_qwen2_1_5b().config,
-            "qwen2-7b": QwenOptimizer.for_qwen2_7b().config,
-            "qwen2-72b": QwenOptimizer.for_qwen2_72b().config,
-            # DeepSeek
-            "deepseek-7b": DeepSeekOptimizer.for_deepseek_7b().config,
-            "deepseek-67b": DeepSeekOptimizer.for_deepseek_67b().config,
-            "deepseek-coder-6.7b": DeepSeekOptimizer.for_deepseek_coder_6_7b().config,
-            "deepseek-coder-33b": DeepSeekOptimizer.for_deepseek_coder_33b().config,
-            "deepseek-v2-lite-16b": DeepSeekOptimizer.for_deepseek_v2_lite_16b().config,
-            "deepseek-v2.5-7b": DeepSeekOptimizer.for_deepseek_v2_5_7b().config,
-            # Gemma
-            "gemma-2b": GemmaOptimizer.for_gemma_2b().config,
-            "gemma-7b": GemmaOptimizer.for_gemma_7b().config,
-            # Falcon
-            "falcon-7b": FalconOptimizer.for_falcon_7b().config,
-            "falcon-40b": FalconOptimizer.for_falcon_40b().config,
+            # 千问 Qwen — latest open weights
+            "qwen3-8b": QwenOptimizer.for_qwen3_8b().config,
+            "qwen3-14b": QwenOptimizer.for_qwen3_14b().config,
+            "qwen2.5-7b": QwenOptimizer.for_qwen2_5_7b().config,
+            "qwen2.5-72b": QwenOptimizer.for_qwen2_5_72b().config,
+            # Google Gemma 3 (open-weight Gemini family)
+            "gemma-3-4b": GemmaOptimizer.for_gemma3_4b().config,
+            "gemma-3-12b": GemmaOptimizer.for_gemma3_12b().config,
+            "gemma-3-27b": GemmaOptimizer.for_gemma3_27b().config,
+            # DeepSeek — latest V3 / R1 stack
+            "deepseek-v3": DeepSeekOptimizer.for_deepseek_v3().config,
+            "deepseek-r1": DeepSeekOptimizer.for_deepseek_r1().config,
         }
 
     def register(self, name: str, config: ModelConfig):
@@ -833,7 +971,10 @@ class ModelRegistry:
             return MistralOptimizer(config)
         elif config.architecture in (ModelArchitecture.PHI, ModelArchitecture.PHI3):
             return PhiOptimizer(config)
-        elif config.architecture == ModelArchitecture.QWEN2:
+        elif config.architecture in (
+            ModelArchitecture.QWEN2,
+            ModelArchitecture.QWEN3,
+        ):
             return QwenOptimizer(config)
         elif config.architecture in (
             ModelArchitecture.DEEPSEEK,

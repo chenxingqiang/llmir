@@ -44,7 +44,7 @@ After install, confirm the environment with:
 ```bash
 python3 -c "from llmir import PagedKVCache, KVCacheConfig; c = KVCacheConfig(num_layers=8, num_heads=8, head_dim=64); print(PagedKVCache(c))"
 llmir-list-models
-llmir-benchmark --model llama3-8b --batch-sizes 1,4
+llmir-benchmark --model qwen3-8b --batch-sizes 1,4
 ```
 
 ### Optional extras

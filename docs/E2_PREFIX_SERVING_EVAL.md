@@ -1,6 +1,6 @@
 # E2: Prefix-Aware Serving Evaluation
 
-Paper **E2** evaluates **shared-prefix decoder prefill** (RAG / multi-tenant): one long shared context + N suffix variants. This matches Llama/Qwen-class serving patterns, **not** the ShareGPT dataset brand.
+Paper **E2** evaluates **shared-prefix decoder prefill** (RAG / multi-tenant): one long shared context + N suffix variants. This matches Qwen/Gemma/DeepSeek decoder serving patterns, **not** the ShareGPT dataset brand.
 
 See [`DECODER_WORKLOAD_ARCHITECTURES.md`](./DECODER_WORKLOAD_ARCHITECTURES.md) for architecture presets and length buckets (S1/S2/S3).
 
@@ -10,9 +10,9 @@ Repository harness (legacy script/flags retained): `llmir-benchmark --shared-pre
 
 | Bucket | Shared prefix \(L_s\) | Suffix \(L_u\) | Requests \(N\) | Architecture target |
 |--------|----------------------|----------------|----------------|---------------------|
-| **S1** short | 128 | 8–32 | 32 | Llama-3 / Qwen2 (CI default) |
-| **S2** RAG | 2048 | 8–32 | 32 | Llama-3-8B, Qwen2-7B, DeepSeek-7B |
-| **S3** long-doc | 8192 | 64+ | 16 | Mistral / long-context |
+| **S1** short | 128 | 8–32 | 32 | Qwen3 / Gemma 3 |
+| **S2** RAG | 2048 | 8–32 | 32 | Qwen3-8B, Gemma-3-12B, DeepSeek-V3 |
+| **S3** long-doc | 8192 | 64+ | 16 | Gemma 3 / Qwen2.5-72B |
 
 gpt2 runs are **integration smoke only** (MHA + GELU-FFN, not representative of mainline decoders).
 
@@ -23,8 +23,11 @@ gpt2 runs are **integration smoke only** (MHA + GELU-FFN, not representative of 
 python scripts/sharegpt_prefix_bench.py --simulation-only
 
 # E2 on architecture-representative preset (needs llmir[full])
-llmir-benchmark --shared-prefix-bench --model llama3-8b \
-  --shared-prefix-tokens 2048 --shared-prefix-requests 32 -o e2_llama3.json
+llmir-benchmark --shared-prefix-bench --model qwen3-8b \
+  --shared-prefix-tokens 2048 --shared-prefix-requests 32 -o e2_qwen3.json
+
+llmir-benchmark --shared-prefix-bench --model gemma-3-12b \
+  --shared-prefix-tokens 2048 --shared-prefix-requests 32 -o e2_gemma3.json
 
 # CI smoke
 llmir-benchmark --shared-prefix-bench --model gpt2 \
