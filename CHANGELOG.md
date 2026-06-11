@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Python**: minimum supported version is **3.9** (CI matrix 3.9–3.12; 3.8 dropped). See `docs/PYTHON_VERSION_POLICY.md`.
+
 ### Added (P5)
 
 - **CUDA kernels**: `CUDAKernels.cu` wired into `MLIRLLMRuntime` via `LLMIR_ENABLE_CUDA`.
