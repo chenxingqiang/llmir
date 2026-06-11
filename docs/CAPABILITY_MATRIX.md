@@ -39,7 +39,7 @@ Legend:
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| `llm` dialect ops & types | **C++** | Lit tests under `test/Dialect/LLM/` |
+| `llm` dialect ops & types | **C++** | Lit tests under `test/Dialect/LLM/`; Python catalog in `mlir_lit_suite.py` |
 | Optimization passes | **C++** | Partial pipeline; some passes commented out |
 | PyTorch → MLIR import | **Python (ref)** | `llmir.importers` + toy SDPA; emits MLIR text |
 | `llmir-compile` KV micro-pipeline | **Python (ref)** | Emit + optional `mlir-opt` + NumPy/native reference |

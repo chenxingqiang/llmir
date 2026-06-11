@@ -88,8 +88,13 @@ bash scripts/reproduce_paper.sh
 llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \
   --seq-len 8 --mvp-json /tmp/mvp_a.json -o /tmp/mvp_a.mlir
 
-# MLIR lit (LLVM/MLIR build tree)
+# MLIR lit suite (optional mlir-opt)
+pytest tests/test_mlir_lit_suite.py -q
+python3 scripts/verify_mlir_lit_suite.py
+
+# Single-file lit (LLVM/MLIR build tree)
 mlir-opt test/Dialect/LLM/mvp_single_layer_pipeline.mlir -llm-optimize-kv-cache
+mlir-opt test/Dialect/LLM/decoder_workload_buckets.mlir -llm-optimize-kv-cache -split-input-file
 ```
 
 ## Paper figures (Nature style)

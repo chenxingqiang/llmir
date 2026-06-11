@@ -292,7 +292,8 @@ pytest tests/ -m "not network" -q
 - **Loop R7（S1/S3 桶 + reproduce 串联 E8）**：`decoder_workload_buckets.py`；`shared_prefix_decoder_{128,8192}_sim.json`；`reproduce_paper.sh` 校验三桶并追加非阻塞 E8。验证：`pytest tests/test_decoder_workload_buckets.py -q`；`scripts/regenerate_decoder_workload_buckets.py --verify-only`。
 - **Loop R8（E4/E5 多桶 trace）**：`run_e4_multi_bucket_verification` / `run_e5_multi_bucket_ablation`；`e4_compositional_buckets.json`、`e5_ablation_buckets.json`；`e4_e5_multi_bucket_verify.py`。验证：`pytest tests/test_e4_e5_multi_bucket.py -q`。
 - **Loop R9（论文附录多桶表）**：`generate_paper_bucket_tables_tex.py` → `generated/e4_e5_bucket_tables.tex`；`revised.tex` §5 + Appendix `app:verified_buckets`。验证：`pytest tests/test_paper_bucket_tables_tex.py -q`。
-- **下一轮感知建议**：真机跑 E8；MLIR lit 覆盖；或 walkthrough 视频。
+- **Loop R10（MLIR lit 覆盖）**：`decoder_workload_buckets.mlir`（S1/S2/S3 E1）；`mlir_lit_suite.py` + `verify_mlir_lit_suite.py`。验证：`pytest tests/test_mlir_lit_suite.py -q`（无 mlir-opt 时 skipped）。
+- **下一轮感知建议**：真机跑 E8；有 mlir-opt 时跑 lit 全绿；或 walkthrough 视频。
 
 ---
 
