@@ -11,6 +11,7 @@ from typing import Any, Optional, Tuple
 
 from llmir.models import (
     AttentionType,
+    DeepSeekOptimizer,
     FalconOptimizer,
     GemmaOptimizer,
     LlamaOptimizer,
@@ -20,7 +21,6 @@ from llmir.models import (
     ModelOptimizer,
     PhiOptimizer,
     QwenOptimizer,
-    DeepSeekOptimizer,
 )
 
 __all__ = ["from_pretrained"]

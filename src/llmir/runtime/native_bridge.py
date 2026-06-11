@@ -11,7 +11,7 @@ from __future__ import annotations
 import ctypes
 import os
 import sys
-from ctypes import c_bool, c_float, c_int32, c_int64, c_void_p
+from ctypes import c_bool, c_int32, c_int64, c_void_p
 from typing import Optional, Tuple
 
 import numpy as np

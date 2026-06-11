@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -65,7 +64,9 @@ def analyze_e1_block_sizing(trace: E4WorkloadTrace) -> Dict[str, Any]:
     blocks_before = _blocks_for_length(seq_total, trace.block_size_before)
     blocks_after_pass = _blocks_for_length(seq_total, e1_pass_block_size)
 
-    alloc_before = sum(_allocated_tokens(length, trace.block_size_before) for length in seq_lengths)
+    alloc_before = sum(
+        _allocated_tokens(length, trace.block_size_before) for length in seq_lengths
+    )
     alloc_after_pass = sum(
         _allocated_tokens(length, e1_pass_block_size) for length in seq_lengths
     )
@@ -139,7 +140,8 @@ def analyze_e3_host_copies(trace: E4WorkloadTrace) -> Dict[str, Any]:
         "decode_steps_per_request": steps_per_request,
         "total_decode_steps": total_decode_steps,
         "numpy_host_round_trips_total": numpy_round_trips_per_step * total_decode_steps,
-        "torch_cuda_host_round_trips_total": torch_cuda_round_trips_per_step * total_decode_steps,
+        "torch_cuda_host_round_trips_total": torch_cuda_round_trips_per_step
+        * total_decode_steps,
         "host_copy_reduction_ratio": 1.0 if total_decode_steps else 0.0,
     }
 

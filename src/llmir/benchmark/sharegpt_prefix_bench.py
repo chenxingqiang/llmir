@@ -17,10 +17,10 @@ from llmir.benchmark.prefix_cache_bench import PrefixBenchResult, bench_prefix_k
 @dataclass(frozen=True)
 class ShareGPTPrefixBenchConfig:
     """
-    Shared-prefix decoder load (RAG / multi-tenant): one prefix + N suffixes.
+      Shared-prefix decoder load (RAG / multi-tenant): one prefix + N suffixes.
 
-  Standard length buckets: S1 short (128), S2 RAG (512--2048), S3 long-doc (8k).
-  Pair with ``qwen3-8b`` / ``gemma-3-12b`` / ``deepseek-v3`` for architecture-representative runs.
+    Standard length buckets: S1 short (128), S2 RAG (512--2048), S3 long-doc (8k).
+    Pair with ``qwen3-8b`` / ``gemma-3-12b`` / ``deepseek-v3`` for architecture-representative runs.
     """
 
     system_prompt_tokens: int = 128
@@ -79,7 +79,9 @@ def build_sharegpt_prompts(
     system = " ".join([token_word] * cfg.system_prompt_tokens)
     prompts: List[str] = []
     for i in range(cfg.num_requests):
-        suffix = " ".join([f"user{i}", token_word] * max(1, cfg.user_suffix_tokens // 2))
+        suffix = " ".join(
+            [f"user{i}", token_word] * max(1, cfg.user_suffix_tokens // 2)
+        )
         prompts.append(f"{system} {suffix}".strip())
     return system, prompts
 
@@ -134,7 +136,9 @@ def bench_sharegpt_kv_simulation(
     optimized = next(r for r in rows if r.scenario == "kv_append_prefix_cached")
     speedup = optimized.speedup_vs_baseline
 
-    def _to_sharegpt(row: PrefixBenchResult, scenario: str) -> ShareGPTPrefixBenchResult:
+    def _to_sharegpt(
+        row: PrefixBenchResult, scenario: str
+    ) -> ShareGPTPrefixBenchResult:
         return ShareGPTPrefixBenchResult(
             scenario=scenario,
             num_requests=cfg.num_requests,
@@ -198,9 +202,7 @@ def bench_llmir_paged_sharegpt(
     if with_warm_prefix:
         engine._ensure_llmir_paged()
         assert engine._paged_decoder is not None
-        warmed = engine._paged_decoder.warm_prefix(system)
-    else:
-        warmed = 0
+        engine._paged_decoder.warm_prefix(system)
 
     params = SamplingParams(max_tokens=cfg.max_new_tokens, temperature=0.0)
     metrics: List[ShareGPTRequestMetrics] = []
@@ -271,7 +273,9 @@ def run_sharegpt_prefix_benchmark(
             details={"prefix_cache": "warm_prefix"},
         )
         if warmed.total_elapsed_s > 0:
-            warmed.speedup_vs_baseline = baseline.total_elapsed_s / warmed.total_elapsed_s
+            warmed.speedup_vs_baseline = (
+                baseline.total_elapsed_s / warmed.total_elapsed_s
+            )
         payload["results"].extend([baseline.to_dict(), warmed.to_dict()])
         payload["per_request"] = {
             "baseline": [asdict(r) for r in baseline_rows],
@@ -283,12 +287,16 @@ def run_sharegpt_prefix_benchmark(
 
 def print_sharegpt_results(payload: Dict[str, Any]) -> None:
     """Human-readable summary."""
-    print(f"Shared-prefix decoder benchmark  requests={payload['config'].get('num_requests')}")
+    print(
+        f"Shared-prefix decoder benchmark  requests={payload['config'].get('num_requests')}"
+    )
     print(
         f"  system≈{payload['config'].get('system_prompt_tokens')} tok  "
         f"suffix≈{payload['config'].get('user_suffix_tokens')} tok"
     )
-    print(f"{'scenario':<32} {'avg_ms':>8} {'hit':>8} {'prefill':>8} {'tok/s':>10} {'speedup':>8}")
+    print(
+        f"{'scenario':<32} {'avg_ms':>8} {'hit':>8} {'prefill':>8} {'tok/s':>10} {'speedup':>8}"
+    )
     print("-" * 80)
     for row in payload.get("results", []):
         print(

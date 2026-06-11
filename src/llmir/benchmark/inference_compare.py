@@ -8,8 +8,8 @@ from typing import Callable, Dict, List, Optional
 
 from llmir import LLMEngine, SamplingParams
 from llmir.benchmark.device import (
-    DtypeChoice,
     DeviceChoice,
+    DtypeChoice,
     InferenceDeviceConfig,
     cuda_available,
     resolve_inference_device,
@@ -182,16 +182,18 @@ def run_hf_transformers(
                 pad_token_id=tokenizer.pad_token_id,
             )
 
+    model_for_gen = torch_model
+
     def _run() -> int:
         with torch.no_grad():
-            out = torch_model.generate(
+            out = model_for_gen.generate(
                 **inputs,
                 max_new_tokens=max_tokens,
                 do_sample=False,
                 pad_token_id=tokenizer.pad_token_id,
                 use_cache=True,
             )
-        gen_per = out.shape[1] - inputs["input_ids"].shape[1]
+        gen_per = int(out.shape[1] - inputs["input_ids"].shape[1])
         return batch_size * gen_per
 
     elapsed_s, generated_tokens = time_call(_run)
@@ -427,7 +429,9 @@ def print_inference_results(results: List[BenchmarkResult]) -> None:
     except ImportError:
         pass
     if results:
-        print(f"Device: {results[0].device or 'n/a'}  dtype: {results[0].dtype or 'n/a'}")
+        print(
+            f"Device: {results[0].device or 'n/a'}  dtype: {results[0].dtype or 'n/a'}"
+        )
         if cuda_available():
             print("(CUDA available for compare)")
     print(

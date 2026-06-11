@@ -107,7 +107,6 @@ class TorchGpuPagedKVCache:
         keys_t = self._as_tensor(keys)
         values_t = self._as_tensor(values)
         batch_size = keys_t.shape[0]
-        seq_len = keys_t.shape[1]
         if keys_t.shape != values_t.shape:
             raise ValueError("keys and values must have the same shape")
 
@@ -138,7 +137,9 @@ class TorchGpuPagedKVCache:
 
         for batch_idx, seq_len in enumerate(seq_lens):
             seq_id = int(block_indices[batch_idx, 0])
-            self._read_dense_into(seq_id, int(seq_len), keys[batch_idx], values[batch_idx])
+            self._read_dense_into(
+                seq_id, int(seq_len), keys[batch_idx], values[batch_idx]
+            )
         return keys, values
 
     def export_dense(
@@ -290,4 +291,6 @@ class TorchGpuPagedKVCache:
     def _as_tensor(self, data: Union["torch.Tensor", np.ndarray]) -> "torch.Tensor":
         if isinstance(data, torch.Tensor):
             return data.to(device=self.device, dtype=self._dtype)
-        return torch.from_numpy(np.asarray(data)).to(device=self.device, dtype=self._dtype)
+        return torch.from_numpy(np.asarray(data)).to(
+            device=self.device, dtype=self._dtype
+        )

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Sequence
+from typing import Iterable, Sequence
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,9 @@ def _gpu_utilization(block_size: int, *, warp_size: int = 32) -> float:
     return warp_util * occupancy * bank
 
 
-def _memory_alignment(block_size: int, *, cache_line: int = 128, element_size: int = 2) -> float:
+def _memory_alignment(
+    block_size: int, *, cache_line: int = 128, element_size: int = 2
+) -> float:
     bytes_per_block = block_size * element_size
     if bytes_per_block % cache_line == 0:
         return 1.0

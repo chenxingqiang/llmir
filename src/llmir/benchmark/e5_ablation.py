@@ -166,7 +166,11 @@ def analyze_layer_proxies(
     if switches.block_opt:
         e1 = {**e1, "pass_enabled": True}
 
-    e2 = analyze_e2_prefix_prefill(trace) if switches.prefix_cache else _e2_disabled(trace)
+    e2 = (
+        analyze_e2_prefix_prefill(trace)
+        if switches.prefix_cache
+        else _e2_disabled(trace)
+    )
     if switches.prefix_cache:
         e2 = {**e2, "prefix_cache_enabled": True}
 

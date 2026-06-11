@@ -56,7 +56,8 @@ def load_manifest(root: Optional[Path] = None) -> Dict[str, Any]:
     root = _repo_root(root)
     path = root / "IEEE-conference/benchmarks/artifact_manifest.json"
     with path.open(encoding="utf-8") as f:
-        return json.load(f)
+        data: Dict[str, Any] = json.load(f)
+        return data
 
 
 def _check_json_artifact(
@@ -186,7 +187,11 @@ def verify_artifact_bundle(
                 {
                     "path": rel,
                     "ok": path.is_file(),
-                    "message": "ok" if path.is_file() else "missing (regen via generate_all_nature_figures.py)",
+                    "message": (
+                        "ok"
+                        if path.is_file()
+                        else "missing (regen via generate_all_nature_figures.py)"
+                    ),
                 }
             )
 

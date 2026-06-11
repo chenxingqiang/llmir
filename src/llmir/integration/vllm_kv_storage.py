@@ -83,9 +83,7 @@ class LLMIRKVStorage:
         """Persist extracted KV for ``token_ids`` and eligible sub-prefixes."""
         tokens = [int(t) for t in token_ids]
         seq_len = kv_cache.shape[0] if kv_cache.ndim > 0 else len(tokens)
-        for length in range(
-            self.config.min_prefix_length, len(tokens) + 1
-        ):
+        for length in range(self.config.min_prefix_length, len(tokens) + 1):
             prefix = tuple(tokens[:length])
             layer_dir = self._prefix_dir(prefix)
             layer_dir.mkdir(parents=True, exist_ok=True)

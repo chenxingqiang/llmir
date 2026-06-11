@@ -89,7 +89,9 @@ def run_lit_file(mlir_path: Path) -> LitRunResult:
     for line in runs:
         cmd = _mlir_opt_command(line, mlir_path)
         if cmd is None:
-            row_logs.append({"line": line, "status": "skipped", "detail": "no mlir-opt stage"})
+            row_logs.append(
+                {"line": line, "status": "skipped", "detail": "no mlir-opt stage"}
+            )
             continue
         proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if proc.returncode != 0:
@@ -100,7 +102,9 @@ def run_lit_file(mlir_path: Path) -> LitRunResult:
                     "detail": (proc.stderr or proc.stdout or "")[:500],
                 }
             )
-            return LitRunResult(str(mlir_path), "failed", runs=row_logs, reason="mlir-opt failed")
+            return LitRunResult(
+                str(mlir_path), "failed", runs=row_logs, reason="mlir-opt failed"
+            )
         row_logs.append({"line": line, "status": "passed"})
 
     return LitRunResult(str(mlir_path), "passed", runs=row_logs)
@@ -119,7 +123,9 @@ def run_lit_suite(
     failed = sum(1 for r in results if r.status == "failed")
     skipped = sum(1 for r in results if r.status == "skipped")
     return {
-        "status": "failed" if failed else ("skipped" if skipped == len(results) else "passed"),
+        "status": (
+            "failed" if failed else ("skipped" if skipped == len(results) else "passed")
+        ),
         "mlir_opt": find_mlir_opt(),
         "passed": passed,
         "failed": failed,

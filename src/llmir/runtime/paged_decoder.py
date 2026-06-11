@@ -169,8 +169,7 @@ class PagedKVDecoder:
         self._prefix_store: Optional[PrefixKVStore] = None
         if enable_prefix_cache:
             self._prefix_store = prefix_store or PrefixKVStore(
-                config=prefix_cache_config
-                or PrefixCacheConfig(min_prefix_length=4)
+                config=prefix_cache_config or PrefixCacheConfig(min_prefix_length=4)
             )
 
     @property
@@ -379,9 +378,7 @@ class PagedKVDecoder:
                 )
 
             if self._prefix_store is not None:
-                self._prefix_store.store(
-                    prompt_token_ids, layer_caches, self.kv_config
-                )
+                self._prefix_store.store(prompt_token_ids, layer_caches, self.kv_config)
 
             next_token = int(logits[:, -1].argmax(dim=-1).item())
             generated.append(next_token)
@@ -519,9 +516,7 @@ class PagedKVDecoder:
 
         past_len = prompt_len - 1
         past_key_values = (
-            self._lookup_dynamic_cache(layer_caches, past_len)
-            if past_len > 0
-            else None
+            self._lookup_dynamic_cache(layer_caches, past_len) if past_len > 0 else None
         )
         last_token = input_ids[:, -1:]
         cache_position = torch.tensor(

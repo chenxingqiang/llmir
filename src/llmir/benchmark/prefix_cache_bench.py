@@ -40,7 +40,7 @@ def bench_prefix_lookup_throughput(
     rng = np.random.default_rng(seed)
     cache = PrefixCache(PrefixCacheConfig(max_prefixes=1000, min_prefix_length=4))
     prefixes: List[List[int]] = []
-    for i in range(num_prefixes):
+    for _ in range(num_prefixes):
         tokens = rng.integers(0, 50000, size=prefix_len, dtype=np.int32).tolist()
         cache.cache_prefix(tokens, [[0]])
         prefixes.append(tokens)

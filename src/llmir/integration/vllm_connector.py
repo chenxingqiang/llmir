@@ -31,7 +31,6 @@ __all__ = [
     "CONNECTOR_MODULE_PATH",
     "CONNECTOR_NAME",
     "LLMIRConnector",
-    "LLMIRConnectorMetadata",
     "build_kv_transfer_extra_config",
     "is_vllm_connector_available",
     "register_llmir_vllm_connector",
@@ -212,9 +211,12 @@ def _define_connector_class() -> Optional[Type[Any]]:
                         self._block_size,
                         is_store=False,
                     )
-                elif self._storage.longest_cached_prefix_length(
-                    token_ids, block_size=self._block_size
-                ) < self._storage.config.min_prefix_length:
+                elif (
+                    self._storage.longest_cached_prefix_length(
+                        token_ids, block_size=self._block_size
+                    )
+                    < self._storage.config.min_prefix_length
+                ):
                     meta.add_request(
                         token_ids,
                         new_req.block_ids[0],
@@ -224,7 +226,9 @@ def _define_connector_class() -> Optional[Type[Any]]:
             self._requests_need_load.clear()
             return meta
 
-        def start_load_kv(self, forward_context: "ForwardContext", **kwargs: Any) -> None:
+        def start_load_kv(
+            self, forward_context: "ForwardContext", **kwargs: Any
+        ) -> None:
             import torch
 
             metadata = self._get_connector_metadata()

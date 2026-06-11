@@ -297,7 +297,8 @@ pytest tests/ -m "not network" -q
 - **Loop R12（CI walkthrough + E8 lab）**：`a-class-walkthrough.yml`；`e8-empirical-gpu.yml` + `e8_lab_run.sh` + `E8_LAB_RUNBOOK.md`；README 快速入口。验证：`pytest tests/test_ci_workflows.py -q`。
 - **Loop R13（Walkthrough summary）**：`walkthrough_summary.py` → `walkthrough_summary.json`；`LOOP_MILESTONE_STATUS.md`；walkthrough 末尾自动生成摘要。验证：`pytest tests/test_walkthrough_summary.py -q`。
 - **Loop R14（Evidence dashboard + README badges）**：`generate_evidence_dashboard.py` → `docs/EVIDENCE_DASHBOARD.md`；README CI badges。验证：`pytest tests/test_evidence_dashboard.py -q`。
-- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 PyPI release 与 badge 对齐。
+- **Loop R15（CI lint + walkthrough gates）**：修复 ruff/black；mypy 收窄至 benchmark+compiler；`verify_walkthrough_gates.py` + `ci_lint_gate.sh`。验证：`bash scripts/ci_lint_gate.sh`；`pytest tests/test_verify_walkthrough_gates.py -q`。
+- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 PyPI 3.8 测试矩阵收敛。
 
 ---
 

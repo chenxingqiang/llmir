@@ -245,9 +245,9 @@ class ProfileReport:
                 min_ms=min(durations) if durations else 0,
                 max_ms=max(durations) if durations else 0,
                 std_ms=variance**0.5,
-                percentage=(total / self.total_time_ms * 100)
-                if self.total_time_ms > 0
-                else 0,
+                percentage=(
+                    (total / self.total_time_ms * 100) if self.total_time_ms > 0 else 0
+                ),
             )
 
         return self._stats

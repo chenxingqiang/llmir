@@ -388,7 +388,9 @@ Examples:
         print("=" * 50)
         lookup = bench_prefix_lookup_throughput()
         kv_rows = bench_prefix_kv_reuse()
-        print(f"lookup: {lookup.throughput_ops_s:,.0f} ops/s hit={lookup.hit_ratio:.1%}")
+        print(
+            f"lookup: {lookup.throughput_ops_s:,.0f} ops/s hit={lookup.hit_ratio:.1%}"
+        )
         for row in kv_rows:
             print(
                 f"{row.scenario}: {row.throughput_ops_s:,.0f} tok/s "
@@ -524,7 +526,9 @@ Examples:
         action="store_true",
         help="Import toy PyTorch SDPA module to MLIR (requires torch)",
     )
-    parser.add_argument("--run-opt", action="store_true", help="Run mlir-opt / llmir-opt")
+    parser.add_argument(
+        "--run-opt", action="store_true", help="Run mlir-opt / llmir-opt"
+    )
     parser.add_argument(
         "--run-reference",
         action="store_true",
@@ -541,17 +545,29 @@ Examples:
     parser.add_argument("--head-dim", type=int, default=8)
     args = parser.parse_args()
 
-    if not args.emit_kv_pipeline and not args.import_toy_attention and not args.mvp_a_e2e:
-        parser.error("Specify --emit-kv-pipeline, --import-toy-attention, or --mvp-a-e2e")
+    if (
+        not args.emit_kv_pipeline
+        and not args.import_toy_attention
+        and not args.mvp_a_e2e
+    ):
+        parser.error(
+            "Specify --emit-kv-pipeline, --import-toy-attention, or --mvp-a-e2e"
+        )
 
     from llmir.compiler.kv_emit import KVMicroPipelineConfig
     from llmir.compiler.pipeline import compile_kv_micro_pipeline
-    from llmir.importers.toy_attention import import_toy_attention_to_mlir, ToyAttentionSpec
+    from llmir.importers.toy_attention import (
+        ToyAttentionSpec,
+        import_toy_attention_to_mlir,
+    )
 
     mlir_text = ""
     if args.mvp_a_e2e:
         from llmir.compiler.kv_emit import KVMicroPipelineConfig
-        from llmir.compiler.mvp_pipeline import mvp_result_to_json, run_mvp_single_layer_e2e
+        from llmir.compiler.mvp_pipeline import (
+            mvp_result_to_json,
+            run_mvp_single_layer_e2e,
+        )
 
         cfg = KVMicroPipelineConfig(
             batch_size=args.batch_size,
