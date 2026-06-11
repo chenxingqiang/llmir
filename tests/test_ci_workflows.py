@@ -21,6 +21,13 @@ def test_release_prep_workflow_exists():
     assert "workflow_dispatch" in text
 
 
+def test_release_tag_workflow_exists():
+    path = ROOT / ".github/workflows/release-tag.yml"
+    text = path.read_text(encoding="utf-8")
+    assert "tag_release.sh" in text
+    assert "workflow_dispatch" in text
+
+
 def test_e8_workflow_and_lab_script_exist():
     wf = ROOT / ".github/workflows/e8-empirical-gpu.yml"
     lab = ROOT / "scripts/e8_lab_run.sh"

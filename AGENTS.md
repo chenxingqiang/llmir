@@ -302,7 +302,8 @@ pytest tests/ -m "not network" -q
 - **Loop R17（PyPI release prep）**：`prepare_release.sh` + `PYPI_RELEASE_CHECKLIST.md` + `release-prep.yml`。验证：`pytest tests/test_prepare_release.py -q`；`bash scripts/prepare_release.sh`。
 - **Loop R18（MVP-C device test fix）**：`test_mvp_c_engine_device.py` 在无 GPU CI 上不再误触 `model.to(cuda)`；CPU 安全 spy 验证 `create_paged_kv_cache(device="cuda")`；真 CUDA 集成测试 `skipif`。验证：`pytest tests/test_mvp_c_engine_device.py -q`；全量 `pytest -q` 221 passed。
 - **Loop R19（Release 0.2.1 + MLIR lit runbook）**：`pyproject.toml` / `__init__.py` → `0.2.1`；CHANGELOG `[0.2.1]`；`build_mlir_opt.sh` + `mlir_lit_smoke.sh` + `MLIR_LIT_RUNBOOK.md`。验证：`pytest tests/test_prepare_release.py tests/test_mlir_lit_suite.py -q`；`bash scripts/prepare_release.sh`。
-- **下一轮感知建议**：维护者 push tag `v0.2.1` 触发 PyPI；GPU lab E8 `completed`；lab 上 `mlir_lit_smoke.sh` 四文件全绿。
+- **Loop R20（Release tag automation）**：`tag_release.sh`（dry-run / --push）+ `release-tag.yml` workflow_dispatch。验证：`bash scripts/tag_release.sh --dry-run`；`pytest tests/test_tag_release.py -q`。
+- **下一轮感知建议**：`bash scripts/tag_release.sh --push` 或 workflow 发布 `v0.2.1`；GPU lab E8；mlir lit 四文件全绿。
 
 ---
 
