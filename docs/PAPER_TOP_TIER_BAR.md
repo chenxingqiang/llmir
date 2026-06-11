@@ -96,6 +96,7 @@ M4  E6 多后端 parity          [done]
 M5  hot-path lowered op（完整性）  [done]
 M6  artifact 包（E1–E6+M5，CPU 可跑）  [done]
 M7  E8 GPU 实测 + S1/S3 workload 桶（可选，不阻塞 M6）  [scaffold + reproduce hook]
+M8  MLIR lit catalog + S1/S2/S3 block-size lit  [done]
 ```
 
 ---

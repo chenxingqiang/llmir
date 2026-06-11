@@ -1,0 +1,57 @@
+{
+  "status": "skipped",
+  "mlir_opt": null,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 4,
+  "files": [
+    {
+      "path": "/workspace/test/Dialect/LLM/kv_cache_ops.mlir",
+      "status": "skipped",
+      "reason": "mlir-opt / llmir-opt not on PATH",
+      "runs": [
+        {
+          "line": "mlir-opt %s -split-input-file | mlir-opt | FileCheck %s",
+          "status": "skipped"
+        }
+      ]
+    },
+    {
+      "path": "/workspace/test/Dialect/LLM/kv_cache_optimization.mlir",
+      "status": "skipped",
+      "reason": "mlir-opt / llmir-opt not on PATH",
+      "runs": [
+        {
+          "line": "mlir-opt %s -llm-optimize-kv-cache -split-input-file | FileCheck %s",
+          "status": "skipped"
+        }
+      ]
+    },
+    {
+      "path": "/workspace/test/Dialect/LLM/mvp_single_layer_pipeline.mlir",
+      "status": "skipped",
+      "reason": "mlir-opt / llmir-opt not on PATH",
+      "runs": [
+        {
+          "line": "mlir-opt %s -llm-optimize-kv-cache | FileCheck %s --check-prefix=OPT",
+          "status": "skipped"
+        },
+        {
+          "line": "mlir-opt %s -llm-optimize-kv-cache -llm-lower-kv-cache-ops | FileCheck %s --check-prefix=LOWER",
+          "status": "skipped"
+        }
+      ]
+    },
+    {
+      "path": "/workspace/test/Dialect/LLM/decoder_workload_buckets.mlir",
+      "status": "skipped",
+      "reason": "mlir-opt / llmir-opt not on PATH",
+      "runs": [
+        {
+          "line": "mlir-opt %s -llm-optimize-kv-cache -split-input-file | FileCheck %s",
+          "status": "skipped"
+        }
+      ]
+    }
+  ]
+}

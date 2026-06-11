@@ -12,6 +12,10 @@ echo ""
 echo "=== E1 compile pass ==="
 pytest tests/test_mvp_a_e2e.py -m "not network" -q
 
+echo "=== MLIR lit suite (optional, needs mlir-opt) ==="
+pytest tests/test_mlir_lit_suite.py -q
+python3 scripts/verify_mlir_lit_suite.py || true
+
 echo "=== E2 prefix decoder ==="
 pytest tests/test_sharegpt_prefix_bench.py tests/test_decoder_workload_buckets.py -m "not network" -q
 python3 scripts/regenerate_decoder_workload_buckets.py --verify-only
