@@ -1,0 +1,15 @@
+{
+  "mode": "a_class_walkthrough_summary",
+  "evidence_class": "A",
+  "m6_all_pass": true,
+  "artifact_count": 10,
+  "artifacts_failed": [],
+  "e8_status": "skipped",
+  "e8_evidence_class": "B",
+  "mlir_opt_available": false,
+  "mlir_lit_suite_status": "skipped",
+  "mlir_lit_passed": 0,
+  "mlir_lit_skipped": 4,
+  "reproduce_command": "bash scripts/reproduce_paper.sh",
+  "walkthrough_command": "bash scripts/walkthrough_a_class.sh"
+}

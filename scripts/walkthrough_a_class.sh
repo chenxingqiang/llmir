@@ -38,8 +38,11 @@ python3 scripts/e8_empirical_gpu_bench.py || true
 step "8/8 — M6 artifact bundle verify"
 python3 scripts/verify_artifact_bundle.py --skip-figures
 
+python3 scripts/walkthrough_summary.py
+
 echo ""
 echo "Walkthrough complete."
+echo "  Summary: IEEE-conference/benchmarks/walkthrough_summary.json"
 echo "  Status: IEEE-conference/benchmarks/artifact_bundle_status.json"
 echo "  Full CPU regen: bash scripts/reproduce_paper.sh"
 echo "  Paper tables:   python3 scripts/generate_paper_bucket_tables_tex.py"
