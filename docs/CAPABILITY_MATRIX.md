@@ -43,7 +43,8 @@ Legend:
 | Optimization passes | **C++** | Partial pipeline; some passes commented out |
 | PyTorch → MLIR import | **Python (ref)** | `llmir.importers` + toy SDPA; emits MLIR text |
 | `llmir-compile` KV micro-pipeline | **Python (ref)** | Emit + optional `mlir-opt` + NumPy/native reference |
-| `mlir-opt` → execute e2e | **Planned** | Lowering works; full execution JIT not wired |
+| `mlir-opt` → semantic hot path (M5) | **Python (ref)** | `lowered_hot_path.py` + `m5_lowered_hot_path_verify.py`; parity vs reference |
+| `mlir-opt` → full MLIR JIT execute | **Planned** | Lowering works; in-process JIT not wired |
 | CUDA MQA kernels | **C++** (optional) | `CUDAKernels.cu` when `LLMIR_ENABLE_CUDA=ON` |
 | Prebuilt native wheel | **Planned** | `scripts/package_native_lib.sh` for local bundling |
 
