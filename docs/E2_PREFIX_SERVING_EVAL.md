@@ -38,8 +38,17 @@ llmir-benchmark --shared-prefix-bench --model gpt2 \
 
 | File | Content |
 |------|---------|
-| `IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json` | S2 bucket, 2048-token shared prefix KV sim |
+| `IEEE-conference/benchmarks/shared_prefix_decoder_128_sim.json` | **S1** bucket (128-token shared prefix KV sim) |
+| `IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json` | **S2** bucket (2048-token shared prefix KV sim) |
+| `IEEE-conference/benchmarks/shared_prefix_decoder_8192_sim.json` | **S3** bucket (8192-token shared prefix KV sim) |
 | `IEEE-conference/benchmarks/paper_results.json` | gpt2 `warm_prefix` prefill tokens |
+
+Regenerate or verify all buckets:
+
+```bash
+python3 scripts/regenerate_decoder_workload_buckets.py --verify-only
+python3 scripts/regenerate_decoder_workload_buckets.py   # rewrite JSON
+```
 
 ## Success criteria
 
