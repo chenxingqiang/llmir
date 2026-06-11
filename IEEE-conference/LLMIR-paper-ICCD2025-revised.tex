@@ -65,7 +65,7 @@
 \maketitle
 
 \begin{abstract}
-Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) three reproducible evaluation experiments (E1--E3) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} E1 (compile-time pass verification) rewrites oversized KV block attributes and matches a numeric reference; E2 (prefix-aware serving evaluation) demonstrates shared-prefix decoder prefill reuse on standard length buckets ($\sim$4--5$\times$ KV-layer speedup); E3 (GPU-resident KV integration) removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. Our evaluation focuses on \textbf{compiler verification and serving-integration proxies}, not operator-level kernel speedups (Appendix~\ref{app:future_ops}).
+Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) reproducible evaluation experiments E1--E6 plus an open CPU artifact bundle (M6) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} E1--E3 (pass verification, prefix-aware serving proxies, GPU-resident KV integration); E4--E6 (compositional trace analysis, layer ablations, multi-backend correctness parity); M6 (\texttt{reproduce\_paper.sh} + manifest). Our evaluation focuses on \textbf{compiler verification and analytical serving proxies}, not operator-level kernel speedups (Appendix~\ref{app:future_ops}); optional GPU throughput vs vLLM (E8) is B-class only.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -89,7 +89,7 @@ This paper presents LLMIR (Large Language Model Intermediate Representation), a 
     
     \item \textbf{Multi-Stage Compilation Pipeline}: A detailed transformation flow from PyTorch/ONNX models through LLM dialect to optimized CUDA kernels, with clear separation of optimization concerns at each level.
     
-    \item \textbf{Reproducible Evaluation Experiments (E1--E3)}: An open-source harness linking compiler passes to serving benchmarks---compile-time pass verification, prefix-aware serving evaluation, and GPU-resident KV integration---with JSON artifacts checked into the repository (\texttt{IEEE-conference/benchmarks/}).
+    \item \textbf{Reproducible Evaluation Experiments (E1--E6, M6)}: Open-source harnesses from compile-time pass verification through compositional trace analysis (E4), verifiable ablations (E5), and multi-backend parity (E6), with a CPU artifact manifest (\texttt{artifact\_manifest.json}) and one-shot reproduce script (\texttt{scripts/reproduce\_paper.sh}).
 \end{itemize}
 
 \section{Related Work}
@@ -325,9 +325,10 @@ While LLMIR optimizes at compile time, a thin runtime layer handles inherently d
 
 \subsection{Evaluation Scope}
 
-We do \emph{not} claim operator-level superiority over FlashAttention, cuBLAS, or vLLM CUDA kernels in the main text. Evidence is organized at two levels:
+We do \emph{not} claim operator-level superiority over FlashAttention, cuBLAS, or vLLM CUDA kernels in the main text. Evidence is organized at three levels:
 \begin{enumerate}
     \item \textbf{Compiler verification (E1--E3):} IR passes, numeric reference agreement, prefix reuse, and GPU KV integration---linking dialect design to runnable serving paths.
+    \item \textbf{Analytical composition (E4--E6):} Trace-driven compositional bounds (E4), switchable layer ablations (E5), and numpy vs \texttt{torch\_cuda} correctness parity (E6)---all CPU-reproducible.
     \item \textbf{Serving proxies:} Honest decode baselines (Table~\ref{tab:measured_harness}), prefix/TTFT proxies (Fig.~\ref{fig:prefix_ttft}), and a gpt2 integration case study (Listing~\ref{lst:e1_mlir}, Fig.~\ref{fig:gpt2_latency}).
 \end{enumerate}
 Isolated attention microbenchmarks and multi-model throughput \emph{design targets} appear only in Appendix~\ref{app:future_ops} and Appendix~\ref{app:projected}.
@@ -338,7 +339,8 @@ Isolated attention microbenchmarks and multi-model throughput \emph{design targe
 
 \textbf{Verified in CI} (see \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}):
 \begin{itemize}
-    \item E1--E3 harnesses and JSON under \texttt{IEEE-conference/benchmarks/}
+    \item E1--E6 + M5 harnesses and JSON under \texttt{IEEE-conference/benchmarks/}
+    \item One-shot CPU reproduce: \texttt{bash scripts/reproduce\_paper.sh}; manifest verify: \texttt{verify\_artifact\_bundle.py}
     \item gpt2 HF vs \texttt{llmir\_paged} decode; prefix/TTFT proxies; external Qwen citation
 \end{itemize}
 
@@ -360,6 +362,20 @@ Fig.~\ref{fig:e1_e3_eval} summarizes the three evaluation experiments that conne
 \caption{Compiler verification experiments (E1--E3). \textbf{a,b,} Verified: E1 block-size IR rewrite; E2 normalized latency with prefix reuse. \textbf{c,} Illustrative E3 GPU vs NumPy targets. Reproduce via \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}.}
 \label{fig:e1_e3_eval}
 \end{figure}
+
+\subsection{Analytical Verification (E4--E6) and Artifact Bundle (M6)}
+
+Beyond E1--E3 integration checks, the repository provides \textbf{A-class analytical} experiments that compose compile-time levers on shared-prefix decoder traces $(L_s, N, L_u)$ without claiming end-to-end superiority over vLLM.
+
+\textbf{E4 (compositional trace verification):} \texttt{e4\_compositional\_verify.py} combines E1 block-size policy, E2 prefill token accounting, and E3 host-copy bounds; output \texttt{e4\_compositional.json} includes an ideal KV speedup bound checked against E2 simulation (\texttt{shared\_prefix\_decoder\_2048\_sim.json}).
+
+\textbf{E5 (ablation at verifiable layers):} \texttt{e5\_ablation\_verify.py} toggles block-opt, prefix cache, and GPU KV paths independently and cumulatively; proxy deltas are predictable on CPU (not the illustrative throughput ablation in Table~\ref{tab:ablation}).
+
+\textbf{E6 (multi-backend correctness parity):} \texttt{e6\_backend\_parity\_verify.py} asserts identical greedy decode tokens for \texttt{numpy} vs \texttt{torch\_cuda} KV backends on a toy decoder.
+
+\textbf{M5 (lowered hot path):} \texttt{m5\_lowered\_hot\_verify.py} executes the \texttt{mlir\_llm\_*} call sequence semantically after \texttt{-llm-lower-kv-cache-ops} lowering.
+
+\textbf{M6 (artifact bundle):} \texttt{artifact\_manifest.json} lists all JSON/MLIR artifacts; \texttt{reproduce\_paper.sh} regenerates E1--E6 + M5 and verifies the bundle on CPU.
 
 \subsection{Serving Proxies}
 
@@ -416,7 +432,7 @@ Listing~\ref{lst:e1_mlir} shows MLIR after E1 (\texttt{block\_size} 1024$\righta
 
 \subsection{Verified Claims Summary}
 
-Main-text results support: (1) compile-time KV block sizing is applied and checkable (E1); (2) prefix reuse reduces repeated prefill work (E2); (3) GPU KV can stay on-device without NumPy round-trips (E3); (4) honest integration decode shows where overhead remains. Operator/kernel comparisons and multi-GPU throughput tables are deferred to appendices until lowered MLIR kernels execute on the hot path.
+Main-text results support: (1) compile-time KV block sizing is applied and checkable (E1); (2) prefix reuse reduces repeated prefill work (E2); (3) GPU KV can stay on-device without NumPy round-trips (E3); (4) E4--E6 analytical harnesses compose and ablate these levers on traces with CPU reproducibility (M6); (5) honest integration decode shows where overhead remains. Operator/kernel comparisons, illustrative ablation throughput (Table~\ref{tab:ablation}), and multi-GPU tables remain in appendices; optional E8 GPU vs vLLM is B-class only.
 
 \section{Discussion}
 
@@ -434,7 +450,7 @@ Compile-time optimization can provide benefits beyond runtime-only systems when 
 
 \subsection{Limitations and Future Work}
 
-\textbf{Measurement gap}: Appendix~\ref{app:projected} lists scale-out design targets; Appendix~\ref{app:future_ops} holds standalone attention microbenchmarks \emph{not} wired to lowered \texttt{llm.paged\_attention} kernels. Verified claims are E1--E3, Table~\ref{tab:measured_harness}, and Fig.~\ref{fig:prefix_ttft}.
+\textbf{Measurement gap}: Appendix~\ref{app:projected} lists scale-out design targets; Appendix~\ref{app:future_ops} holds standalone attention microbenchmarks \emph{not} wired to lowered \texttt{llm.paged\_attention} kernels. Verified A-class claims are E1--E6 + M6, Table~\ref{tab:measured_harness}, and Fig.~\ref{fig:prefix_ttft}; optional E8 empirical GPU rows are not required for compiler correctness.
 
 \textbf{Operator-level evaluation}: Future work will compare compiled \texttt{llm.append\_kv}/\texttt{llm.paged\_attention} against SDPA/vLLM kernels on identical shapes \emph{after} MLIR execution is on the hot path---not via disconnected C++ toys.
 
@@ -450,7 +466,7 @@ Compile-time optimization can provide benefits beyond runtime-only systems when 
 
 This paper presented LLMIR, a compiler infrastructure that brings systematic optimization to LLM inference through LLM-specific MLIR dialect design and compile-time analysis of previously runtime-only patterns. Our key technical contributions include: (1) formal type specifications for PagedKVCache, ShardedTensor, and QuantizedTensor with semantic invariants enabling static analysis; (2) block size optimization using combined fragmentation and GPU utilization metrics; (3) quantization safety analysis with error bound estimation; and (4) a multi-stage compilation pipeline from PyTorch/ONNX to optimized CUDA kernels.
 
-Our open-source stack verifies the compiler-to-serving path through evaluation experiments E1--E3 and serving proxies in \S5; operator-level and scale-out numbers remain in appendices until GPU CI lands.
+Our open-source stack verifies the compiler-to-serving path through E1--E6 analytical harnesses, M6 CPU artifact reproduction, and serving proxies in \S5; operator-level and scale-out numbers remain in appendices; optional E8 GPU throughput is documented separately as empirical (B-class) evidence.
 
 \appendix
 \section{Projected Scale-Out Targets}
@@ -599,7 +615,7 @@ Baseline (no LLMIR opt.) & 32,500 & - \\
 \end{tabular}
 \label{tab:ablation}
 \end{center}
-\textsuperscript{$\dagger$}\footnotesize Illustrative cumulative targets.
+\textsuperscript{$\dagger$}\footnotesize Illustrative cumulative targets. Verifiable layer ablations (E5 proxy switches) are in \texttt{e5\_ablation.json}, not this throughput table.
 \end{table}
 
 \section{Future Operator-Level Evaluation}
