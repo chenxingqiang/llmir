@@ -35,6 +35,7 @@ jobs:
         with:
           name: walkthrough-status-json
           path: |
+            IEEE-conference/benchmarks/walkthrough_summary.json
             IEEE-conference/benchmarks/artifact_bundle_status.json
             IEEE-conference/benchmarks/mlir_lit_suite_status.json
             IEEE-conference/benchmarks/e8_empirical_gpu.json

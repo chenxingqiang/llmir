@@ -1,0 +1,39 @@
+# Loop Milestone Status (living)
+
+Engineering milestones **M1–M8** and recent **Loop** iterations. Update after each merged optimization PR.
+
+## Milestones
+
+| ID | Name | Status |
+|----|------|--------|
+| M1 | E1 single-layer IR + CI | done |
+| M2 | E4 compositional trace | done |
+| M3 | E5 ablation switches | done |
+| M4 | E6 multi-backend parity | done |
+| M5 | Lowered hot path semantics | done |
+| M6 | CPU artifact bundle | done |
+| M7 | E8 scaffold + S1/S3 buckets + reproduce E8 | scaffold |
+| M8 | MLIR lit catalog + S1/S2/S3 block-size lit | done |
+
+## Recent loops (R6–R13)
+
+| Loop | Theme |
+|------|--------|
+| R6 | Paper §5 E4–E6/M6 + E8 scaffold |
+| R7 | S1/S3 workload buckets + reproduce E8 |
+| R8 | E4/E5 multi-bucket traces |
+| R9 | Paper appendix bucket tables (TeX from JSON) |
+| R10 | MLIR lit catalog + `decoder_workload_buckets.mlir` |
+| R11 | `walkthrough_a_class.sh` + optional manifest entries |
+| R12 | CI walkthrough workflow + E8 lab runbook |
+| R13 | Walkthrough summary JSON + milestone doc |
+
+## Reviewer commands
+
+```bash
+bash scripts/walkthrough_a_class.sh
+python3 scripts/walkthrough_summary.py
+cat IEEE-conference/benchmarks/walkthrough_summary.json
+```
+
+CI: `.github/workflows/a-class-walkthrough.yml`

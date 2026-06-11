@@ -25,6 +25,7 @@ bash scripts/walkthrough_a_class.sh
 
 | File | Meaning |
 |------|---------|
+| `walkthrough_summary.json` | One-page reviewer snapshot (m6/e8/lit) |
 | `artifact_bundle_status.json` | M6 verify summary |
 | `e4_compositional_buckets.json` | S1/S2/S3 compositional proxies |
 | `e5_ablation_buckets.json` | S1/S2/S3 ablation matrix |
@@ -37,6 +38,17 @@ bash scripts/walkthrough_a_class.sh
 |---------|-------|------|
 | `walkthrough_a_class.sh` | Verify committed artifacts + pytest gates | ~5 min CPU |
 | `reproduce_paper.sh` | Regen JSON, figures, multi-bucket TeX, full verify | longer |
+
+## Demo recording (optional)
+
+Record a terminal session for reviewers:
+
+```bash
+bash scripts/walkthrough_a_class.sh
+# ends with walkthrough_summary.json
+```
+
+Expected tail: `m6_all_pass: True`, `e8_status: skipped` on CPU CI (honest).
 
 ## GPU / MLIR lab follow-ups
 
