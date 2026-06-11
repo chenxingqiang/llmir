@@ -84,6 +84,11 @@ python3 scripts/e8_empirical_gpu_bench.py
 # Fast reviewer walkthrough (verify committed artifacts, ~5 min CPU)
 bash scripts/walkthrough_a_class.sh
 
+# CI: .github/workflows/a-class-walkthrough.yml (same script on ubuntu-latest)
+
+# E8 GPU lab (B-class, optional)
+bash scripts/e8_lab_run.sh   # requires CUDA for status=completed
+
 # Full A-class reproduce (E1–E6 + M5 + figures + verify)
 bash scripts/reproduce_paper.sh
 

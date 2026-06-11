@@ -294,7 +294,8 @@ pytest tests/ -m "not network" -q
 - **Loop R9（论文附录多桶表）**：`generate_paper_bucket_tables_tex.py` → `generated/e4_e5_bucket_tables.tex`；`revised.tex` §5 + Appendix `app:verified_buckets`。验证：`pytest tests/test_paper_bucket_tables_tex.py -q`。
 - **Loop R10（MLIR lit 覆盖）**：`decoder_workload_buckets.mlir`（S1/S2/S3 E1）；`mlir_lit_suite.py` + `verify_mlir_lit_suite.py`。验证：`pytest tests/test_mlir_lit_suite.py -q`（无 mlir-opt 时 skipped）。
 - **Loop R11（Walkthrough + 可选 artifact）**：`walkthrough_a_class.sh` + `docs/WALKTHROUGH.md`；manifest 增加 E8 / 多桶 JSON 为 optional。验证：`bash scripts/walkthrough_a_class.sh`。
-- **下一轮感知建议**：真机跑 E8 填 `status=completed`；有 mlir-opt 时 lit 全绿；或录制 walkthrough 演示。
+- **Loop R12（CI walkthrough + E8 lab）**：`a-class-walkthrough.yml`；`e8-empirical-gpu.yml` + `e8_lab_run.sh` + `E8_LAB_RUNBOOK.md`；README 快速入口。验证：`pytest tests/test_ci_workflows.py -q`。
+- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 walkthrough 演示录制。
 
 ---
 

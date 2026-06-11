@@ -24,6 +24,10 @@ bash scripts/reproduce_paper.sh   # includes E8 when CUDA absent: skipped
 | `evidence_class` | Always `B` |
 | `results` | `llmir-benchmark --compare` rows when GPU available |
 
+## GPU lab (status=completed)
+
+See [`E8_LAB_RUNBOOK.md`](E8_LAB_RUNBOOK.md) and `bash scripts/e8_lab_run.sh` on a CUDA machine.
+
 ## Paper wording
 
 - **May claim (appendix / footnote):** empirical comparison on stated hardware SKU when `status=completed`.

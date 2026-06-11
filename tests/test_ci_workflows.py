@@ -1,0 +1,23 @@
+"""CI workflow files for walkthrough and E8 lab."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_a_class_walkthrough_workflow_exists():
+    path = ROOT / ".github/workflows/a-class-walkthrough.yml"
+    text = path.read_text(encoding="utf-8")
+    assert "walkthrough_a_class.sh" in text
+    assert "workflow_dispatch" in text
+
+
+def test_e8_workflow_and_lab_script_exist():
+    wf = ROOT / ".github/workflows/e8-empirical-gpu.yml"
+    lab = ROOT / "scripts/e8_lab_run.sh"
+    assert wf.is_file()
+    assert lab.is_file()
+    assert "e8_empirical_gpu_bench.py" in wf.read_text(encoding="utf-8")
+    assert "status=completed" in lab.read_text(encoding="utf-8")
