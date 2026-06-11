@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llmir"
-version = "0.2.0"
+version = "0.2.1"
 description = "LLMIR - Large Language Model Intermediate Representation for optimizing LLM inference"
 readme = "README.md"
 license = {text = "Apache-2.0 WITH LLVM-exception"}

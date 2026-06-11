@@ -7,53 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-05
+
 ### Fixed
+
 - MVP-C `test_mvp_c_engine_device`: CPU CI no longer calls `model.to(cuda)` when CUDA is mocked; GPU integration test gated with `skipif`.
 
 ### Added
 
 - **Release prep**: `scripts/prepare_release.sh`, `docs/PYPI_RELEASE_CHECKLIST.md`, workflow `release-prep.yml`.
+- **MLIR lit lab**: `scripts/build_mlir_opt.sh`, `scripts/mlir_lit_smoke.sh`, `docs/MLIR_LIT_RUNBOOK.md`.
+- **Evidence chain (Loops R6–R18)**: E4–E6 multi-bucket traces, M6 artifact bundle extensions, E8 B-class scaffold, A-class walkthrough CI, evidence dashboard, lint gates, MLIR lit catalog, paper appendix bucket tables.
+- **CUDA kernels (P5)**: `CUDAKernels.cu`, `cuda_probe`, native ctypes bindings, `build_native_runtime.sh`, `package_native_lib.sh`.
+- **vLLM KV connector (P4)**, GPU compare benchmarks, prefix cache on `llmir_paged`.
+- **Benchmark harness (P3)**: `llmir-benchmark --compare`, prefix microbenches, `native-runtime.yml`.
 
 ### Changed
 
 - **Python**: minimum supported version is **3.9** (CI matrix 3.9–3.12; 3.8 dropped). See `docs/PYTHON_VERSION_POLICY.md`.
-
-### Added (Loop R6–R16 evidence chain)
-
-- E4–E6 multi-bucket traces, M6 artifact bundle extensions, E8 B-class scaffold.
-- A-class walkthrough + CI (`a-class-walkthrough.yml`), evidence dashboard, lint gates.
-- MLIR lit catalog (`decoder_workload_buckets.mlir`), paper appendix tables from JSON.
-
-### Added (P5)
-
-- **CUDA kernels**: `CUDAKernels.cu` wired into `MLIRLLMRuntime` via `LLMIR_ENABLE_CUDA`.
-- MQA / GQA / pruned attention launchers implemented (MVP block kernel).
-- C API: `llmir_cuda_runtime_available`, `llmir_cuda_device_count`.
-- Python: `llmir.runtime.cuda_probe`, native ctypes bindings.
-- `scripts/build_native_runtime.sh` auto-enables CUDA when `nvcc` is present.
-- `scripts/package_native_lib.sh` for dev wheel bundling; `docs/P5_CUDA_NATIVE.md`.
-
-### Added (P4)
-
-- **vLLM KV connector**: `LLMIRConnector` + `LLMIRKVStorage` (`llmir.integration.vllm_connector`).
-- `register_llmir_vllm_connector()` for vLLM V1 factory registration.
-- **GPU compare**: `--compare-device` / `--compare-dtype` on `llmir-benchmark --compare`.
-- `scripts/gpu_inference_compare.py`, `scripts/vllm_kv_connector_smoke.py`.
-- Optional workflow `.github/workflows/gpu-benchmark.yml` (workflow_dispatch).
-
-### Added (prefix on `llmir_paged`)
-
-- `PrefixKVStore` + `PagedKVDecoder.warm_prefix` / decode-time longest-prefix restore.
-- `DecodeResult.prefix_hit_tokens` / `prefill_tokens_computed`; surfaced on `LLMEngine` metrics.
-- `scripts/prefix_prefill_e2e.py`; tests `test_prefix_kv_store.py`, `test_paged_decoder_prefix.py`.
-
-### Added (P3)
-
-- `llmir.benchmark`: `run_inference_compare`, prefix cache microbenches.
-- `llmir-benchmark --compare hf,vllm,llmir-paged` for reproducible E2E JSON.
-- `llmir-benchmark --prefix-bench` and `scripts/prefix_cache_benchmark.py`.
-- `scripts/build_native_runtime.sh` + optional CI workflow `native-runtime.yml`.
-- `scripts/cpu_inference_compare.py` now delegates to `llmir.benchmark`.
 
 ## [0.2.0] - 2026-06-05
 
