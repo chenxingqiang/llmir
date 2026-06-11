@@ -32,6 +32,8 @@ python3 scripts/e5_ablation_verify.py --from-sim \
 echo "=== E4/E5 multi-bucket (S1/S2/S3) ==="
 pytest tests/test_e4_e5_multi_bucket.py -q
 python3 scripts/e4_e5_multi_bucket_verify.py
+python3 scripts/generate_paper_bucket_tables_tex.py
+pytest tests/test_paper_bucket_tables_tex.py -q
 
 echo "=== E6 backend parity ==="
 pytest tests/test_e6_backend_parity.py -q
