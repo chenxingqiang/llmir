@@ -1,0 +1,50 @@
+{
+  "mode": "shared_prefix_decoder",
+  "config": {
+    "system_prompt_tokens": 8192,
+    "num_requests": 16,
+    "user_suffix_tokens": 64,
+    "max_new_tokens": 4,
+    "model": "gpt2",
+    "device": "auto",
+    "warmup_requests": 0
+  },
+  "results": [
+    {
+      "scenario": "sharegpt_kv_baseline",
+      "num_requests": 16,
+      "system_prompt_tokens": 8192,
+      "user_suffix_tokens": 64,
+      "total_elapsed_s": 0.02253211299830582,
+      "avg_latency_ms": 1.4082570623941137,
+      "ttft_proxy_ms": 1.4082570623941137,
+      "prefix_hit_tokens_total": 0,
+      "prefill_tokens_computed_total": 0,
+      "generated_tokens_total": 132096,
+      "throughput_tok_s": 5862566.018993968,
+      "speedup_vs_baseline": 1.0,
+      "details": {}
+    },
+    {
+      "scenario": "sharegpt_kv_prefix_cached",
+      "num_requests": 16,
+      "system_prompt_tokens": 8192,
+      "user_suffix_tokens": 64,
+      "total_elapsed_s": 0.003049589002330322,
+      "avg_latency_ms": 0.1905993126456451,
+      "ttft_proxy_ms": 0.1905993126456451,
+      "prefix_hit_tokens_total": 0,
+      "prefill_tokens_computed_total": 0,
+      "generated_tokens_total": 9280,
+      "throughput_tok_s": 3043033.0096641723,
+      "speedup_vs_baseline": 7.3885736671689415,
+      "details": {
+        "prefix_len": 8192,
+        "suffix_len": 64,
+        "num_requests": 16
+      }
+    }
+  ],
+  "bucket_id": "S3",
+  "bucket_label": "long document prefill"
+}

@@ -13,7 +13,8 @@ echo "=== E1 compile pass ==="
 pytest tests/test_mvp_a_e2e.py -m "not network" -q
 
 echo "=== E2 prefix decoder ==="
-pytest tests/test_sharegpt_prefix_bench.py -m "not network" -q
+pytest tests/test_sharegpt_prefix_bench.py tests/test_decoder_workload_buckets.py -m "not network" -q
+python3 scripts/regenerate_decoder_workload_buckets.py --verify-only
 
 echo "=== E3 GPU KV integration ==="
 pytest tests/test_mvp_c_e2e.py tests/test_torch_gpu_kv_cache.py -m "not network" -q
@@ -59,6 +60,10 @@ if [[ "${FIGURE_CHECK:-0}" == "1" ]]; then
 else
   python3 scripts/verify_artifact_bundle.py --skip-figures
 fi
+
+echo "=== E8 optional GPU bench (B-class, non-blocking) ==="
+pytest tests/test_e8_empirical_gpu.py -q
+python3 scripts/e8_empirical_gpu_bench.py || true
 
 echo ""
 echo "Done. Artifacts: IEEE-conference/benchmarks/"

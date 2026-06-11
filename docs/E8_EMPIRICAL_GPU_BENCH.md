@@ -9,6 +9,9 @@ Paper **E8** is **B-class evidence**: same-harness throughput vs HF/vLLM on GPU.
 python3 scripts/e8_empirical_gpu_bench.py
 
 pytest tests/test_e8_empirical_gpu.py -q
+
+# Optional tail of A-class reproduce (does not block M6)
+bash scripts/reproduce_paper.sh   # includes E8 when CUDA absent: skipped
 ```
 
 ## Output

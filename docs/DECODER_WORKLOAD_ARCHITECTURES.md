@@ -48,7 +48,19 @@ input → RMSNorm → Self-Attention (+ KV cache) → residual
 | **S2** | 2048 | 8–128 | 32 | RAG / shared system |
 | **S3** | 8192 | 64+ | 16 | 长文档 prefill |
 
-## 3. 命令
+## 3. 已提交仿真 JSON（CPU KV sim）
+
+| 桶 | 文件 |
+|----|------|
+| S1 | `IEEE-conference/benchmarks/shared_prefix_decoder_128_sim.json` |
+| S2 | `IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json` |
+| S3 | `IEEE-conference/benchmarks/shared_prefix_decoder_8192_sim.json` |
+
+```bash
+python3 scripts/regenerate_decoder_workload_buckets.py --verify-only
+```
+
+## 4. 命令
 
 ```bash
 llmir-list-models
@@ -66,7 +78,7 @@ llmir-benchmark --shared-prefix-bench --model deepseek-v3 \
   --shared-prefix-tokens 2048 --shared-prefix-requests 8
 ```
 
-## 4. 论文写法
+## 5. 论文写法
 
 - 主对标：**Qwen3 / 开源 Gemma 3 / DeepSeek-V3** decoder 算子栈（均可 `from_pretrained` 复现）
 - 不用 ShareGPT 数据集命名；用 S1/S2/S3 长度桶
