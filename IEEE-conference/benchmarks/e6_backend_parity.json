@@ -1,0 +1,81 @@
+{
+  "experiment": "E6",
+  "mode": "multi_backend_correctness_parity",
+  "reference_backend": "numpy",
+  "backends_tested": [
+    "numpy",
+    "torch_cuda"
+  ],
+  "decode_parity": [
+    {
+      "prompt": "hello world",
+      "reference_backend": "numpy",
+      "reference_generated_token_ids": [
+        5,
+        10,
+        11,
+        1
+      ],
+      "comparisons": [
+        {
+          "backend": "numpy",
+          "kv_backend_label": "numpy",
+          "generated_token_ids": [
+            5,
+            10,
+            11,
+            1
+          ],
+          "matches_reference": true
+        },
+        {
+          "backend": "torch_cuda",
+          "kv_backend_label": "torch_cuda",
+          "generated_token_ids": [
+            5,
+            10,
+            11,
+            1
+          ],
+          "matches_reference": true
+        }
+      ],
+      "all_match": true
+    }
+  ],
+  "kv_micro_parity": {
+    "reference_backend": "numpy",
+    "seq_len": 9,
+    "backends": [
+      "numpy",
+      "torch_cuda"
+    ],
+    "rows": [
+      {
+        "backend": "numpy",
+        "kv_backend_label": "numpy",
+        "matches_reference": true,
+        "max_abs_diff_k": 0.0,
+        "max_abs_diff_v": 0.0
+      },
+      {
+        "backend": "torch_cuda",
+        "kv_backend_label": "torch_cuda",
+        "max_abs_diff_k": 0.0,
+        "max_abs_diff_v": 0.0,
+        "matches_reference": true
+      }
+    ],
+    "all_match": true
+  },
+  "summary": {
+    "decode_all_match": true,
+    "kv_micro_all_match": true,
+    "overall_pass": true,
+    "backends_tested": [
+      "numpy",
+      "torch_cuda"
+    ]
+  },
+  "performance_note": "Correctness parity only; throughput panels belong in MVP-C / E8, not E6."
+}
