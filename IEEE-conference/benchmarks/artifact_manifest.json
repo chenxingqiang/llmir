@@ -79,6 +79,15 @@
       "kind": "json",
       "required_keys": ["experiment", "mode", "buckets"],
       "optional": true
+    },
+    {
+      "id": "walkthrough_summary",
+      "experiment": "M6",
+      "path": "IEEE-conference/benchmarks/walkthrough_summary.json",
+      "kind": "json",
+      "required_keys": ["mode", "m6_all_pass", "walkthrough_command"],
+      "assert_true": ["m6_all_pass"],
+      "optional": true
     }
   ],
   "figures": [
