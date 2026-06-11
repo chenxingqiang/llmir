@@ -2,8 +2,8 @@
 
 from llmir.benchmark.inference_compare import (
     BenchmarkResult,
-    run_inference_compare,
     print_inference_results,
+    run_inference_compare,
 )
 from llmir.benchmark.prefix_cache_bench import (
     PrefixBenchResult,

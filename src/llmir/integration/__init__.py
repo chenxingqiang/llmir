@@ -20,7 +20,7 @@ from llmir.integration.vllm_connector import (
 from llmir.integration.vllm_kv_storage import LLMIRKVStorage, LLMIRKVStorageConfig
 
 try:
-    from llmir.integration.huggingface import from_pretrained
+    from llmir.integration.huggingface import from_pretrained  # noqa: F401
 
     __all__.append("from_pretrained")
 except ImportError:

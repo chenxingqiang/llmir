@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -69,7 +69,7 @@ def run_kv_micro_parity(
     seq_lens = np.array([seq_len], dtype=np.int32)
 
     reference_backend = backends[0] if backends else "numpy"
-    reference_kv: Optional[np.ndarray] = None
+    reference_kv: Optional[Tuple[np.ndarray, np.ndarray]] = None
     rows: List[Dict[str, Any]] = []
 
     for backend in backends:
@@ -179,7 +179,9 @@ def compare_decode_parity(
                 errors[backend] = str(exc)
 
         ref_tokens = (
-            by_backend.get(reference, {}).get("generated_token_ids") if reference in by_backend else None
+            by_backend.get(reference, {}).get("generated_token_ids")
+            if reference in by_backend
+            else None
         )
         comparisons: List[Dict[str, Any]] = []
         for backend in cfg.backends:
@@ -257,5 +259,5 @@ def run_e6_backend_parity(
 
 def _to_numpy(data: Any) -> np.ndarray:
     if hasattr(data, "detach"):
-        return data.detach().cpu().numpy()
+        return np.asarray(data.detach().cpu().numpy())
     return np.asarray(data)

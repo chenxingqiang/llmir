@@ -549,7 +549,6 @@ class LLMEngine:
             hf_from_pretrained_kwargs,
             materialize_hf_causal_lm,
         )
-
         from llmir.runtime.device import resolve_inference_device
 
         apply_transformers_load_patches()

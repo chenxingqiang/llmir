@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, is_dataclass
 from typing import Any, Dict, List, Optional
 
 from llmir.runtime.cuda_probe import summarize_cuda_stack
@@ -76,7 +76,7 @@ def run_e8_empirical_gpu_bench(
                 device="cuda",
             )
             for row in compare_rows:
-                rows.append(row.to_dict() if hasattr(row, "to_dict") else dict(row))
+                rows.append(asdict(row) if is_dataclass(row) else dict(row))
         except Exception as exc:  # pragma: no cover - lab backends
             rows.append({"backend": backend, "error": str(exc)})
 

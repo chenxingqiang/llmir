@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
@@ -139,7 +139,11 @@ def run_lowered_hot_path_verification(
     mlir_before, lowered, block_after = lower_kv_micro_pipeline_mlir(
         cfg, oversized_block_size=oversized_block_size
     )
-    symbols = verify_lowered_mlir(lowered) if lowered else {s: False for s in LOWERED_RUNTIME_SYMBOLS}
+    symbols = (
+        verify_lowered_mlir(lowered)
+        if lowered
+        else dict.fromkeys(LOWERED_RUNTIME_SYMBOLS, False)
+    )
     mlir_lowered = bool(lowered) and all(symbols.values())
 
     ref = compile_kv_micro_pipeline(

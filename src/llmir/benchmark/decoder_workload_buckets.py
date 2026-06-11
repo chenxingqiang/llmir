@@ -117,7 +117,9 @@ def verify_bucket_artifact(
         "model",
     ):
         if cfg.get(key) != expected[key]:
-            return f"{path.name}: config.{key}={cfg.get(key)!r} expected {expected[key]!r}"
+            return (
+                f"{path.name}: config.{key}={cfg.get(key)!r} expected {expected[key]!r}"
+            )
     if data.get("mode") != "shared_prefix_decoder":
         return f"{path.name}: mode must be shared_prefix_decoder"
     if len(data.get("results", [])) < 2:

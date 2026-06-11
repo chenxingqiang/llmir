@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -14,7 +14,7 @@ from llmir.runtime.kv_factory import create_paged_kv_cache
 def _softmax(x: np.ndarray, axis: int = -1) -> np.ndarray:
     x = x - np.max(x, axis=axis, keepdims=True)
     e = np.exp(x)
-    return e / np.sum(e, axis=axis, keepdims=True)
+    return np.asarray(e / np.sum(e, axis=axis, keepdims=True))
 
 
 def numpy_paged_attention(
@@ -36,7 +36,7 @@ def numpy_paged_attention(
     scores = np.einsum("bqhd,bkhd->bqhk", q, k) * scale
     attn = _softmax(scores, axis=-1)
     out = np.einsum("bqhk,bkhd->bqhd", attn, v)
-    return out.astype(query.dtype, copy=False)
+    return np.asarray(out.astype(query.dtype, copy=False))
 
 
 def run_kv_micro_pipeline_reference(

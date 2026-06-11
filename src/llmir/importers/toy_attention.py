@@ -73,7 +73,9 @@ def import_toy_attention_to_mlir(
         "num_attention_heads": spec.num_heads,
         "head_dim": spec.head_dim,
     }
-    mlir = importer.import_model(module, sample_inputs={"x": sample}, model_config=model_config)
+    mlir = importer.import_model(
+        module, sample_inputs={"x": sample}, model_config=model_config
+    )
     if "llm.paged_attention" not in mlir and "llm.attention" not in mlir:
         kv_cfg = KVMicroPipelineConfig(
             batch_size=spec.batch_size,
@@ -86,7 +88,9 @@ def import_toy_attention_to_mlir(
     return mlir
 
 
-def toy_attention_model_config(spec: Optional[ToyAttentionSpec] = None) -> Dict[str, Any]:
+def toy_attention_model_config(
+    spec: Optional[ToyAttentionSpec] = None,
+) -> Dict[str, Any]:
     spec = spec or ToyAttentionSpec()
     return {
         "num_layers": 1,

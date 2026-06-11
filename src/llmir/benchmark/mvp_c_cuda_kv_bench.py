@@ -53,7 +53,10 @@ def _run_one_backend(
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from llmir.integration.hf_load import hf_from_pretrained_kwargs, materialize_hf_causal_lm
+    from llmir.integration.hf_load import (
+        hf_from_pretrained_kwargs,
+        materialize_hf_causal_lm,
+    )
     from llmir.runtime.kv_factory import kv_cache_backend_name
     from llmir.runtime.paged_decoder import PagedKVDecoder
 
