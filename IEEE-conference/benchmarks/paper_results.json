@@ -26,8 +26,8 @@
       "note": "LLMIR PagedKVCache on critical path"
     }
   ],
-  "sharegpt_prefix": {
-    "mode": "sharegpt_prefix",
+  "shared_prefix_decoder": {
+    "mode": "shared_prefix_decoder",
     "config": {
       "system_prompt_tokens": 256,
       "num_requests": 6,
@@ -207,6 +207,6 @@
   "notes": {
     "prompt_tokens": 64,
     "max_tokens": 8,
-    "sharegpt_system_tokens": 256
+    "shared_prefix_tokens": 256
   }
 }

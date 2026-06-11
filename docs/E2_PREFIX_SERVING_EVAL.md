@@ -1,18 +1,20 @@
 # E2: Prefix-Aware Serving Evaluation
 
-Paper **E2** demonstrates **product value** from prefix KV reuse (paper §5.1 workload shape), complementary to E1's compile-time IR path.
+Paper **E2** evaluates **shared-prefix decoder prefill** (RAG / multi-tenant): one long shared context + N suffix variants. This matches Llama/Qwen-class serving patterns, **not** the ShareGPT dataset brand.
 
-Repository harness (legacy CLI): `llmir-benchmark --sharegpt-prefix-bench`, `scripts/sharegpt_prefix_bench.py`.
+See [`DECODER_WORKLOAD_ARCHITECTURES.md`](./DECODER_WORKLOAD_ARCHITECTURES.md) for architecture presets and length buckets (S1/S2/S3).
 
-## Workload
+Repository harness (legacy script/flags retained): `llmir-benchmark --shared-prefix-bench`, `scripts/sharegpt_prefix_bench.py`.
 
-One long **shared system prompt** + **N user-variant** suffixes (synthetic ShareGPT):
+## Workload shapes
 
-| Parameter | CI default | GPU demo |
-|-----------|------------|----------|
-| `system_prompt_tokens` | 128 | 2048 |
-| `num_requests` | 32 | 32 |
-| `user_suffix_tokens` | 8 | 8–32 |
+| Bucket | Shared prefix \(L_s\) | Suffix \(L_u\) | Requests \(N\) | Architecture target |
+|--------|----------------------|----------------|----------------|---------------------|
+| **S1** short | 128 | 8–32 | 32 | Llama-3 / Qwen2 (CI default) |
+| **S2** RAG | 2048 | 8–32 | 32 | Llama-3-8B, Qwen2-7B |
+| **S3** long-doc | 8192 | 64+ | 16 | Mistral / long-context |
+
+gpt2 runs are **integration smoke only** (MHA + GELU-FFN, not representative of mainline decoders).
 
 ## Commands
 
@@ -20,39 +22,28 @@ One long **shared system prompt** + **N user-variant** suffixes (synthetic Share
 # KV-layer simulation only (no HuggingFace)
 python scripts/sharegpt_prefix_bench.py --simulation-only
 
-# Full E2 harness (sim + llmir_paged on gpt2)
-llmir-benchmark --sharegpt-prefix-bench --model gpt2 \
-  --sharegpt-system-tokens 128 --sharegpt-requests 32 -o sharegpt.json
+# E2 on architecture-representative preset (needs llmir[full])
+llmir-benchmark --shared-prefix-bench --model llama3-8b \
+  --shared-prefix-tokens 2048 --shared-prefix-requests 32 -o e2_llama3.json
 
-# GPU-scale demo
-python scripts/sharegpt_prefix_bench.py --model gpt2 --device cuda \
-  --system-prompt-tokens 2048 --num-requests 32 -o sharegpt_gpu.json
+# CI smoke
+llmir-benchmark --shared-prefix-bench --model gpt2 \
+  --shared-prefix-tokens 128 --shared-prefix-requests 32 -o e2_gpt2.json
 ```
-
-## vLLM connector (P4)
-
-Disk-backed prefix KV for vLLM V1 disaggregated prefill:
-
-```bash
-python scripts/vllm_kv_connector_smoke.py
-python scripts/vllm_kv_connector_smoke.py --register  # when vLLM installed
-```
-
-See [VLLM_KV_CONNECTOR.md](./VLLM_KV_CONNECTOR.md).
 
 ## Artifacts
 
 | File | Content |
 |------|---------|
-| `IEEE-conference/benchmarks/sharegpt_2048_sim.json` | 2048-token system prompt KV sim |
+| `IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json` | S2 bucket, 2048-token shared prefix KV sim |
 | `IEEE-conference/benchmarks/paper_results.json` | gpt2 `warm_prefix` prefill tokens |
 
 ## Success criteria
 
-- **KV simulation**: `sharegpt_kv_prefix_cached` speedup ≫ 1 vs baseline (ideal prefix append).
-- **llmir_paged E2E**: `sharegpt_llmir_warm_prefix` lower total time vs `sharegpt_llmir_no_prefix`; rising `prefix_hit_tokens` on requests after `warm_prefix`.
+- **KV simulation**: prefix-cached row speedup ≫ 1 vs baseline.
+- **llmir_paged E2E**: warm-prefix row lower latency vs cold; rising `prefix_hit_tokens`.
 
 ## Honesty
 
-- Synthetic word-count prompts approximate token lengths; use a tokenizer for exact ShareGPT replay.
-- This is **not** the paper Table II multi-model vLLM throughput table yet.
+- Lengths are tokenizer-accurate when `--model` uses HF tokenizer; word-count fallback is approximate.
+- Not a multi-model vLLM throughput table; see E8 (optional empirical) in `PAPER_TOP_TIER_BAR.md`.

@@ -1,4 +1,9 @@
-"""ShareGPT-style prefix workload benchmarks (MVP-B)."""
+"""Shared-prefix decoder workload benchmarks (E2).
+
+Synthetic multi-tenant prefill: one long shared prefix + N request suffixes.
+Models Llama/Qwen-class **decoder prefill** (see docs/DECODER_WORKLOAD_ARCHITECTURES.md).
+Legacy module name; not tied to the ShareGPT dataset.
+"""
 
 from __future__ import annotations
 
@@ -12,10 +17,10 @@ from llmir.benchmark.prefix_cache_bench import PrefixBenchResult, bench_prefix_k
 @dataclass(frozen=True)
 class ShareGPTPrefixBenchConfig:
     """
-    Synthetic ShareGPT-like load: one long shared prefix + many user variants.
+    Shared-prefix decoder load (RAG / multi-tenant): one prefix + N suffixes.
 
-    Paper §5.1 uses ShareGPT with mixed sequence lengths; MVP-B fixes the
-    high-prefix-overlap regime (system prompt reuse).
+  Standard length buckets: S1 short (128), S2 RAG (512--2048), S3 long-doc (8k).
+  Pair with ``llama3-8b`` / ``qwen2-7b`` for architecture-representative runs.
     """
 
     system_prompt_tokens: int = 128
@@ -235,7 +240,7 @@ def run_sharegpt_prefix_benchmark(
     """
     cfg = cfg or ShareGPTPrefixBenchConfig()
     payload: Dict[str, Any] = {
-        "mode": "sharegpt_prefix",
+        "mode": "shared_prefix_decoder",
         "config": asdict(cfg),
         "results": [],
     }
@@ -278,7 +283,7 @@ def run_sharegpt_prefix_benchmark(
 
 def print_sharegpt_results(payload: Dict[str, Any]) -> None:
     """Human-readable summary."""
-    print(f"ShareGPT prefix benchmark  requests={payload['config'].get('num_requests')}")
+    print(f"Shared-prefix decoder benchmark  requests={payload['config'].get('num_requests')}")
     print(
         f"  system≈{payload['config'].get('system_prompt_tokens')} tok  "
         f"suffix≈{payload['config'].get('user_suffix_tokens')} tok"

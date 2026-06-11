@@ -65,7 +65,7 @@
 \maketitle
 
 \begin{abstract}
-Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) three reproducible evaluation experiments (E1--E3) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} E1 (compile-time pass verification) rewrites oversized KV block attributes and matches a numeric reference; E2 (prefix-aware serving evaluation) demonstrates ShareGPT-shaped prefix reuse ($\sim$4--5$\times$ KV-layer speedup); E3 (GPU-resident KV integration) removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. Our evaluation focuses on \textbf{compiler verification and serving-integration proxies}, not operator-level kernel speedups (Appendix~\ref{app:future_ops}).
+Large Language Model (LLM) inference faces significant challenges in memory management, computational efficiency, and deployment scalability. This paper presents LLMIR, a compiler infrastructure based on MLIR (Multi-Level Intermediate Representation) for optimizing LLM inference workloads. Unlike runtime-centric approaches that rely solely on dynamic optimizations, LLMIR enables systematic compile-time analysis of LLM-specific patterns including PagedAttention, KV cache management, and quantization. Our contributions include: (1) IR-level PagedAttention representation for static block-allocation analysis, (2) a four-stage compilation pipeline from PyTorch/ONNX to optimized kernels, and (3) three reproducible evaluation experiments (E1--E3) linking compiler passes to serving benchmarks. \textbf{Verified in open-source CI:} E1 (compile-time pass verification) rewrites oversized KV block attributes and matches a numeric reference; E2 (prefix-aware serving evaluation) demonstrates shared-prefix decoder prefill reuse on standard length buckets ($\sim$4--5$\times$ KV-layer speedup); E3 (GPU-resident KV integration) removes CPU NumPy round-trips via block-paged GPU KV and chained \texttt{past\_key\_values}. Our evaluation focuses on \textbf{compiler verification and serving-integration proxies}, not operator-level kernel speedups (Appendix~\ref{app:future_ops}).
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -334,7 +334,7 @@ Isolated attention microbenchmarks and multi-model throughput \emph{design targe
 
 \subsection{Experimental Setup}
 
-\textbf{Target environment} (Appendix~\ref{app:projected}; not measured end-to-end yet): A100-80GB single/multi-GPU, LLaMA/Qwen-class models, vLLM/SGLang/TRT/MLC baselines, ShareGPT/C4/MMLU.
+\textbf{Target environment} (Appendix~\ref{app:projected}; not measured end-to-end yet): A100-80GB, Llama-3/Qwen2/Mistral decoder stacks, vLLM/SGLang/TRT baselines, prefill/decode length sweeps (512--8192), quality eval (MMLU) as future work.
 
 \textbf{Verified in CI} (see \texttt{docs/PAPER\_REVISION\_TRACEABILITY.md}):
 \begin{itemize}
@@ -346,11 +346,11 @@ Isolated attention microbenchmarks and multi-model throughput \emph{design targe
 
 \subsection{Compiler Verification (E1--E3)}
 
-Fig.~\ref{fig:e1_e3_eval} summarizes the three evaluation experiments that connect compiler passes to serving behavior.\footnote{Repository CLI flags retain legacy names: E1 $\leftrightarrow$ \texttt{--mvp-a-e2e}, E2 $\leftrightarrow$ \texttt{--sharegpt-prefix-bench}, E3 $\leftrightarrow$ \texttt{--mvp-c-bench}.}
+Fig.~\ref{fig:e1_e3_eval} summarizes the three evaluation experiments that connect compiler passes to serving behavior.\footnote{Repository CLI: E1 $\leftrightarrow$ \texttt{--mvp-a-e2e}, E2 $\leftrightarrow$ \texttt{--shared-prefix-bench} (legacy \texttt{--sharegpt-prefix-bench}), E3 $\leftrightarrow$ \texttt{--mvp-c-bench}. Workload shapes: \texttt{docs/DECODER\_WORKLOAD\_ARCHITECTURES.md}.}
 
 \textbf{E1 (compile-time pass verification):} \texttt{llmir-compile --mvp-a-e2e} runs Algorithm~\ref{alg:block_opt} on single-layer IR, lowering to runtime calls; CI asserts block size reduction (e.g., 1024$\rightarrow$32) and numeric agreement with a reference kernel.
 
-\textbf{E2 (prefix-aware serving evaluation):} \texttt{llmir-benchmark --sharegpt-prefix-bench} simulates a long shared system prompt plus $N$ user variants. KV-layer simulation shows $\sim$4--5$\times$ speedup; \texttt{llmir\_paged} runs report rising \texttt{prefix\_hit\_tokens} after \texttt{warm\_prefix}.
+\textbf{E2 (prefix-aware serving evaluation):} \texttt{llmir-benchmark --shared-prefix-bench} exercises a \emph{shared-prefix decoder} workload (RAG / multi-tenant prefill): one long system context plus $N$ suffix variants on Llama/Qwen-class decoders. KV-layer simulation shows $\sim$4--5$\times$ speedup; \texttt{llmir\_paged} reports rising \texttt{prefix\_hit\_tokens} after \texttt{warm\_prefix}. gpt2 CI runs are integration smoke only (non-GQA legacy stack).
 
 \textbf{E3 (GPU-resident KV integration):} \texttt{TorchGpuPagedKVCache} implements block-paged GPU storage; \texttt{PagedKVDecoder} chains HuggingFace \texttt{past\_key\_values} to avoid per-step cache rebuild. \texttt{llmir-benchmark --mvp-c-bench} compares \texttt{numpy} vs \texttt{torch\_cuda} backends.
 
@@ -387,7 +387,7 @@ Qwen2.5-7B\textsuperscript{*} & 40 & --- & 84 & \texttt{external\_baselines.json
 
 \subsubsection{Prefix-heavy workloads (E2)}
 
-Figure~\ref{fig:prefix_ttft} reports measured E2 proxies: KV simulation at a 2048-token shared system prompt ($7.4\times$ latency reduction, \texttt{sharegpt\_2048\_sim.json}); reduced \texttt{prefill\_tokens\_computed} on gpt2 after \texttt{warm\_prefix} (\texttt{paper\_results.json}). The product win is prefill savings under prefix-heavy chat, not raw short-prompt throughput.
+Figure~\ref{fig:prefix_ttft} reports measured E2 proxies: KV simulation at the S2 RAG length bucket (2048-token shared prefix, $7.4\times$ latency reduction, \texttt{shared\_prefix\_decoder\_2048\_sim.json}); reduced \texttt{prefill\_tokens\_computed} on gpt2 after \texttt{warm\_prefix} (\texttt{paper\_results.json}). The product win is prefill savings under shared-prefix decoder loads, not raw short-prompt throughput.
 
 \begin{figure}[htbp]
 \centering
@@ -651,8 +651,6 @@ This work was supported by anonymous funding sources.
 \bibitem{b16} PyTorch Team, "Torch-MLIR," github.com/llvm/torch-mlir, 2023.
 
 \bibitem{b17} Google, "IREE," github.com/openxla/iree, 2023.
-
-\bibitem{b18} ShareGPT Team, "ShareGPT: Share your ChatGPT conversations," sharegpt.com, 2023.
 
 \bibitem{b19} D. Hendrycks et al., "Measuring massive multitask language understanding," ICLR, 2021.
 

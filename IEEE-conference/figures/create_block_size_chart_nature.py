@@ -12,7 +12,7 @@ from nature_style import NATURE_COLORS, apply_nature_style, despine, panel_label
 
 HERE = Path(__file__).resolve().parent
 
-# Illustrative sweep (ShareGPT-shaped workload; replace via E1 JSON when available)
+# Illustrative sweep (decoder length buckets; replace via E1 JSON when available)
 BLOCK_SIZES = np.array([16, 32, 64, 128, 256])
 THROUGHPUT = np.array([43479, 43318, 41670, 42181, 48407])
 FRAGMENTATION = np.array([15.0, 12.0, 8.5, 6.2, 4.8])  # lower is better

@@ -1,4 +1,4 @@
-"""MVP-B ShareGPT-style prefix benchmark tests."""
+"""E2 shared-prefix decoder workload tests (legacy module names)."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def test_run_sharegpt_simulation_only():
         run_simulation=True,
         run_llmir_paged=False,
     )
-    assert payload["mode"] == "sharegpt_prefix"
+    assert payload["mode"] == "shared_prefix_decoder"
     assert len(payload["results"]) == 2
 
 

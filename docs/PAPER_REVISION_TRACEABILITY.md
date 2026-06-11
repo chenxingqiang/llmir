@@ -7,7 +7,7 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | Paper ID | Full name | Legacy CLI / tests | Doc |
 |----------|-----------|-------------------|-----|
 | **E1** | Compile-Time Pass Verification | `llmir-compile --mvp-a-e2e`, `tests/test_mvp_a_e2e.py` | `docs/E1_COMPILE_PASS_VERIFICATION.md` |
-| **E2** | Prefix-Aware Serving Evaluation | `llmir-benchmark --sharegpt-prefix-bench`, `scripts/sharegpt_prefix_bench.py` | `docs/E2_PREFIX_SERVING_EVAL.md` |
+| **E2** | Prefix-Aware Serving Evaluation | `llmir-benchmark --shared-prefix-bench`, `scripts/sharegpt_prefix_bench.py` | `docs/E2_PREFIX_SERVING_EVAL.md`, `docs/DECODER_WORKLOAD_ARCHITECTURES.md` |
 | **E3** | GPU-Resident KV Integration | `llmir-benchmark --mvp-c-bench`, `tests/test_mvp_c_e2e.py` | `docs/E3_GPU_KV_INTEGRATION.md` |
 
 Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E3** only.
@@ -20,14 +20,14 @@ Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E
 | §3.1 model → IR → kernel (single layer) | `llmir-compile --mvp-a-e2e`, `src/llmir/compiler/mvp_pipeline.py` | **E1** |
 | Lower to runtime calls | `-llm-lower-kv-cache-ops` → `@mlir_llm_*` | Implemented (needs `llmir-opt`) |
 | Reference correctness | `tests/test_mvp_a_e2e.py`, `tests/test_compile_e2e.py` | CI (Python) |
-| §5 ShareGPT prefix / TTFT workload | `scripts/sharegpt_prefix_bench.py`, `llmir-benchmark --sharegpt-prefix-bench` | **E2** (sim + llmir_paged E2E) |
+| §5 shared-prefix decoder / TTFT workload | `scripts/sharegpt_prefix_bench.py`, `llmir-benchmark --shared-prefix-bench` | **E2** (sim + llmir_paged E2E) |
 | GPU KV without CPU NumPy round-trip | `TorchGpuPagedKVCache`, `PagedKVDecoder` GPU path, `llmir-benchmark --mvp-c-bench` | **E3** |
 | Native CUDA KV kernels | `libMLIRLLMRuntime` + `cuda_probe`, `LLMIR_KV_BACKEND=native` | **E3** (optional build) |
 | §5 evaluation scope | Main text: compiler verification + serving proxies only | **No operator-level claims** |
 | Operator / FlashAttention speedup | Appendix `app:future_ops` only | **Not LLMIR kernels** — `benchmark/attention/` toys |
 | Main-text throughput | Table measured_harness only | **gpt2 CPU** + **cited Qwen** |
 | Appendix scale-out | `app:projected` design targets | **Illustrative** |
-| Prefix TTFT Fig (2048) | `sharegpt_2048_sim.json` | **KV sim measured** |
+| Prefix TTFT Fig (2048) | `shared_prefix_decoder_2048_sim.json` | **KV sim measured** |
 
 ## Quick commands
 

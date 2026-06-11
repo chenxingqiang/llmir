@@ -10,7 +10,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 |----------------|-------------------|---------------|
 | Implementation / compile path | §4, Algorithm 1, **E1** | `BlockSizeAnalysis.cpp`, `tests/test_mvp_a_e2e.py`, `gpt2_e1_snippet.mlir` |
 | Model → IR → runtime | §3.1 pipeline, E1 lowering | `llmir-compile --mvp-a-e2e`, lit tests |
-| Prefix / ShareGPT workload | **E2**, Fig. prefix TTFT | `sharegpt_prefix_bench.py`, `sharegpt_2048_sim.json`, `paper_results.json` |
+| Prefix / shared-prefix decoder workload | **E2**, Fig. prefix TTFT | `sharegpt_prefix_bench.py`, `shared_prefix_decoder_2048_sim.json`, `paper_results.json` |
 | GPU KV without NumPy round-trip | **E3** | `TorchGpuPagedKVCache`, `tests/test_mvp_c_e2e.py` |
 | Measured decode baseline | gpt2 HF vs `llmir-paged` | `paper_results.json` |
 | External serving reference | Qwen vLLM cited row | `external_baselines.json` (Qwen official benchmark) |
@@ -32,7 +32,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 ### Review 1 — implementation & experimental detail
 
 - **Implementation depth**: Addressed in text + E1 (**verified**).
-- **Experimental setup (A100, ShareGPT, C4, MMLU)**: §5.1 now splits **target environment** vs **completed measurements**; only E1–E3 + gpt2 CPU + KV sim are in CI today.
+- **Experimental setup (A100, decoder length sweeps, MMLU)**: §5.1 splits **target environment** vs **completed measurements**; only E1–E3 + gpt2 CPU + KV sim are in CI today.
 
 ### Review 2 — IR flow, multi-model, kernel selection
 

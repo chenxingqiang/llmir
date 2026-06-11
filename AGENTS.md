@@ -76,6 +76,7 @@ llmir-benchmark --model llama3-8b --batch-sizes 1,4
 
 | 文档 | 用途 |
 |------|------|
+| [`docs/DECODER_WORKLOAD_ARCHITECTURES.md`](docs/DECODER_WORKLOAD_ARCHITECTURES.md) | 主流 decoder 架构 + S1/S2/S3 workload（不用 ShareGPT 命名） |
 | [`docs/CAPABILITY_MATRIX.md`](docs/CAPABILITY_MATRIX.md) | 功能真实实现程度（C++ / Python ref / Demo / Planned） |
 | [`docs/PAPER_REVISION_TRACEABILITY.md`](docs/PAPER_REVISION_TRACEABILITY.md) | 论文主张 ↔ 仓库证据（E1–E3、JSON、测试） |
 | [`IEEE-conference/REVISION_NOTES.md`](IEEE-conference/REVISION_NOTES.md) | 审稿意见映射与「已验证 / 投影 / 未来工作」边界 |
@@ -182,7 +183,7 @@ M7  E8 GPU 实测对标（可选实验室）
 | ID | 名称 | 验证命令 |
 |----|------|----------|
 | **E1** | Compile-Time Pass Verification | `pytest tests/test_mvp_a_e2e.py -m "not network"` |
-| **E2** | Prefix-Aware Serving Evaluation | `llmir-benchmark --sharegpt-prefix-bench` |
+| **E2** | Prefix-Aware Serving Evaluation | `llmir-benchmark --shared-prefix-bench` |
 | **E3** | GPU-Resident KV Integration | `pytest tests/test_mvp_c_e2e.py -m "not network"` |
 
 ### 二、Loop 1：工程持续迭代闭环（无限循环）
@@ -216,7 +217,7 @@ python3 scripts/paper_benchmark_collect.py --model gpt2
 | 层级 | 测什么 | 典型入口 |
 |------|--------|----------|
 | 编译 Pass | block size 改写、reference 数值一致 | E1、`llmir-compile --mvp-a-e2e` |
-| Serving 代理 | prefix 复用、TTFT/prefill token 代理 | E2、`sharegpt_prefix_bench.py` |
+| Serving 代理 | shared-prefix decoder prefill 复用 | E2、`docs/DECODER_WORKLOAD_ARCHITECTURES.md` |
 | Runtime 集成 | GPU KV 无 NumPy 往返 | E3、`llmir-benchmark --mvp-c-bench` |
 | 算子微基准 | attention toy kernel | `benchmark/attention/`（**非** hot path） |
 
@@ -245,7 +246,7 @@ Step 1 框架 & 短板定位 → Step 2 实验 & 数据 → Step 3 行文重构 
 | 类型 | 论文位置 | 仓库要求 |
 |------|----------|----------|
 | 编译验证 | §5 E1、`lst:e1_mlir` | `gpt2_e1_snippet.mlir`、E1 pytest |
-| Serving 代理 | §5 E2、`fig:prefix_ttft` | `sharegpt_2048_sim.json`、`paper_results.json` |
+| Serving 代理 | §5 E2、`fig:prefix_ttft` | `shared_prefix_decoder_2048_sim.json`、`paper_results.json` |
 | GPU KV | §5 E3、`fig:e1_e3_eval` | E3 pytest；panel c 标 illustrative |
 | decode 基线 | `tab:measured_harness` | gpt2 实测 + Qwen **引用** |
 | 算子/多模型 | Appendix | 脚注 *not measured in CI* |

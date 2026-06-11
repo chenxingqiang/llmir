@@ -57,7 +57,7 @@ LLMIR 论文长期对标 **OSDI / ASPLOS / PLDI / MLSys** 档 **LLM 编译与 IR
 
 ### E4 组合验证（可建模）应产出什么
 
-1. **输入：** ShareGPT 形状 trace（\(L_s, N, L_u\)）或 `sharegpt_*_sim.json` 同类参数
+1. **输入：** Decoder workload 参数 \((L_s, N, L_u, \text{arch})\)（S1/S2/S3 桶）或 `shared_prefix_decoder_*_sim.json`；`arch` 来自 `ModelRegistry`（Llama-3/Qwen2）
 2. **模型：**
    - E1 → 每序列 block 数 \(B(L)\) 随 `block_size` 变化
    - E2 → 重复 prefill token 数 \(\sum_i \mathbb{1}[\text{prefix hit}]\cdot L_s\)

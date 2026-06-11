@@ -7,7 +7,7 @@ Reproducible benchmarks and paper evaluation harnesses (E1–E3) for LLMIR. Run 
 | Script | Description |
 |--------|-------------|
 | `paper_benchmark_collect.py` | Writes `IEEE-conference/benchmarks/paper_results.json` |
-| `sharegpt_prefix_bench.py` | E2 ShareGPT-shaped prefix benchmark |
+| `sharegpt_prefix_bench.py` | E2 shared-prefix decoder workload (legacy filename) |
 | `plot_from_results.py` | Plots benchmark JSON (no hard-coded throughput) |
 | `cpu_inference_compare.py` | CPU HF vs `llmir-paged` vs optional vLLM |
 | `gpu_inference_compare.py` | GPU-oriented compare wrapper (CI workflow) |

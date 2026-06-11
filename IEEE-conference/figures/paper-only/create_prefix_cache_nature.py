@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E2 ShareGPT-style prefix cache — Nature style."""
+"""E2 shared-prefix decoder cache — Nature style."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def main() -> None:
     fig.text(
         0.5,
         0.02,
-        "E2 harness: sharegpt_prefix_bench.py / llmir-benchmark --sharegpt-prefix-bench.",
+        "E2 harness: shared-prefix decoder / llmir-benchmark --shared-prefix-bench.",
         ha="center",
         fontsize=6.5,
         color="#666666",

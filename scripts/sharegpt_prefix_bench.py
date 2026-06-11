@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MVP-B: ShareGPT-style prefix reuse benchmark (KV sim + llmir_paged E2E)."""
+"""E2: shared-prefix decoder workload (KV sim + llmir_paged E2E). Legacy script name."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from llmir.benchmark.sharegpt_prefix_bench import (
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="ShareGPT-style shared system prompt + N user variants (MVP-B)"
+        description="E2 shared-prefix decoder workload (legacy script name)"
     )
     parser.add_argument("--model", default="gpt2")
     parser.add_argument(
