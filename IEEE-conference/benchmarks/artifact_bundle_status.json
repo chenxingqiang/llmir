@@ -51,6 +51,27 @@
       "path": "/workspace/IEEE-conference/benchmarks/paper_results.json",
       "ok": true,
       "message": "ok"
+    },
+    {
+      "id": "e8_empirical_gpu",
+      "experiment": "E8",
+      "path": "/workspace/IEEE-conference/benchmarks/e8_empirical_gpu.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "e4_compositional_buckets",
+      "experiment": "E4",
+      "path": "/workspace/IEEE-conference/benchmarks/e4_compositional_buckets.json",
+      "ok": true,
+      "message": "ok"
+    },
+    {
+      "id": "e5_ablation_buckets",
+      "experiment": "E5",
+      "path": "/workspace/IEEE-conference/benchmarks/e5_ablation_buckets.json",
+      "ok": true,
+      "message": "ok"
     }
   ],
   "figures": [],
