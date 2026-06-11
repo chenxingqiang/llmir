@@ -1,126 +1,117 @@
 # 论文顶级标准对标（Top-Tier Bar）
 
-LLMIR 论文长期对标 **OSDI / SOSP / ASPLOS / MLSys** 档 LLM 推理编译与系统方向。本文档是 `AGENTS.md` § LOOPs 的展开版，用于 Loop 2 Step 1 短板定位与里程碑排期。
+LLMIR 论文长期对标 **OSDI / ASPLOS / PLDI / MLSys** 档 **LLM 编译与 IR** 方向（非 vLLM 替代品）。本文档是 `AGENTS.md` § LOOPs 的展开版。
 
-**现状定位：** ICCD 修订稿 = **Tier-B 诚实版**（E1–E3 可复现 + 主文不夸大）。投 Tier-A 前必须闭合 E4–E7。
-
----
-
-## 1. 领域顶级论文在问什么
-
-顶会审稿人通常用五句话压测全文：
-
-1. **Why compiler?** 为何 runtime（vLLM/SGLang）不够，compile-time 能带来什么可度量收益？
-2. **Why LLM-specific IR?** 为何不是 Torch-MLIR / XLA / TVM 加几条 pass？
-3. **Does it run end-to-end?** 优化是否在 **真实推理 hot path** 上生效，而非 microbench only？
-4. **Is the evaluation fair?** 基线、模型、硬件、workload 是否与 SOTA 对齐？
-5. **Can I reproduce it?** Artifact / 开源 / 固定环境能否复现主表？
-
-LLMIR 当前最强叙事：**(3) 的部分答案** — E1–E3 证明 compiler→serving 链路可验证；**(4)(5) 在 gpt2/CPU 档部分满足**；**(1)(2) 有设计，需 E4+ 数据支撑**。
+**现状定位：** ICCD 修订稿 = Tier-B 诚实版（E1–E3）。Tier-A **编译向**目标 = 闭合 **A 类可验证证据（E1–E6）**，不把 **7B A100 实测对标** 作为理论或必要门槛。
 
 ---
 
-## 2. 六维验收详表
+## 1. 证据二分法（核心修正）
 
-### 2.1 问题重要性（Problem）
+### 1.1 为何原「E4 端到端对标」不能作为理论验证
 
-| Tier-A 标准 | 当前 | 下一步 |
-|-------------|------|--------|
-| 生产 LLM 推理成本/延迟有量化背景 | 引言定性 | 引用 vLLM/行业报告或自有 trace |
-| 明确 runtime-only 天花板（跨请求、跨层） | §1–2 已有 | 补 1 个「仅 runtime 做不到」的可编译例子（prefix + block co-design） |
+「LLMIR vs vLLM/HF，7B+，A100，同 harness 吞吐/延迟」依赖：
 
-### 2.2 技术新颖性（Novelty）
+- 特定 GPU SKU、驱动、CUDA、cuDNN、Flash kernel 版本
+- vLLM 连续批处理、PagedAttention CUDA 实现、调度策略
+- 模型权重精度、量化、TP/PP 配置
+- 网络、磁盘、HF 实现细节
 
-| Tier-A 标准 | 当前 | 下一步 |
-|-------------|------|--------|
-| 新 IR 类型/不变量（PagedKVCache 等） | Dialect + 类型定义 | 补语义不变量段落或 lit 证明 |
-| 新 Pass / 算法（block size 等） | Algorithm 1 + E1 | E5 消融量化 Pass 收益 |
-| 与最接近工作清晰分界 | Table related | 增 Torch-MLIR / MLC 对比表（能力维，非性能） |
+上述因素 **无法从 IR/Pass 正确性推导**，不存在「理论建模即可闭合」的证明路径。因此它属于 **B 类 · 实测对标**，只能进实验室或 **可选 E8**，**不能** 作为 compiler 创新是否成立的必要条件。
 
-### 2.3 系统完整性（System）
+### 1.2 A 类 vs B 类
 
-| Tier-A 标准 | 当前 | 下一步 |
-|-------------|------|--------|
-| Model import | Toy / partial | Llama-3-8B 或 Qwen2.5-7B import 路径 |
-| Pass pipeline | 单层 + lit | 多层 / 全图 pass pipeline |
-| Lowering + codegen | 部分 C++/CUDA | **M2**：`llm.paged_attention` 执行在 hot path |
-| Serving integration | `llmir_paged` + vLLM pass-through | E4 同 harness 对标 |
+| 类型 | 问什么 | 典型方法 | LLMIR 实验 |
+|------|--------|----------|------------|
+| **A · 可验证** | Pass 对吗？语义变了吗？组合 proxy 可算吗？ | lit、pytest、reference、KV 仿真、trace 公式 | E1–E6 |
+| **B · 实测对标** | 生产集群谁更快？ | 同机 benchmark、多轮统计 | **E8**（可选） |
 
-### 2.4 实验严谨性（Evaluation）
-
-| Tier-A 标准 | 当前 | 下一步 |
-|-------------|------|--------|
-| 模型规模 | gpt2（integration） | ≥7B ×2 家族 |
-| 硬件 | CPU 为主；GPU 局部 | A100/L40 固定 SKU + CI nightly |
-| Workload | ShareGPT 形状 sim + proxy | 真实 trace 或标准 bench（ShareGPT, HumanEval 长度分布） |
-| 基线 | HF, 引用 Qwen/vLLM | 同机 vLLM, TRT-LLM, SGLang（能装则装） |
-| 指标 | tok/s, prefix tokens, TTFT proxy | p50/p99 TTFT, throughput@batch, KV memory |
-| 消融 | 附录 illustrative | E5 实测开关 |
-| 统计 | 单次或少量 | ≥3 run, 方差/置信区间 |
-
-### 2.5 对标诚实性（Positioning）
-
-| 规则 | 说明 |
-|------|------|
-| 主文 measured 必须有 JSON + 命令 | 见 `PAPER_REVISION_TRACEABILITY.md` |
-| 引用第三方数字须标明 **cited, not LLMIR** | `external_baselines.json` |
-| 投影/设计目标仅附录 + 脚注 | `app:projected` |
-| 禁止无 harness 的「优于 FlashAttention」 | `app:future_ops` |
-
-### 2.6 可复现性（Artifact）
-
-| Tier-A 标准 | 当前 | 下一步 |
-|-------------|------|--------|
-| 公开仓库 + 标签版本 | 是 | 投稿打 `paper-iccd-2025` tag |
-| 一键复现主实验 | E1–E3 脚本 | `scripts/reproduce_paper.sh` |
-| 硬件说明 | 部分 | `docs/HARDWARE.md` 固定 SKU |
-| CI badge | Python offline CI | GPU workflow + artifact upload |
+**顶会 compiler 稿的正当叙事：** 把 runtime 难以静态做的 **block / prefix / KV 布局** 提升到 compile-time；用 **A 类链条** 证明「设计成立 + 收益可分析 + 实现可复现」。B 类是 **生态位补充**，不是理论内核。
 
 ---
 
-## 3. 实验档位定义（E1–E7）
+## 2. 领域顶级论文在问什么（编译向改写）
 
-| ID | 名称 | Tier-B (ICCD) | Tier-A (OSDI/MLSys) |
-|----|------|---------------|---------------------|
-| E1 | Compile-Time Pass Verification | **主文** | 主文（基础门槛） |
-| E2 | Prefix-Aware Serving Evaluation | **主文** | 主文 + 真实 trace |
-| E3 | GPU-Resident KV Integration | **主文**（panel c illustrative） | 主文全实测 |
-| E4 | End-to-End Serving Parity | 附录/未来 | **主文必需** |
-| E5 | Ablation Study | 附录 illustrative | **主文必需** |
-| E6 | Multi-Hardware Matrix | 未来 | **主文必需** |
-| E7 | Quality Preservation | 未来 | 强烈建议 |
+1. **Why compiler?** compile-time 能 **确定性地** 改变哪些量（block 数、重复 prefill、host 拷贝）？
+2. **Why LLM-specific IR?** 这些量为何在通用 tensor IR 里 **不可表达或不可分析**？
+3. **Is it correct?** Pass 是否保持语义？（E1 + lit）
+4. **Is the benefit compositional?** E1+E2+E3 能否在 trace 上 **相加/上界**？（**E4**）
+5. **Can I reproduce without your GPU farm?** E1–E5 是否 CPU/CI 可跑？
+
+第 4 条用 **E4 组合验证** 回答，而非「我们比 vLLM 快 X%」。
 
 ---
 
-## 4. 里程碑与依赖
+## 3. 实验档位（E1–E8）
+
+| ID | 名称 | 类型 | Tier-B | Tier-A 编译向 |
+|----|------|------|--------|---------------|
+| E1 | Compile-Time Pass Verification | A | 主文 | 主文 |
+| E2 | Prefix-Aware Serving Evaluation | A | 主文 | 主文 |
+| E3 | GPU-Resident KV Integration | A | 主文 | 主文 |
+| **E4** | **Compositional / Trace-Driven Verification** | **A** | 未来 | **主文必需** |
+| E5 | Ablation at Verifiable Layers | A | 附录 | 主文 |
+| E6 | Multi-Backend Correctness Parity | A (+性能分写) | 未来 | 主文（正确性） |
+| E7 | Quality Preservation (PPL/MMLU) | B | 未来 | 可选 |
+| **E8** | Empirical E2E vs vLLM (7B+, A100) | **B** | 不做 | **可选加分** |
+
+### E4 组合验证（可建模）应产出什么
+
+1. **输入：** ShareGPT 形状 trace（\(L_s, N, L_u\)）或 `sharegpt_*_sim.json` 同类参数
+2. **模型：**
+   - E1 → 每序列 block 数 \(B(L)\) 随 `block_size` 变化
+   - E2 → 重复 prefill token 数 \(\sum_i \mathbb{1}[\text{prefix hit}]\cdot L_s\)
+   - E3 → 每 decode 步 host↔device 拷贝次数上界（numpy vs torch_cuda）
+3. **输出：** 可复现脚本 + JSON；论文一张「分析 vs 实测 proxy」对照表（允许 gpt2/仿真档）
+4. **禁止：** 将 E4 结论写成「已证明端到端优于 vLLM」
+
+### E8 实测对标（若做）应如何写
+
+- 单独小节或附录，标题含 **Empirical comparison, same harness**
+- 脚注：硬件 SKU、驱动、vLLM 版本、batch 策略
+- **不与 E4 组合公式混为一条定理**
+
+---
+
+## 4. 六维验收（编译向）
+
+| 维度 | Tier-A 期待 | 验证手段 | 是否依赖 E8 |
+|------|-------------|----------|-------------|
+| 问题重要性 | compile-time 可静态优化的量清晰 | 引言 + E4 trace 示例 | 否 |
+| 技术新颖性 | LLM IR 语义 + Pass | Dialect + E1 | 否 |
+| 系统完整性 | IR → runtime 链路 | E1–E3 + M5 hot path | 否 |
+| 实验严谨性 | A 类可复现 + 消融 | E1–E6 | 否 |
+| 对标诚实性 | A/B 分类清晰 | 正文措辞 | 否 |
+| 可复现性 | CPU CI 复现主 claim | E1–E5 artifact | 否 |
+
+---
+
+## 5. 里程碑
 
 ```
-M1  E1 单层 IR + CI               [done]
-M2  Hot-path lowered execution      [blocker for E4]
-M3  GPU harness 7B+                 [blocker for E4]
-M4  Ablation flags → JSON           [E5]
-M5  Multi-SKU benchmark matrix      [E6]
-M6  Artifact bundle + doc           [MLSys AE]
+M1  E1 单层 IR + CI                    [done]
+M2  E4 trace/compositional 脚本 + JSON  [Tier-A 编译向核心]
+M3  E5 消融开关
+M4  E6 多后端 parity
+M5  hot-path lowered op（完整性）
+M6  artifact 包（E1–E5，CPU 可跑）
+M7  E8 GPU 实测（可选，不阻塞 M6）
 ```
 
-**建议排期逻辑：** M2 ∥ M3 可部分并行；E4 依赖 M2+M3；E5 依赖 E4 框架；E6 依赖 E4 稳定；M6 与投稿同步。
+---
+
+## 6. 写作层级
+
+| 元素 | ICCD 现稿 | Tier-A 编译向 |
+|------|-----------|---------------|
+| 摘要 | verify, demonstrate, proxy | verify + **compositional analysis** |
+| 主文实验 | E1–E3 | E1–E6（A 类） |
+| 端到端比 vLLM | 不做 / 引用第三方 | 仅 **E8** 可选附录 |
+| 结论 | 链路可验证 | **可静态分析的优化空间** + 适用边界 |
 
 ---
 
-## 5. 写作层级：同一仓库，两档文稿
+## 7. 维护
 
-| 元素 | ICCD 修订稿（现在） | Tier-A 目标稿 |
-|------|---------------------|---------------|
-| 摘要动词 | verify, demonstrate, proxy | improve, outperform (同 harness), reduce |
-| §5 主文 | E1–E3 + 诚实表 | E1–E7 |
-| 附录 | projected + future_ops | 仅补充材料，无主 claim |
-| 结论 | 链路已验证；scale-out 未来 | 量化端到端收益 + 适用边界 |
-
-**原则：** 不把 Tier-A 语言提前写进现稿；用本表驱动 Loop 1，达标后再升稿。
-
----
-
-## 6. 维护
-
-- 每闭合一个里程碑：更新本文件状态列 + `CAPABILITY_MATRIX.md` + `PAPER_REVISION_TRACEABILITY.md`。
-- Loop 2 返修时：审稿意见映射到 **六维** 或 **E4–E7** 缺口，避免只改措辞。
+- 新增实验先标 **A/B**，再决定能否进摘要。
+- 审稿意见要求「比 vLLM 快」→ 能转 **E4 组合分析** 则转；否则 **E8 实测** 或 **收窄 scope**，不写假定理。
