@@ -25,9 +25,9 @@ LLMIR 默认模型注册表（`llmir-list-models`）仅保留三大 **开源** d
 | **Qwen3** | `qwen3-14b` | `Qwen/Qwen3-14B` | GQA | SwiGLU | 40×5120 |
 | **Qwen2.5** | `qwen2.5-7b` | `Qwen/Qwen2.5-7B-Instruct` | GQA | SwiGLU | 28×3584 |
 | **Qwen2.5** | `qwen2.5-72b` | `Qwen/Qwen2.5-72B-Instruct` | GQA | SwiGLU | 80×8192 |
-| **Gemma 3** | `gemma-3-4b` | `google/gemma-3-4b-it` | GQA + SWA | GeGLU | 34×2560 |
-| **Gemma 3** | `gemma-3-12b` | `google/gemma-3-12b-it` | GQA + SWA | GeGLU | 48×3840 |
-| **Gemma 3** | `gemma-3-27b` | `google/gemma-3-27b-it` | GQA + SWA | GeGLU | 62×5376 |
+| **Gemma 3**（开源） | `gemma-3-4b` | [`google/gemma-3-4b-it`](https://huggingface.co/google/gemma-3-4b-it) | GQA + SWA | GeGLU | 34×2560 |
+| **Gemma 3**（开源） | `gemma-3-12b` | [`google/gemma-3-12b-it`](https://huggingface.co/google/gemma-3-12b-it) | GQA + SWA | GeGLU | 48×3840 |
+| **Gemma 3**（开源） | `gemma-3-27b` | [`google/gemma-3-27b-it`](https://huggingface.co/google/gemma-3-27b-it) | GQA + SWA | GeGLU | 62×5376 |
 | **DeepSeek** | `deepseek-v3` | `deepseek-ai/DeepSeek-V3` | MLA + MoE | SwiGLU | 61×7168 |
 | **DeepSeek** | `deepseek-r1` | `deepseek-ai/DeepSeek-R1` | MLA + MoE | SwiGLU | 同 V3 |
 
@@ -68,6 +68,6 @@ llmir-benchmark --shared-prefix-bench --model deepseek-v3 \
 
 ## 4. 论文写法
 
-- 主对标：**Qwen3 / Gemma 3 / DeepSeek-V3** decoder 算子栈
+- 主对标：**Qwen3 / 开源 Gemma 3 / DeepSeek-V3** decoder 算子栈（均可 `from_pretrained` 复现）
 - 不用 ShareGPT 数据集命名；用 S1/S2/S3 长度桶
 - `gpt2` 仅脚注为 legacy integration smoke

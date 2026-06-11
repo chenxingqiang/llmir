@@ -1,0 +1,73 @@
+{
+  "experiment": "E4",
+  "mode": "compositional_verification",
+  "trace": {
+    "shared_prefix_tokens": 2048,
+    "num_requests": 32,
+    "suffix_tokens": 8,
+    "decode_steps": 4,
+    "block_size_before": 1024,
+    "block_size_after": 32,
+    "model_preset": "gpt2"
+  },
+  "e1_block_sizing": {
+    "seq_lengths": [
+      2048,
+      8,
+      2056
+    ],
+    "algorithm1_optimal_block_size": 64,
+    "block_size_attr_before": 1024,
+    "block_size_attr_after_e1_pass": 64,
+    "block_size_reduction_ratio": 0.9375,
+    "blocks_per_request_before_attr": 3,
+    "blocks_per_request_after_e1_pass": 33,
+    "total_kv_blocks_all_requests_before": 96,
+    "total_kv_blocks_all_requests_after_e1_pass": 1056,
+    "allocated_tokens_all_lengths_before": 6144,
+    "allocated_tokens_all_lengths_after_e1_pass": 4224,
+    "allocated_tokens_reduction_ratio": 0.3125,
+    "fragmentation_score_at_optimal": 0.3005050505050505
+  },
+  "e2_prefix_prefill": {
+    "cold_prefill_tokens_total": 65792,
+    "warm_prefill_tokens_total": 2304,
+    "saved_prefill_tokens": 63488,
+    "prefill_reduction_ratio": 0.9649805447470817,
+    "ideal_kv_layer_speedup_upper_bound": 28.555555555555557
+  },
+  "e3_kv_host_copies": {
+    "decode_steps_per_request": 4,
+    "total_decode_steps": 128,
+    "numpy_host_round_trips_total": 256,
+    "torch_cuda_host_round_trips_total": 0,
+    "host_copy_reduction_ratio": 1.0
+  },
+  "composite": {
+    "claim_scope": "Analytical compositional bounds for compile-time block/prefix/KV integration; not end-to-end vs vLLM throughput.",
+    "model": {
+      "model_preset": "gpt2"
+    },
+    "compile_time_levers": {
+      "e1_block_size_reduction": 0.9375,
+      "e1_allocated_tokens_reduction": 0.3125,
+      "e2_prefill_token_reduction": 0.9649805447470817,
+      "e3_host_copy_elimination": 1.0
+    }
+  },
+  "measured_comparison": {
+    "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json",
+    "ideal_kv_speedup_model": 28.555555555555557,
+    "measured_kv_sim_speedup": 7.7103671817251,
+    "measured_within_ideal_bound": true,
+    "config": {
+      "system_prompt_tokens": 2048,
+      "num_requests": 32,
+      "user_suffix_tokens": 8,
+      "max_new_tokens": 4,
+      "model": "gpt2",
+      "device": "auto",
+      "warmup_requests": 0
+    }
+  }
+}

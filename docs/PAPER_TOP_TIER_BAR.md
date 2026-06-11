@@ -90,7 +90,7 @@ LLMIR 论文长期对标 **OSDI / ASPLOS / PLDI / MLSys** 档 **LLM 编译与 IR
 
 ```
 M1  E1 单层 IR + CI                    [done]
-M2  E4 trace/compositional 脚本 + JSON  [Tier-A 编译向核心]
+M2  E4 trace/compositional 脚本 + JSON  [done]
 M3  E5 消融开关
 M4  E6 多后端 parity
 M5  hot-path lowered op（完整性）

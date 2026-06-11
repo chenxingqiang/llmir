@@ -2,13 +2,14 @@
 
 Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiable** artifacts in this repository.
 
-## Paper experiment naming (E1–E3)
+## Paper experiment naming (E1–E4)
 
 | Paper ID | Full name | Legacy CLI / tests | Doc |
 |----------|-----------|-------------------|-----|
 | **E1** | Compile-Time Pass Verification | `llmir-compile --mvp-a-e2e`, `tests/test_mvp_a_e2e.py` | `docs/E1_COMPILE_PASS_VERIFICATION.md` |
 | **E2** | Prefix-Aware Serving Evaluation | `llmir-benchmark --shared-prefix-bench`, `scripts/sharegpt_prefix_bench.py` | `docs/E2_PREFIX_SERVING_EVAL.md`, `docs/DECODER_WORKLOAD_ARCHITECTURES.md` |
 | **E3** | GPU-Resident KV Integration | `llmir-benchmark --mvp-c-bench`, `tests/test_mvp_c_e2e.py` | `docs/E3_GPU_KV_INTEGRATION.md` |
+| **E4** | Compositional / Trace-Driven Verification | `scripts/e4_compositional_verify.py`, `tests/test_e4_compositional.py` | `docs/E4_COMPOSITIONAL_VERIFICATION.md` |
 
 Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E3** only.
 
@@ -28,6 +29,7 @@ Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E
 | Main-text throughput | Table measured_harness only | **gpt2 CPU** + **cited Qwen** |
 | Appendix scale-out | `app:projected` design targets | **Illustrative** |
 | Prefix TTFT Fig (2048) | `shared_prefix_decoder_2048_sim.json` | **KV sim measured** |
+| E4 compositional (E1+E2+E3 trace) | `e4_compositional.json`, `scripts/reproduce_paper.sh` | **Analytical + E2 sim bound** |
 
 ## Quick commands
 
@@ -39,9 +41,17 @@ pytest tests/test_mvp_a_e2e.py -m "not network" -q
 pytest tests/test_torch_gpu_kv_cache.py tests/test_mvp_c_e2e.py -m "not network" -q
 llmir-benchmark --mvp-c-bench --model gpt2 -o mvp_c.json
 
+# E4 compositional (CPU, no GPU)
+pytest tests/test_e4_compositional.py -q
+python3 scripts/e4_compositional_verify.py --from-sim \
+  IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
+
 # Paper measured JSON + figures
 python3 scripts/paper_benchmark_collect.py --model gpt2
 python3 IEEE-conference/figures/create_measured_figures_nature.py
+
+# Full A-class reproduce (E1–E4 + figures)
+bash scripts/reproduce_paper.sh
 
 # Full path when llmir-opt is on PATH
 llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \

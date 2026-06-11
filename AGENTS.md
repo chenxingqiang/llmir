@@ -135,7 +135,7 @@ LLMIR 是 **编译器 / IR** 贡献，不是 serving 框架替换。证据分两
 | 已具备 | **E1** | Pass 正确性 + block rewrite | A · 可证明 | **主文必需** |
 | 已具备 | **E2** | Prefix / TTFT 代理 | A · 可仿真 | **主文必需** |
 | 已具备 | **E3** | GPU KV 集成正确性 | A · 可单测 | **主文必需** |
-| 待建设 | **E4** | **组合验证**：E1 block 策略 + E2 prefix 命中率 + E3 拷贝次数 → trace 上 prefill/KV **可计算上界** | A · 建模 | **主文必需**（替代 7B 对标） |
+| 已实现 | **E4** | **组合验证**：E1 block 策略 + E2 prefix 命中率 + E3 拷贝次数 → trace 上 prefill/KV **可计算上界** | A · 建模 | `scripts/e4_compositional_verify.py` |
 | 待建设 | **E5** | **可验证消融**：关 Pass / prefix / block-opt，各层 proxy 变化可预期 | A · 开关+JSON | **主文必需** |
 | 待建设 | **E6** | **多后端正确性**：CPU/GPU/native 输出一致；性能分面板、不混口径 | A 正确性 + B 性能 | 正确性必需 |
 | 可选 | **E7** | 质量无损 PPL/MMLU | B · 实测 | 加分 |
@@ -151,7 +151,7 @@ LLMIR 是 **编译器 / IR** 贡献，不是 serving 框架替换。证据分两
 
 ```
 M1  E1 单层 IR 闭环              ← 已完成
-M2  E4 trace 驱动组合验证脚本     ← Tier-A（编译向）核心
+M2  E4 trace 驱动组合验证脚本     ← Tier-A（编译向）核心 [done]
 M3  E5 消融开关 + JSON schema
 M4  E6 多后端正确性 parity tests
 M5  Lowered op hot path（增强 E1）← 强化完整性，非 E8 前置
@@ -277,7 +277,8 @@ python3 IEEE-conference/figures/generate_projected_figures.py  # 仅附录
 ### 五、论文对齐验证清单（收工前必跑）
 
 ```bash
-pytest tests/test_mvp_a_e2e.py tests/test_mvp_c_e2e.py tests/test_sharegpt_prefix_bench.py -m "not network" -q
+pytest tests/test_mvp_a_e2e.py tests/test_mvp_c_e2e.py tests/test_sharegpt_prefix_bench.py tests/test_e4_compositional.py -m "not network" -q
+python3 scripts/e4_compositional_verify.py --from-sim IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 python3 -c "
 import json; from pathlib import Path
 p=json.loads(Path('IEEE-conference/benchmarks/paper_results.json').read_text())
@@ -287,7 +288,7 @@ print('paper_results OK')
 python3 IEEE-conference/figures/generate_all_nature_figures.py
 ```
 
-**Definition of Done：** traceability 可核对；主文无未标注的 operator/多卡 measured 口吻；图由脚本生成；E1–E3 命名统一。
+**Definition of Done：** traceability 可核对；主文无未标注的 operator/多卡 measured 口吻；图由脚本生成；E1–E4 命名统一。
 
 ### 六、落地规范
 

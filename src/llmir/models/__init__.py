@@ -808,7 +808,7 @@ class GemmaOptimizer(ModelOptimizer):
 
     @classmethod
     def for_gemma3_4b(cls) -> "GemmaOptimizer":
-        """Gemma 3 4B (Google open-weight). HF: google/gemma-3-4b-it."""
+        """Gemma 3 4B — Google open-source. HF: google/gemma-3-4b-it."""
         return cls(
             ModelConfig(
                 architecture=ModelArchitecture.GEMMA,
