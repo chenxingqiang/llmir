@@ -10,11 +10,17 @@ python3 scripts/e4_compositional_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 
 pytest tests/test_e4_compositional.py -q
+
+# All S1/S2/S3 buckets
+python3 scripts/e4_e5_multi_bucket_verify.py --e4-only
+pytest tests/test_e4_e5_multi_bucket.py -q
 ```
 
 ## Output
 
-`IEEE-conference/benchmarks/e4_compositional.json`
+`IEEE-conference/benchmarks/e4_compositional.json` (S2 primary artifact for M6)
+
+`IEEE-conference/benchmarks/e4_compositional_buckets.json` (S1/S2/S3 aggregate)
 
 | Section | Meaning |
 |---------|---------|

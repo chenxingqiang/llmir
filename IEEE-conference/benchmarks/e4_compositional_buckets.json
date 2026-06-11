@@ -1,0 +1,241 @@
+{
+  "experiment": "E4",
+  "mode": "multi_bucket_compositional",
+  "benchmarks_dir": "/workspace/IEEE-conference/benchmarks",
+  "buckets": [
+    {
+      "bucket_id": "S1",
+      "bucket_label": "short multi-tenant",
+      "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_128_sim.json",
+      "analysis": {
+        "experiment": "E4",
+        "mode": "compositional_verification",
+        "trace": {
+          "shared_prefix_tokens": 128,
+          "num_requests": 32,
+          "suffix_tokens": 16,
+          "decode_steps": 4,
+          "block_size_before": 1024,
+          "block_size_after": 32,
+          "model_preset": "gpt2"
+        },
+        "e1_block_sizing": {
+          "seq_lengths": [
+            128,
+            16,
+            144
+          ],
+          "algorithm1_optimal_block_size": 32,
+          "block_size_attr_before": 1024,
+          "block_size_attr_after_e1_pass": 32,
+          "block_size_reduction_ratio": 0.96875,
+          "blocks_per_request_before_attr": 1,
+          "blocks_per_request_after_e1_pass": 5,
+          "total_kv_blocks_all_requests_before": 32,
+          "total_kv_blocks_all_requests_after_e1_pass": 160,
+          "allocated_tokens_all_lengths_before": 3072,
+          "allocated_tokens_all_lengths_after_e1_pass": 320,
+          "allocated_tokens_reduction_ratio": 0.8958333333333334,
+          "fragmentation_score_at_optimal": 0.19999999999999998
+        },
+        "e2_prefix_prefill": {
+          "cold_prefill_tokens_total": 4608,
+          "warm_prefill_tokens_total": 640,
+          "saved_prefill_tokens": 3968,
+          "prefill_reduction_ratio": 0.8611111111111112,
+          "ideal_kv_layer_speedup_upper_bound": 7.2
+        },
+        "e3_kv_host_copies": {
+          "decode_steps_per_request": 4,
+          "total_decode_steps": 128,
+          "numpy_host_round_trips_total": 256,
+          "torch_cuda_host_round_trips_total": 0,
+          "host_copy_reduction_ratio": 1.0
+        },
+        "composite": {
+          "claim_scope": "Analytical compositional bounds for compile-time block/prefix/KV integration; not end-to-end vs vLLM throughput.",
+          "model": {
+            "model_preset": "gpt2"
+          },
+          "compile_time_levers": {
+            "e1_block_size_reduction": 0.96875,
+            "e1_allocated_tokens_reduction": 0.8958333333333334,
+            "e2_prefill_token_reduction": 0.8611111111111112,
+            "e3_host_copy_elimination": 1.0
+          }
+        },
+        "measured_comparison": {
+          "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_128_sim.json",
+          "ideal_kv_speedup_model": 7.2,
+          "measured_kv_sim_speedup": 3.566188911770923,
+          "measured_within_ideal_bound": true,
+          "config": {
+            "system_prompt_tokens": 128,
+            "num_requests": 32,
+            "user_suffix_tokens": 16,
+            "max_new_tokens": 4,
+            "model": "gpt2",
+            "device": "auto",
+            "warmup_requests": 0
+          }
+        }
+      }
+    },
+    {
+      "bucket_id": "S2",
+      "bucket_label": "RAG shared system",
+      "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json",
+      "analysis": {
+        "experiment": "E4",
+        "mode": "compositional_verification",
+        "trace": {
+          "shared_prefix_tokens": 2048,
+          "num_requests": 32,
+          "suffix_tokens": 8,
+          "decode_steps": 4,
+          "block_size_before": 1024,
+          "block_size_after": 32,
+          "model_preset": "gpt2"
+        },
+        "e1_block_sizing": {
+          "seq_lengths": [
+            2048,
+            8,
+            2056
+          ],
+          "algorithm1_optimal_block_size": 64,
+          "block_size_attr_before": 1024,
+          "block_size_attr_after_e1_pass": 64,
+          "block_size_reduction_ratio": 0.9375,
+          "blocks_per_request_before_attr": 3,
+          "blocks_per_request_after_e1_pass": 33,
+          "total_kv_blocks_all_requests_before": 96,
+          "total_kv_blocks_all_requests_after_e1_pass": 1056,
+          "allocated_tokens_all_lengths_before": 6144,
+          "allocated_tokens_all_lengths_after_e1_pass": 4224,
+          "allocated_tokens_reduction_ratio": 0.3125,
+          "fragmentation_score_at_optimal": 0.3005050505050505
+        },
+        "e2_prefix_prefill": {
+          "cold_prefill_tokens_total": 65792,
+          "warm_prefill_tokens_total": 2304,
+          "saved_prefill_tokens": 63488,
+          "prefill_reduction_ratio": 0.9649805447470817,
+          "ideal_kv_layer_speedup_upper_bound": 28.555555555555557
+        },
+        "e3_kv_host_copies": {
+          "decode_steps_per_request": 4,
+          "total_decode_steps": 128,
+          "numpy_host_round_trips_total": 256,
+          "torch_cuda_host_round_trips_total": 0,
+          "host_copy_reduction_ratio": 1.0
+        },
+        "composite": {
+          "claim_scope": "Analytical compositional bounds for compile-time block/prefix/KV integration; not end-to-end vs vLLM throughput.",
+          "model": {
+            "model_preset": "gpt2"
+          },
+          "compile_time_levers": {
+            "e1_block_size_reduction": 0.9375,
+            "e1_allocated_tokens_reduction": 0.3125,
+            "e2_prefill_token_reduction": 0.9649805447470817,
+            "e3_host_copy_elimination": 1.0
+          }
+        },
+        "measured_comparison": {
+          "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json",
+          "ideal_kv_speedup_model": 28.555555555555557,
+          "measured_kv_sim_speedup": 7.7103671817251,
+          "measured_within_ideal_bound": true,
+          "config": {
+            "system_prompt_tokens": 2048,
+            "num_requests": 32,
+            "user_suffix_tokens": 8,
+            "max_new_tokens": 4,
+            "model": "gpt2",
+            "device": "auto",
+            "warmup_requests": 0
+          }
+        }
+      }
+    },
+    {
+      "bucket_id": "S3",
+      "bucket_label": "long document prefill",
+      "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_8192_sim.json",
+      "analysis": {
+        "experiment": "E4",
+        "mode": "compositional_verification",
+        "trace": {
+          "shared_prefix_tokens": 8192,
+          "num_requests": 16,
+          "suffix_tokens": 64,
+          "decode_steps": 4,
+          "block_size_before": 1024,
+          "block_size_after": 32,
+          "model_preset": "gpt2"
+        },
+        "e1_block_sizing": {
+          "seq_lengths": [
+            8192,
+            64,
+            8256
+          ],
+          "algorithm1_optimal_block_size": 64,
+          "block_size_attr_before": 1024,
+          "block_size_attr_after_e1_pass": 64,
+          "block_size_reduction_ratio": 0.9375,
+          "blocks_per_request_before_attr": 9,
+          "blocks_per_request_after_e1_pass": 129,
+          "total_kv_blocks_all_requests_before": 144,
+          "total_kv_blocks_all_requests_after_e1_pass": 2064,
+          "allocated_tokens_all_lengths_before": 18432,
+          "allocated_tokens_all_lengths_after_e1_pass": 16512,
+          "allocated_tokens_reduction_ratio": 0.10416666666666663,
+          "fragmentation_score_at_optimal": 0.0
+        },
+        "e2_prefix_prefill": {
+          "cold_prefill_tokens_total": 132096,
+          "warm_prefill_tokens_total": 9216,
+          "saved_prefill_tokens": 122880,
+          "prefill_reduction_ratio": 0.9302325581395349,
+          "ideal_kv_layer_speedup_upper_bound": 14.333333333333334
+        },
+        "e3_kv_host_copies": {
+          "decode_steps_per_request": 4,
+          "total_decode_steps": 64,
+          "numpy_host_round_trips_total": 128,
+          "torch_cuda_host_round_trips_total": 0,
+          "host_copy_reduction_ratio": 1.0
+        },
+        "composite": {
+          "claim_scope": "Analytical compositional bounds for compile-time block/prefix/KV integration; not end-to-end vs vLLM throughput.",
+          "model": {
+            "model_preset": "gpt2"
+          },
+          "compile_time_levers": {
+            "e1_block_size_reduction": 0.9375,
+            "e1_allocated_tokens_reduction": 0.10416666666666663,
+            "e2_prefill_token_reduction": 0.9302325581395349,
+            "e3_host_copy_elimination": 1.0
+          }
+        },
+        "measured_comparison": {
+          "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_8192_sim.json",
+          "ideal_kv_speedup_model": 14.333333333333334,
+          "measured_kv_sim_speedup": 7.3885736671689415,
+          "measured_within_ideal_bound": true,
+          "config": {
+            "system_prompt_tokens": 8192,
+            "num_requests": 16,
+            "user_suffix_tokens": 64,
+            "max_new_tokens": 4,
+            "model": "gpt2",
+            "device": "auto",
+            "warmup_requests": 0
+          }
+        }
+      }
+    }
+  ]
+}

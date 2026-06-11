@@ -1,0 +1,1087 @@
+{
+  "experiment": "E5",
+  "mode": "multi_bucket_ablation",
+  "benchmarks_dir": "/workspace/IEEE-conference/benchmarks",
+  "buckets": [
+    {
+      "bucket_id": "S1",
+      "bucket_label": "short multi-tenant",
+      "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_128_sim.json",
+      "ablation": {
+        "experiment": "E5",
+        "mode": "ablation_at_verifiable_layers",
+        "trace": {
+          "shared_prefix_tokens": 128,
+          "num_requests": 32,
+          "suffix_tokens": 16,
+          "decode_steps": 4,
+          "block_size_before": 1024,
+          "block_size_after": 32,
+          "model_preset": "gpt2"
+        },
+        "configurations": [
+          {
+            "name": "baseline",
+            "kind": "baseline",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e1_block_opt_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e2_prefix_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 7.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 6.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e3_gpu_kv_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            }
+          },
+          {
+            "name": "cumulative_e1",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1_e2",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 7.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 6.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "full",
+            "kind": "full",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 7.2,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 6.2,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            }
+          }
+        ],
+        "isolated_contributions": {
+          "e1_block_opt": {
+            "configuration": "e1_block_opt_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            },
+            "primary_lever": "e1"
+          },
+          "e2_prefix_cache": {
+            "configuration": "e2_prefix_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 6.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            },
+            "primary_lever": "e2"
+          },
+          "e3_gpu_kv": {
+            "configuration": "e3_gpu_kv_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            },
+            "primary_lever": "e3"
+          }
+        },
+        "cumulative_stack": [
+          {
+            "name": "baseline",
+            "kind": "baseline",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1_e2",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 7.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 6.2,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "full",
+            "kind": "full",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 7.2,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.96875,
+              "allocated_tokens_reduction_ratio": 0.8958333333333334,
+              "prefill_reduction_ratio": 0.8611111111111112,
+              "saved_prefill_tokens": 3968,
+              "ideal_kv_layer_speedup_upper_bound": 6.2,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            }
+          }
+        ]
+      }
+    },
+    {
+      "bucket_id": "S2",
+      "bucket_label": "RAG shared system",
+      "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json",
+      "ablation": {
+        "experiment": "E5",
+        "mode": "ablation_at_verifiable_layers",
+        "trace": {
+          "shared_prefix_tokens": 2048,
+          "num_requests": 32,
+          "suffix_tokens": 8,
+          "decode_steps": 4,
+          "block_size_before": 1024,
+          "block_size_after": 32,
+          "model_preset": "gpt2"
+        },
+        "configurations": [
+          {
+            "name": "baseline",
+            "kind": "baseline",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e1_block_opt_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e2_prefix_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 28.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 27.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e3_gpu_kv_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            }
+          },
+          {
+            "name": "cumulative_e1",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1_e2",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 28.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 27.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "full",
+            "kind": "full",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 28.555555555555557,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 27.555555555555557,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            }
+          }
+        ],
+        "isolated_contributions": {
+          "e1_block_opt": {
+            "configuration": "e1_block_opt_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            },
+            "primary_lever": "e1"
+          },
+          "e2_prefix_cache": {
+            "configuration": "e2_prefix_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 27.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            },
+            "primary_lever": "e2"
+          },
+          "e3_gpu_kv": {
+            "configuration": "e3_gpu_kv_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            },
+            "primary_lever": "e3"
+          }
+        },
+        "cumulative_stack": [
+          {
+            "name": "baseline",
+            "kind": "baseline",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1_e2",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 28.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 256
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 27.555555555555557,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "full",
+            "kind": "full",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 28.555555555555557,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.3125,
+              "prefill_reduction_ratio": 0.9649805447470817,
+              "saved_prefill_tokens": 63488,
+              "ideal_kv_layer_speedup_upper_bound": 27.555555555555557,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 256
+            }
+          }
+        ]
+      }
+    },
+    {
+      "bucket_id": "S3",
+      "bucket_label": "long document prefill",
+      "sim_json": "/workspace/IEEE-conference/benchmarks/shared_prefix_decoder_8192_sim.json",
+      "ablation": {
+        "experiment": "E5",
+        "mode": "ablation_at_verifiable_layers",
+        "trace": {
+          "shared_prefix_tokens": 8192,
+          "num_requests": 16,
+          "suffix_tokens": 64,
+          "decode_steps": 4,
+          "block_size_before": 1024,
+          "block_size_after": 32,
+          "model_preset": "gpt2"
+        },
+        "configurations": [
+          {
+            "name": "baseline",
+            "kind": "baseline",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e1_block_opt_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e2_prefix_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 14.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 13.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "e3_gpu_kv_only",
+            "kind": "isolated",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 128
+            }
+          },
+          {
+            "name": "cumulative_e1",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1_e2",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 14.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 13.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "full",
+            "kind": "full",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 14.333333333333334,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 13.333333333333334,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 128
+            }
+          }
+        ],
+        "isolated_contributions": {
+          "e1_block_opt": {
+            "configuration": "e1_block_opt_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            },
+            "primary_lever": "e1"
+          },
+          "e2_prefix_cache": {
+            "configuration": "e2_prefix_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 13.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            },
+            "primary_lever": "e2"
+          },
+          "e3_gpu_kv": {
+            "configuration": "e3_gpu_kv_only",
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 128
+            },
+            "primary_lever": "e3"
+          }
+        },
+        "cumulative_stack": [
+          {
+            "name": "baseline",
+            "kind": "baseline",
+            "switches": {
+              "block_opt": false,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.0,
+              "allocated_tokens_reduction_ratio": 0.0,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": false,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 1.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.0,
+              "saved_prefill_tokens": 0,
+              "ideal_kv_layer_speedup_upper_bound": 0.0,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "cumulative_e1_e2",
+            "kind": "cumulative",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": false
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 14.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 128
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 13.333333333333334,
+              "host_copy_reduction_ratio": 0.0,
+              "host_round_trips_total": 0
+            }
+          },
+          {
+            "name": "full",
+            "kind": "full",
+            "switches": {
+              "block_opt": true,
+              "prefix_cache": true,
+              "torch_cuda_kv": true
+            },
+            "proxies": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 14.333333333333334,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 0
+            },
+            "delta_vs_baseline": {
+              "block_size_reduction_ratio": 0.9375,
+              "allocated_tokens_reduction_ratio": 0.10416666666666663,
+              "prefill_reduction_ratio": 0.9302325581395349,
+              "saved_prefill_tokens": 122880,
+              "ideal_kv_layer_speedup_upper_bound": 13.333333333333334,
+              "host_copy_reduction_ratio": 1.0,
+              "host_round_trips_total": 128
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

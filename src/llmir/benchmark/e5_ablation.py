@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from llmir.benchmark.e4_compositional import (
@@ -10,6 +11,7 @@ from llmir.benchmark.e4_compositional import (
     analyze_e1_block_sizing,
     analyze_e2_prefix_prefill,
     analyze_e3_host_copies,
+    trace_from_sim_json,
 )
 
 
@@ -288,3 +290,28 @@ def run_e5_ablation(
         isolated_contributions=isolated,
         cumulative_stack=cumulative_stack,
     )
+
+
+def run_e5_multi_bucket_ablation(benchmarks_dir: Path) -> Dict[str, Any]:
+    """Run E5 ablation matrix for all S1/S2/S3 decoder workload buckets."""
+    from llmir.benchmark.decoder_workload_buckets import list_decoder_workload_buckets
+
+    buckets: List[Dict[str, Any]] = []
+    for bucket in list_decoder_workload_buckets():
+        sim_path = bucket.artifact_path(benchmarks_dir)
+        trace = trace_from_sim_json(sim_path)
+        result = run_e5_ablation(trace)
+        buckets.append(
+            {
+                "bucket_id": bucket.bucket_id,
+                "bucket_label": bucket.label,
+                "sim_json": str(sim_path),
+                "ablation": result.to_dict(),
+            }
+        )
+    return {
+        "experiment": "E5",
+        "mode": "multi_bucket_ablation",
+        "benchmarks_dir": str(benchmarks_dir),
+        "buckets": buckets,
+    }

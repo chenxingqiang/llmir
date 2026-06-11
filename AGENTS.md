@@ -290,7 +290,8 @@ pytest tests/ -m "not network" -q
 - **Loop R5（M6，artifact 包）**：`artifact_manifest.json` + `verify_artifact_bundle.py`；`reproduce_paper.sh` 末尾自动校验。验证：`pytest tests/test_artifact_bundle.py -q`。
 - **Loop R6（Loop 2 论文对齐 + E8 脚手架）**：`revised.tex` §5 写入 E4–E6/M5/M6；`e8_empirical_gpu.py` + CLI（无 CUDA 时 `status=skipped`）。验证：`pytest tests/test_e8_empirical_gpu.py -q`；`python3 scripts/e8_empirical_gpu_bench.py`。
 - **Loop R7（S1/S3 桶 + reproduce 串联 E8）**：`decoder_workload_buckets.py`；`shared_prefix_decoder_{128,8192}_sim.json`；`reproduce_paper.sh` 校验三桶并追加非阻塞 E8。验证：`pytest tests/test_decoder_workload_buckets.py -q`；`scripts/regenerate_decoder_workload_buckets.py --verify-only`。
-- **下一轮感知建议**：真机跑 E8 填 `e8_empirical_gpu.json`；E4/E5 多桶 trace；或 lit 覆盖。
+- **Loop R8（E4/E5 多桶 trace）**：`run_e4_multi_bucket_verification` / `run_e5_multi_bucket_ablation`；`e4_compositional_buckets.json`、`e5_ablation_buckets.json`；`e4_e5_multi_bucket_verify.py`。验证：`pytest tests/test_e4_e5_multi_bucket.py -q`。
+- **下一轮感知建议**：真机跑 E8；MLIR lit 覆盖；或 E4/E5 桶写入论文附录表。
 
 ---
 

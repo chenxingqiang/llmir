@@ -35,7 +35,9 @@ Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E
 | Appendix scale-out | `app:projected` design targets | **Illustrative** |
 | Prefix TTFT Fig (2048) | `shared_prefix_decoder_2048_sim.json` | **KV sim measured** |
 | E4 compositional (E1+E2+E3 trace) | `e4_compositional.json`, `scripts/reproduce_paper.sh` | **Analytical + E2 sim bound** |
+| E4 multi-bucket (S1/S2/S3) | `e4_compositional_buckets.json`, `scripts/e4_e5_multi_bucket_verify.py` | **Per-bucket ideal-bound check** |
 | E5 ablation switches | `e5_ablation.json` | **Isolated + cumulative proxy deltas** |
+| E5 multi-bucket (S1/S2/S3) | `e5_ablation_buckets.json`, `scripts/e4_e5_multi_bucket_verify.py` | **Per-bucket switch matrix** |
 | E6 backend parity | `e6_backend_parity.json` | **Decode tokens + KV micro match** |
 
 ## Quick commands
@@ -61,6 +63,10 @@ python3 IEEE-conference/figures/create_measured_figures_nature.py
 pytest tests/test_e5_ablation.py -q
 python3 scripts/e5_ablation_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
+
+# E4/E5 multi-bucket (S1/S2/S3)
+pytest tests/test_e4_e5_multi_bucket.py -q
+python3 scripts/e4_e5_multi_bucket_verify.py
 
 # E6 backend parity (offline toy model)
 pytest tests/test_e6_backend_parity.py -q

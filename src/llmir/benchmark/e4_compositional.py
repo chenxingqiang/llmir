@@ -288,3 +288,28 @@ def trace_from_sim_json(path: Path) -> E4WorkloadTrace:
         decode_steps=int(cfg.get("max_new_tokens", 4)),
         model_preset=str(cfg.get("model", "qwen3-8b")),
     )
+
+
+def run_e4_multi_bucket_verification(benchmarks_dir: Path) -> Dict[str, Any]:
+    """Run E4 compositional analysis for all S1/S2/S3 decoder workload buckets."""
+    from llmir.benchmark.decoder_workload_buckets import list_decoder_workload_buckets
+
+    buckets: List[Dict[str, Any]] = []
+    for bucket in list_decoder_workload_buckets():
+        sim_path = bucket.artifact_path(benchmarks_dir)
+        trace = trace_from_sim_json(sim_path)
+        result = run_e4_compositional_verification(trace, measured_sim_json=sim_path)
+        buckets.append(
+            {
+                "bucket_id": bucket.bucket_id,
+                "bucket_label": bucket.label,
+                "sim_json": str(sim_path),
+                "analysis": result.to_dict(),
+            }
+        )
+    return {
+        "experiment": "E4",
+        "mode": "multi_bucket_compositional",
+        "benchmarks_dir": str(benchmarks_dir),
+        "buckets": buckets,
+    }
