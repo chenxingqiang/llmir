@@ -20,6 +20,7 @@ from llmir.models import (
     ModelOptimizer,
     PhiOptimizer,
     QwenOptimizer,
+    DeepSeekOptimizer,
 )
 
 __all__ = ["from_pretrained"]
@@ -72,6 +73,11 @@ _MODEL_TYPE_TO_ARCH: Tuple[Tuple[str, ModelArchitecture], ...] = (
     ("qwen3_next", ModelArchitecture.QWEN2),
     ("qwen3_omni_moe", ModelArchitecture.QWEN2),
     ("colqwen2", ModelArchitecture.QWEN2),
+    # DeepSeek
+    ("deepseek", ModelArchitecture.DEEPSEEK),
+    ("deepseek_v2", ModelArchitecture.DEEPSEEK_V2),
+    ("deepseek_v3", ModelArchitecture.DEEPSEEK_V2),
+    ("deepseek_moe", ModelArchitecture.DEEPSEEK_V2),
     # Gemma
     ("gemma", ModelArchitecture.GEMMA),
     ("gemma2", ModelArchitecture.GEMMA),
@@ -243,6 +249,8 @@ def _create_optimizer(config: ModelConfig) -> ModelOptimizer:
         return PhiOptimizer(config)
     if arch == ModelArchitecture.QWEN2:
         return QwenOptimizer(config)
+    if arch in (ModelArchitecture.DEEPSEEK, ModelArchitecture.DEEPSEEK_V2):
+        return DeepSeekOptimizer(config)
     if arch == ModelArchitecture.GEMMA:
         return GemmaOptimizer(config)
     if arch == ModelArchitecture.FALCON:

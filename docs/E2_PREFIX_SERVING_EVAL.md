@@ -11,7 +11,7 @@ Repository harness (legacy script/flags retained): `llmir-benchmark --shared-pre
 | Bucket | Shared prefix \(L_s\) | Suffix \(L_u\) | Requests \(N\) | Architecture target |
 |--------|----------------------|----------------|----------------|---------------------|
 | **S1** short | 128 | 8–32 | 32 | Llama-3 / Qwen2 (CI default) |
-| **S2** RAG | 2048 | 8–32 | 32 | Llama-3-8B, Qwen2-7B |
+| **S2** RAG | 2048 | 8–32 | 32 | Llama-3-8B, Qwen2-7B, DeepSeek-7B |
 | **S3** long-doc | 8192 | 64+ | 16 | Mistral / long-context |
 
 gpt2 runs are **integration smoke only** (MHA + GELU-FFN, not representative of mainline decoders).

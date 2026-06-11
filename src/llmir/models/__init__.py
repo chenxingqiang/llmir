@@ -18,6 +18,7 @@ __all__ = [
     "MistralOptimizer",
     "PhiOptimizer",
     "QwenOptimizer",
+    "DeepSeekOptimizer",
     "GemmaOptimizer",
     "FalconOptimizer",
     "ModelRegistry",
@@ -37,6 +38,8 @@ class ModelArchitecture(Enum):
     PHI3 = auto()
     QWEN = auto()
     QWEN2 = auto()
+    DEEPSEEK = auto()
+    DEEPSEEK_V2 = auto()
     GEMMA = auto()
     FALCON = auto()
     CUSTOM = auto()
@@ -551,6 +554,119 @@ class QwenOptimizer(ModelOptimizer):
         )
 
 
+class DeepSeekOptimizer(ModelOptimizer):
+    """Optimizations for DeepSeek LLM / Coder / V2 decoder stacks."""
+
+    @classmethod
+    def for_deepseek_7b(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-LLM 7B (MHA decoder, SwiGLU). HF: deepseek-ai/deepseek-llm-7b-chat."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK,
+                num_layers=30,
+                hidden_size=4096,
+                num_attention_heads=32,
+                num_key_value_heads=32,
+                head_dim=128,
+                intermediate_size=11008,
+                vocab_size=102400,
+                max_position_embeddings=4096,
+            )
+        )
+
+    @classmethod
+    def for_deepseek_67b(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-LLM 67B. HF: deepseek-ai/deepseek-llm-67b-chat."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK,
+                num_layers=95,
+                hidden_size=8192,
+                num_attention_heads=64,
+                num_key_value_heads=64,
+                head_dim=128,
+                intermediate_size=22016,
+                vocab_size=102400,
+                max_position_embeddings=4096,
+            )
+        )
+
+    @classmethod
+    def for_deepseek_coder_6_7b(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-Coder 6.7B. HF: deepseek-ai/deepseek-coder-6.7b-instruct."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK,
+                num_layers=32,
+                hidden_size=4096,
+                num_attention_heads=32,
+                num_key_value_heads=32,
+                head_dim=128,
+                intermediate_size=11008,
+                vocab_size=32256,
+                max_position_embeddings=16384,
+            )
+        )
+
+    @classmethod
+    def for_deepseek_coder_33b(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-Coder 33B."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK,
+                num_layers=62,
+                hidden_size=7168,
+                num_attention_heads=56,
+                num_key_value_heads=56,
+                head_dim=128,
+                intermediate_size=19200,
+                vocab_size=32256,
+                max_position_embeddings=16384,
+            )
+        )
+
+    @classmethod
+    def for_deepseek_v2_lite_16b(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-V2-Lite ~16B (MLA + MoE). Paper appendix DeepSeek-16B row."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK_V2,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=26,
+                hidden_size=2048,
+                num_attention_heads=16,
+                num_key_value_heads=16,
+                head_dim=128,
+                intermediate_size=10944,
+                vocab_size=102400,
+                max_position_embeddings=163840,
+                rope_theta=10000.0,
+            )
+        )
+
+    @classmethod
+    def for_deepseek_v2_5_7b(cls) -> "DeepSeekOptimizer":
+        """DeepSeek-V2.5 7B (GQA decoder)."""
+        return cls(
+            ModelConfig(
+                architecture=ModelArchitecture.DEEPSEEK,
+                attention_type=AttentionType.GROUPED_QUERY,
+                num_layers=30,
+                hidden_size=4096,
+                num_attention_heads=32,
+                num_key_value_heads=32,
+                head_dim=128,
+                intermediate_size=11008,
+                vocab_size=102400,
+                max_position_embeddings=4096,
+            )
+        )
+
+    def get_optimized_block_size(self) -> int:
+        """DeepSeek GQA uses 16-token blocks; MHA stacks use 32."""
+        return 16 if self.config.is_gqa() else 32
+
+
 class GemmaOptimizer(ModelOptimizer):
     """Optimizations for Gemma models."""
 
@@ -675,6 +791,13 @@ class ModelRegistry:
             "qwen2-1.5b": QwenOptimizer.for_qwen2_1_5b().config,
             "qwen2-7b": QwenOptimizer.for_qwen2_7b().config,
             "qwen2-72b": QwenOptimizer.for_qwen2_72b().config,
+            # DeepSeek
+            "deepseek-7b": DeepSeekOptimizer.for_deepseek_7b().config,
+            "deepseek-67b": DeepSeekOptimizer.for_deepseek_67b().config,
+            "deepseek-coder-6.7b": DeepSeekOptimizer.for_deepseek_coder_6_7b().config,
+            "deepseek-coder-33b": DeepSeekOptimizer.for_deepseek_coder_33b().config,
+            "deepseek-v2-lite-16b": DeepSeekOptimizer.for_deepseek_v2_lite_16b().config,
+            "deepseek-v2.5-7b": DeepSeekOptimizer.for_deepseek_v2_5_7b().config,
             # Gemma
             "gemma-2b": GemmaOptimizer.for_gemma_2b().config,
             "gemma-7b": GemmaOptimizer.for_gemma_7b().config,
@@ -712,6 +835,11 @@ class ModelRegistry:
             return PhiOptimizer(config)
         elif config.architecture == ModelArchitecture.QWEN2:
             return QwenOptimizer(config)
+        elif config.architecture in (
+            ModelArchitecture.DEEPSEEK,
+            ModelArchitecture.DEEPSEEK_V2,
+        ):
+            return DeepSeekOptimizer(config)
         elif config.architecture == ModelArchitecture.GEMMA:
             return GemmaOptimizer(config)
         elif config.architecture == ModelArchitecture.FALCON:

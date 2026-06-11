@@ -130,7 +130,7 @@ Pre-quantized models (GPTQ, AWQ) are converted to quantized tensor types:
 | Mistral | Partial | Optimizer presets; dialect lowering **Planned** |
 | Phi-3 | Partial | Optimizer presets |
 | Qwen-2 | Partial | External baselines cited; LLMIR GPU harness **Planned** |
-| DeepSeek-V2 | Planned | MoE dialect ops incomplete |
+| DeepSeek-LLM / Coder / V2-Lite | **Partial** | Registry presets + HF `deepseek*` import; MLA/MoE IR incomplete |
 | GPT-NeoX | Planned | |
 | Falcon | Planned | Multi-query attention |
 

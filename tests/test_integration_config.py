@@ -41,6 +41,8 @@ class TestConfigRoundTrip:
             "mistral-7b",
             "phi-3-mini",
             "qwen2-7b",
+            "deepseek-7b",
+            "deepseek-v2-lite-16b",
             "gemma-2b",
             "falcon-40b",
         ]:

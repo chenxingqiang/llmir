@@ -8,6 +8,7 @@ from llmir.models import (
     ModelArchitecture,
     ModelConfig,
     ModelMemoryEstimator,
+    DeepSeekOptimizer,
     ModelRegistry,
     PhiOptimizer,
 )
@@ -183,6 +184,8 @@ class TestModelRegistry:
         assert "llama3-8b" in models
         assert "mistral-7b" in models
         assert "phi-2" in models
+        assert "deepseek-7b" in models
+        assert "deepseek-v2-lite-16b" in models
 
     def test_get_config(self):
         """Test getting model configuration."""
@@ -199,6 +202,17 @@ class TestModelRegistry:
 
         assert optimizer is not None
         assert isinstance(optimizer, LlamaOptimizer)
+
+    def test_deepseek_registry(self):
+        """DeepSeek presets resolve to DeepSeekOptimizer."""
+        registry = ModelRegistry()
+        cfg = registry.get("deepseek-v2-lite-16b")
+        assert cfg is not None
+        assert cfg.architecture == ModelArchitecture.DEEPSEEK_V2
+        assert cfg.num_layers == 26
+        opt = registry.get_optimizer("deepseek-7b")
+        assert isinstance(opt, DeepSeekOptimizer)
+        assert opt.get_optimized_block_size() == 32
 
     def test_has_model(self):
         """Test checking model existence."""

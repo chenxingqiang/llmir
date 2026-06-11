@@ -8,6 +8,8 @@ LLMIR 论文与 benchmark **不以 ShareGPT 数据集命名**，而以 **主流 
 |--------|-------------|-----------|-----|------|-----------------|----------|
 | **Llama 3** | `llama3-8b`, `llama3.1-8b` | GQA | SwiGLU | RMSNorm | 32×4096 | **主对标** |
 | **Qwen2** | `qwen2-7b` | GQA | SwiGLU | RMSNorm | 28×3584 | **主对标** |
+| **DeepSeek** | `deepseek-7b`, `deepseek-v2.5-7b` | MHA / GQA | SwiGLU | RMSNorm | 30×4096 | **主对标** |
+| **DeepSeek-V2** | `deepseek-v2-lite-16b` | MLA + MoE | SwiGLU + routed experts | RMSNorm | 26×2048 | 附录表 / MoE 未来 |
 | **Mistral** | `mistral-7b` | GQA + SWA | SwiGLU | RMSNorm | 32×4096 | 长上下文对照 |
 | **Mixtral** | `mixtral-8x7b` | MoE + GQA | SwiGLU | RMSNorm | sparse FFN | 未来 MoE Pass |
 | GPT-2 | `gpt2` | MHA | GELU-MLP | LayerNorm | 12×768 | **仅 CI smoke**，非主文架构代表 |
@@ -46,6 +48,9 @@ E2 harness 实现的是 **S2 类 shared-prefix decoder workload**（多请求复
 ```bash
 # 推荐：E2 shared-prefix decoder（legacy flag 仍可用）
 llmir-benchmark --shared-prefix-bench --model llama3-8b \
+  --shared-prefix-tokens 2048 --shared-prefix-requests 32
+
+llmir-benchmark --shared-prefix-bench --model deepseek-7b \
   --shared-prefix-tokens 2048 --shared-prefix-requests 32
 
 # CI smoke（非主文架构代表）
