@@ -2,6 +2,8 @@
 
 Guidance for AI coding agents working in this repository.
 
+For **iteration loops (engineering + paper alignment)**, see [`Agent.md`](Agent.md) § LOOPs.
+
 ## Project overview
 
 **LLMIR** is an MLIR-based compiler and Python runtime for optimizing LLM inference. The primary development surface is the **`llmir` Python package** in `src/llmir/`. The repo also vendors a full MLIR tree and a custom LLM dialect under `include/mlir/Dialect/LLM/` and `lib/Dialect/LLM/`.
