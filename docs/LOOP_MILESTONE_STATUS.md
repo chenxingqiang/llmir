@@ -16,6 +16,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M8 | MLIR lit catalog + S1/S2/S3 block-size lit | done |
 | M9 | PyPI release prep (`prepare_release.sh`) | done |
 | M10 | Release 0.2.1 version bump + MLIR lit runbook | done |
+| M11 | Release tag automation (`tag_release.sh` + workflow) | done |
 
 ## Recent loops (R6–R13)
 
@@ -35,6 +36,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R17 | PyPI release prep script + checklist + workflow |
 | R18 | MVP-C CUDA device wiring test (CPU-safe CI) |
 | R19 | Release 0.2.1 + MLIR lit runbook (`build_mlir_opt.sh`) |
+| R20 | Release tag automation + PyPI trigger workflow |
 
 ## Reviewer commands
 

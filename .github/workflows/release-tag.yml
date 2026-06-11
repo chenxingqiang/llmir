@@ -1,0 +1,55 @@
+name: Release tag (PyPI trigger)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (e.g. 0.2.1); blank uses pyproject.toml
+        required: false
+        default: ""
+      push_tag:
+        description: Push annotated tag to origin after gates pass
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package and test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest numpy torch
+          pip install transformers || true
+
+      - name: Validate release gates (dry-run)
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            bash scripts/tag_release.sh --dry-run "${{ github.event.inputs.version }}"
+          else
+            bash scripts/tag_release.sh --dry-run
+          fi
+
+      - name: Create and push release tag
+        if: github.event.inputs.push_tag == 'true'
+        run: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            bash scripts/tag_release.sh --push "${{ github.event.inputs.version }}"
+          else
+            bash scripts/tag_release.sh --push
+          fi

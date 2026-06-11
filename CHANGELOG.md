@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Release tag automation**: `scripts/tag_release.sh`, workflow `release-tag.yml` (push `v*` → PyPI via `python-package.yml`).
+
 ## [0.2.1] - 2026-06-05
 
 ### Fixed

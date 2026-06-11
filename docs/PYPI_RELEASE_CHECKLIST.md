@@ -15,11 +15,12 @@ Or GitHub Actions → **Release prep** → `workflow_dispatch`.
 1. Move `[Unreleased]` entries in `CHANGELOG.md` to `[X.Y.Z] - YYYY-MM-DD`.
 2. Bump `version` in `pyproject.toml` to match the tag (e.g. `0.2.1`).
 3. Commit: `chore: release X.Y.Z`
-4. Tag and push:
+4. Tag and push (automated gates):
    ```bash
-   git tag -a vX.Y.Z -m "Release X.Y.Z"
-   git push origin vX.Y.Z
+   bash scripts/tag_release.sh --dry-run    # validate only
+   bash scripts/tag_release.sh --push       # tag vX.Y.Z from pyproject.toml + push
    ```
+   Or GitHub Actions → **Release tag (PyPI trigger)** → `workflow_dispatch`.
 5. Confirm **Python package** workflow: `test`, `lint`, `build`, `publish` all green.
 6. Verify on PyPI: https://pypi.org/project/llmir/
 
