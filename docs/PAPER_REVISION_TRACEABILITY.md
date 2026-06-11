@@ -23,6 +23,7 @@ Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E
 | §3.1 model → IR → kernel (single layer) | `llmir-compile --mvp-a-e2e`, `src/llmir/compiler/mvp_pipeline.py` | **E1** |
 | Lower to runtime calls | `-llm-lower-kv-cache-ops` → `@mlir_llm_*` | Implemented (needs `llmir-opt`) |
 | M5 lowered hot path execution | `m5_lowered_hot_path.json`, `scripts/m5_lowered_hot_path_verify.py` | **Semantic parity vs reference** |
+| M6 artifact bundle | `artifact_manifest.json`, `artifact_bundle_status.json`, `scripts/verify_artifact_bundle.py` | **Manifest + CPU regen** |
 | Reference correctness | `tests/test_mvp_a_e2e.py`, `tests/test_compile_e2e.py` | CI (Python) |
 | §5 shared-prefix decoder / TTFT workload | `scripts/sharegpt_prefix_bench.py`, `llmir-benchmark --shared-prefix-bench` | **E2** (sim + llmir_paged E2E) |
 | GPU KV without CPU NumPy round-trip | `TorchGpuPagedKVCache`, `PagedKVDecoder` GPU path, `llmir-benchmark --mvp-c-bench` | **E3** |
@@ -64,7 +65,11 @@ python3 scripts/e5_ablation_verify.py --from-sim \
 pytest tests/test_e6_backend_parity.py -q
 python3 scripts/e6_backend_parity_verify.py --model toy
 
-# Full A-class reproduce (E1–E6 + figures)
+# M6 artifact bundle verify
+python3 scripts/verify_artifact_bundle.py
+pytest tests/test_artifact_bundle.py -q
+
+# Full A-class reproduce (E1–E6 + M5 + figures + verify)
 bash scripts/reproduce_paper.sh
 
 # Full path when llmir-opt is on PATH

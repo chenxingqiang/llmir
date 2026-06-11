@@ -123,7 +123,7 @@ M2  E4 trace 组合验证               [done]
 M3  E5 消融开关                     [done]
 M4  E6 多后端 parity                [done]
 M5  Lowered op hot path             [done]
-M6  Artifact 包（CPU 可复现 E1–E6） ← 下一优先
+M6  Artifact 包（CPU 可复现 E1–E6） [done]
 M7  E8 GPU 实测（可选）
 ```
 
@@ -163,6 +163,7 @@ python3 scripts/e5_ablation_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 python3 scripts/e6_backend_parity_verify.py --model toy
 python3 scripts/m5_lowered_hot_path_verify.py
+python3 scripts/verify_artifact_bundle.py --skip-figures
 python3 -c "
 import json; from pathlib import Path
 p=json.loads(Path('IEEE-conference/benchmarks/paper_results.json').read_text())
@@ -247,7 +248,6 @@ pytest tests/ -m "not network" -q
 | M4 E6 parity | `cursor/m5-hot-path-575e` |
 | M5 hot path | `cursor/m6-artifact-575e` |
 | M6 artifact | `cursor/e8-gpu-bench-575e`（若做 E8） |
-| M6 artifact | `cursor/e8-gpu-bench-575e`（若做 E8） |
 
 ---
 
@@ -274,8 +274,8 @@ pytest tests/ -m "not network" -q
 | 感知 | `docs/CAPABILITY_MATRIX.md`, `docs/PAPER_TOP_TIER_BAR.md`, `pytest tests/`, `scripts/reproduce_paper.sh` |
 | 策略 | `docs/PAPER_REVISION_TRACEABILITY.md`, `AGENTS.md` 里程碑 M1–M7, E1–E8 表（下文） |
 | 落地 | `src/llmir/`, `lib/Dialect/LLM/`, `scripts/`, `IEEE-conference/` |
-| 验证 | E1 `test_mvp_a_e2e.py`, E2 `test_sharegpt_prefix_bench.py`, E3 `test_mvp_c_e2e.py`, E4–E6 `test_e4_*` … `scripts/e*_*.py`, `mlir-opt -llm-optimize-kv-cache` |
-| 进化 | **`AGENTS.md`**, traceability, `REVISION_NOTES.md`, benchmark JSON under `IEEE-conference/benchmarks/` |
+| 验证 | E1–E6/M5 pytest + `scripts/e*_*.py` / `m5_*`; **M6** `scripts/verify_artifact_bundle.py` |
+| 进化 | **`AGENTS.md`**, `artifact_manifest.json`, traceability, benchmark JSON under `IEEE-conference/benchmarks/` |
 
 ### 当前轮次笔记（由 Agent 持续追加）
 
@@ -287,7 +287,8 @@ pytest tests/ -m "not network" -q
 - **Loop R3（M4，E6 parity）**：`numpy` vs `torch_cuda` decode token + KV micro parity；`e6_backend_parity_verify.py --model toy`。验证：`pytest tests/test_e6_backend_parity.py -q`。
 - **协议（2026-06）**：本地验证通过后 Agent **自动合并** PR；合并后 pull `main` 并从新分支继续；本文采用 YiRage 式五层闭环结构。
 - **Loop R4（M5，lowered hot path）**：`lowered_hot_path.py` 语义热路径 append→lookup→attention；`m5_lowered_hot_path_verify.py`。验证：`pytest tests/test_m5_lowered_hot_path.py -q`。
-- **下一轮感知建议（M6）**：`reproduce_paper.sh` artifact 包 polish；对照 `CAPABILITY_MATRIX` 与 `IEEE-conference/benchmarks/` 完整性。
+- **Loop R5（M6，artifact 包）**：`artifact_manifest.json` + `verify_artifact_bundle.py`；`reproduce_paper.sh` 末尾自动校验。验证：`pytest tests/test_artifact_bundle.py -q`。
+- **下一轮感知建议（M7/E8）**：可选 GPU 实测；或扩大 decoder workload 桶 / lit 覆盖。
 
 ---
 
