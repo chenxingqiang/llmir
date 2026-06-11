@@ -1,8 +1,13 @@
 # LLMIR (Large Language Model Intermediate Representation)
 
+[![A-class walkthrough](https://github.com/chenxingqiang/llmir/actions/workflows/a-class-walkthrough.yml/badge.svg)](https://github.com/chenxingqiang/llmir/actions/workflows/a-class-walkthrough.yml)
+[![Python package](https://github.com/chenxingqiang/llmir/actions/workflows/python-package.yml/badge.svg)](https://github.com/chenxingqiang/llmir/actions/workflows/python-package.yml)
+
 LLMIR is a compiler infrastructure for large language models based on MLIR (Multi-Level Intermediate Representation), designed to optimize and accelerate LLM inference through compilation techniques.
 
 **Project Website**: [https://chenxingqiang.github.io/llmir-www/](https://chenxingqiang.github.io/llmir-www/)
+
+**Evidence dashboard**: [`docs/EVIDENCE_DASHBOARD.md`](./docs/EVIDENCE_DASHBOARD.md) · [`docs/LOOP_MILESTONE_STATUS.md`](./docs/LOOP_MILESTONE_STATUS.md)
 
 ---
 

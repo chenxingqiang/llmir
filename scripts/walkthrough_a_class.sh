@@ -39,6 +39,7 @@ step "8/8 — M6 artifact bundle verify"
 python3 scripts/verify_artifact_bundle.py --skip-figures
 
 python3 scripts/walkthrough_summary.py
+python3 scripts/generate_evidence_dashboard.py
 
 echo ""
 echo "Walkthrough complete."

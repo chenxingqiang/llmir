@@ -296,7 +296,8 @@ pytest tests/ -m "not network" -q
 - **Loop R11（Walkthrough + 可选 artifact）**：`walkthrough_a_class.sh` + `docs/WALKTHROUGH.md`；manifest 增加 E8 / 多桶 JSON 为 optional。验证：`bash scripts/walkthrough_a_class.sh`。
 - **Loop R12（CI walkthrough + E8 lab）**：`a-class-walkthrough.yml`；`e8-empirical-gpu.yml` + `e8_lab_run.sh` + `E8_LAB_RUNBOOK.md`；README 快速入口。验证：`pytest tests/test_ci_workflows.py -q`。
 - **Loop R13（Walkthrough summary）**：`walkthrough_summary.py` → `walkthrough_summary.json`；`LOOP_MILESTONE_STATUS.md`；walkthrough 末尾自动生成摘要。验证：`pytest tests/test_walkthrough_summary.py -q`。
-- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 walkthrough 终端演示录制。
+- **Loop R14（Evidence dashboard + README badges）**：`generate_evidence_dashboard.py` → `docs/EVIDENCE_DASHBOARD.md`；README CI badges。验证：`pytest tests/test_evidence_dashboard.py -q`。
+- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 PyPI release 与 badge 对齐。
 
 ---
 

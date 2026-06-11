@@ -26,6 +26,7 @@ bash scripts/walkthrough_a_class.sh
 | File | Meaning |
 |------|---------|
 | `walkthrough_summary.json` | One-page reviewer snapshot (m6/e8/lit) |
+| `docs/EVIDENCE_DASHBOARD.md` | Human-readable dashboard (auto-generated) |
 | `artifact_bundle_status.json` | M6 verify summary |
 | `e4_compositional_buckets.json` | S1/S2/S3 compositional proxies |
 | `e5_ablation_buckets.json` | S1/S2/S3 ablation matrix |
