@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reproduce A-class paper evidence (E1–E4) on CPU — no GPU required.
+# Reproduce A-class paper evidence (E1–E5) on CPU — no GPU required.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="${HOME}/.local/bin:${PATH}"
@@ -16,6 +16,11 @@ pytest tests/test_mvp_c_e2e.py tests/test_torch_gpu_kv_cache.py -m "not network"
 echo "=== E4 compositional ==="
 pytest tests/test_e4_compositional.py -q
 python3 scripts/e4_compositional_verify.py --from-sim \
+  IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
+
+echo "=== E5 ablation ==="
+pytest tests/test_e5_ablation.py -q
+python3 scripts/e5_ablation_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 
 echo "=== Paper JSON (optional, needs llmir[full] for HF) ==="
