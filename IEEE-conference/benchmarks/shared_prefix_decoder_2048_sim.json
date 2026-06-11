@@ -1,5 +1,5 @@
 {
-  "mode": "sharegpt_prefix",
+  "mode": "shared_prefix_decoder",
   "config": {
     "system_prompt_tokens": 2048,
     "num_requests": 32,

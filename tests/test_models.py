@@ -8,8 +8,10 @@ from llmir.models import (
     ModelArchitecture,
     ModelConfig,
     ModelMemoryEstimator,
+    DeepSeekOptimizer,
     ModelRegistry,
     PhiOptimizer,
+    QwenOptimizer,
 )
 
 
@@ -179,32 +181,42 @@ class TestModelRegistry:
         registry = ModelRegistry()
         models = registry.list_models()
 
-        assert "llama-7b" in models
-        assert "llama3-8b" in models
-        assert "mistral-7b" in models
-        assert "phi-2" in models
+        assert "qwen3-8b" in models
+        assert "gemma-3-12b" in models
+        assert "deepseek-v3" in models
+        assert "llama3-8b" not in models
 
     def test_get_config(self):
         """Test getting model configuration."""
         registry = ModelRegistry()
-        config = registry.get("llama3-8b")
+        config = registry.get("qwen3-8b")
 
         assert config is not None
-        assert config.num_layers == 32
+        assert config.num_layers == 36
 
     def test_get_optimizer(self):
         """Test getting model optimizer."""
         registry = ModelRegistry()
-        optimizer = registry.get_optimizer("llama3-8b")
+        optimizer = registry.get_optimizer("qwen3-8b")
 
         assert optimizer is not None
-        assert isinstance(optimizer, LlamaOptimizer)
+        assert isinstance(optimizer, QwenOptimizer)
+
+    def test_deepseek_registry(self):
+        """DeepSeek V3/R1 presets resolve to DeepSeekOptimizer."""
+        registry = ModelRegistry()
+        cfg = registry.get("deepseek-v3")
+        assert cfg is not None
+        assert cfg.architecture == ModelArchitecture.DEEPSEEK_V2
+        assert cfg.num_layers == 61
+        opt = registry.get_optimizer("deepseek-r1")
+        assert isinstance(opt, DeepSeekOptimizer)
 
     def test_has_model(self):
         """Test checking model existence."""
         registry = ModelRegistry()
 
-        assert registry.has_model("llama3-8b")
+        assert registry.has_model("qwen3-8b")
         assert not registry.has_model("nonexistent-model")
 
     def test_register_custom(self):

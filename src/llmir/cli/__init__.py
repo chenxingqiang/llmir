@@ -152,9 +152,9 @@ def benchmark_main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  llmir-benchmark --model llama3-8b --batch-sizes 1,4,8
+  llmir-benchmark --model qwen3-8b --batch-sizes 1,4,8
   llmir-benchmark --model facebook/opt-125m --compare hf,llmir-paged -o bench.json
-  llmir-benchmark --prefix-bench -m llama3-8b -o prefix.json
+  llmir-benchmark --prefix-bench -m qwen3-8b -o prefix.json
 
   # Plot results (optional matplotlib):
   python scripts/plot_from_results.py -i results.json -o out.png
@@ -165,7 +165,7 @@ Examples:
         "-m",
         type=str,
         required=True,
-        help="Model name from registry (e.g. llama3-8b) or HuggingFace ID (requires llmir[full])",
+        help="Model name from registry (e.g. qwen3-8b) or HuggingFace ID (requires llmir[full])",
     )
     parser.add_argument(
         "--batch-sizes",
@@ -246,29 +246,39 @@ Examples:
     )
     parser.add_argument(
         "--sharegpt-prefix-bench",
+        "--shared-prefix-bench",
+        dest="shared_prefix_bench",
         action="store_true",
-        help="MVP-B: ShareGPT-style shared system prompt + N user requests",
+        help="E2: shared-prefix decoder workload (Llama/Qwen-class prefill regime)",
     )
     parser.add_argument(
         "--sharegpt-system-tokens",
+        "--shared-prefix-tokens",
+        dest="shared_prefix_tokens",
         type=int,
         default=128,
-        help="Approx shared system prompt tokens for --sharegpt-prefix-bench",
+        help="Shared prefix length (tokens) for --shared-prefix-bench",
     )
     parser.add_argument(
         "--sharegpt-requests",
+        "--shared-prefix-requests",
+        dest="shared_prefix_requests",
         type=int,
         default=32,
-        help="Number of user-variant requests for --sharegpt-prefix-bench",
+        help="Number of suffix variants for --shared-prefix-bench",
     )
     parser.add_argument(
         "--sharegpt-suffix-tokens",
+        "--shared-prefix-suffix-tokens",
+        dest="shared_prefix_suffix_tokens",
         type=int,
         default=8,
-        help="Approx per-request user suffix tokens",
+        help="Per-request suffix length (tokens)",
     )
     parser.add_argument(
         "--sharegpt-simulation-only",
+        "--shared-prefix-simulation-only",
+        dest="shared_prefix_simulation_only",
         action="store_true",
         help="KV simulation only (no HuggingFace E2E)",
     )
@@ -341,7 +351,7 @@ Examples:
         print(f"\nResults saved to {args.output}")
         return 0
 
-    if args.sharegpt_prefix_bench:
+    if args.shared_prefix_bench:
         from llmir.benchmark.sharegpt_prefix_bench import (
             ShareGPTPrefixBenchConfig,
             print_sharegpt_results,
@@ -350,17 +360,17 @@ Examples:
 
         cfg = ShareGPTPrefixBenchConfig(
             model=args.model,
-            system_prompt_tokens=args.sharegpt_system_tokens,
-            num_requests=args.sharegpt_requests,
-            user_suffix_tokens=args.sharegpt_suffix_tokens,
+            system_prompt_tokens=args.shared_prefix_tokens,
+            num_requests=args.shared_prefix_requests,
+            user_suffix_tokens=args.shared_prefix_suffix_tokens,
             max_new_tokens=min(args.compare_max_tokens, 16),
         )
-        print("LLMIR ShareGPT-style prefix benchmark (MVP-B)")
+        print("LLMIR E2 shared-prefix decoder benchmark")
         print("=" * 50)
         payload = run_sharegpt_prefix_benchmark(
             cfg,
             run_simulation=True,
-            run_llmir_paged=not args.sharegpt_simulation_only,
+            run_llmir_paged=not args.shared_prefix_simulation_only,
         )
         print_sharegpt_results(payload)
         with open(args.output, "w", encoding="utf-8") as f:

@@ -37,12 +37,15 @@ class TestConfigRoundTrip:
         """ModelRegistry returns optimizer with correct config."""
         registry = ModelRegistry()
         for name in [
-            "llama3-8b",
-            "mistral-7b",
-            "phi-3-mini",
-            "qwen2-7b",
-            "gemma-2b",
-            "falcon-40b",
+            "qwen3-8b",
+            "qwen3-14b",
+            "qwen2.5-7b",
+            "qwen2.5-72b",
+            "gemma-3-4b",
+            "gemma-3-12b",
+            "gemma-3-27b",
+            "deepseek-v3",
+            "deepseek-r1",
         ]:
             opt = registry.get_optimizer(name)
             assert opt is not None, f"Missing optimizer for {name}"
@@ -96,7 +99,7 @@ class TestKVCacheFromOptimizer:
 
     def test_create_cache_from_registry_optimizer(self):
         """Create PagedKVCache from registry optimizer."""
-        opt = ModelRegistry().get_optimizer("llama3.1-8b")
+        opt = ModelRegistry().get_optimizer("qwen3-14b")
         assert opt is not None
         kv_config = opt.get_optimized_kv_cache_config()
         cache = PagedKVCache(kv_config)

@@ -23,7 +23,9 @@ def _load() -> dict:
 
 
 def _load_2048() -> dict:
-    path = BENCH / "sharegpt_2048_sim.json"
+    path = BENCH / "shared_prefix_decoder_2048_sim.json"
+    if not path.exists():
+        path = BENCH / "sharegpt_2048_sim.json"
     if path.exists():
         with open(path, encoding="utf-8") as f:
             return json.load(f)
@@ -79,7 +81,8 @@ def fig_prefix_ttft(data: dict, sim2048: dict) -> None:
     panel_label(ax1, "a")
 
     # (b) llmir_paged prefill tokens saved (per request)
-    per = data.get("sharegpt_prefix", {}).get("per_request", {})
+    sp = data.get("shared_prefix_decoder") or data.get("sharegpt_prefix", {})
+    per = sp.get("per_request", {})
     if per.get("baseline") and per.get("warmed"):
         idx = np.arange(len(per["warmed"]))
         prefill_cold = [per["baseline"][i]["prefill_tokens_computed"] for i in range(len(per["warmed"]))]

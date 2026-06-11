@@ -4,7 +4,7 @@ Three-panel Nature figure: verified E1 / E2 / E3 evaluation experiments.
 
 Data sources (repository):
 - E1: block_size 1024→32, reference vs torch in tests/test_mvp_a_e2e.py
-- E2: KV simulation speedup ~4–5× (sharegpt_prefix_bench simulation)
+- E2: KV simulation speedup ~4–5× (shared-prefix decoder sim)
 - E3: torch_cuda vs numpy KV backend (design target on GPU)
 """
 
@@ -42,7 +42,7 @@ def main() -> None:
     ax.bar(scenarios, latency, color=[NATURE_COLORS[4], NATURE_COLORS[1]], width=0.55, edgecolor="none")
     ax.set_ylabel("Normalized latency")
     ax.set_ylim(0, 1.15)
-    ax.text(0.5, 0.92, "ShareGPT-shaped sim", transform=ax.transAxes, ha="center", fontsize=6.5, color="#666666")
+    ax.text(0.5, 0.92, "Shared-prefix decoder sim", transform=ax.transAxes, ha="center", fontsize=6.5, color="#666666")
     despine(ax)
     panel_label(ax, "b")
 

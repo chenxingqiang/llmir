@@ -36,7 +36,7 @@ def _run_inference(model: str, prompt_tokens: int, max_tokens: int, warmup: int)
     return results_to_json(rows)
 
 
-def _run_sharegpt(
+def _run_shared_prefix_decoder(
     model: str,
     system_tokens: int,
     num_requests: int,
@@ -92,10 +92,33 @@ def main() -> int:
     parser.add_argument("--prompt-tokens", type=int, default=64)
     parser.add_argument("--max-tokens", type=int, default=16)
     parser.add_argument("--warmup", type=int, default=1)
-    parser.add_argument("--sharegpt-system-tokens", type=int, default=256)
-    parser.add_argument("--sharegpt-requests", type=int, default=8)
-    parser.add_argument("--sharegpt-suffix-tokens", type=int, default=8)
-    parser.add_argument("--sharegpt-simulation-only", action="store_true")
+    parser.add_argument(
+        "--sharegpt-system-tokens",
+        "--shared-prefix-tokens",
+        dest="shared_prefix_tokens",
+        type=int,
+        default=256,
+    )
+    parser.add_argument(
+        "--sharegpt-requests",
+        "--shared-prefix-requests",
+        dest="shared_prefix_requests",
+        type=int,
+        default=8,
+    )
+    parser.add_argument(
+        "--sharegpt-suffix-tokens",
+        "--shared-prefix-suffix-tokens",
+        dest="shared_prefix_suffix_tokens",
+        type=int,
+        default=8,
+    )
+    parser.add_argument(
+        "--sharegpt-simulation-only",
+        "--shared-prefix-simulation-only",
+        dest="shared_prefix_simulation_only",
+        action="store_true",
+    )
     parser.add_argument("-o", "--output", default=str(OUT_DIR / "paper_results.json"))
     args = parser.parse_args()
 
@@ -109,18 +132,18 @@ def main() -> int:
         "inference_compare": _run_inference(
             args.model, args.prompt_tokens, args.max_tokens, args.warmup
         ),
-        "sharegpt_prefix": _run_sharegpt(
+        "shared_prefix_decoder": _run_shared_prefix_decoder(
             args.model,
-            args.sharegpt_system_tokens,
-            args.sharegpt_requests,
-            args.sharegpt_suffix_tokens,
-            simulation_only=args.sharegpt_simulation_only,
+            args.shared_prefix_tokens,
+            args.shared_prefix_requests,
+            args.shared_prefix_suffix_tokens,
+            simulation_only=args.shared_prefix_simulation_only,
         ),
         "e1": _run_e1_snippet(mlir_path),
         "notes": {
             "prompt_tokens": args.prompt_tokens,
             "max_tokens": args.max_tokens,
-            "sharegpt_system_tokens": args.sharegpt_system_tokens,
+            "shared_prefix_tokens": args.shared_prefix_tokens,
         },
     }
 
