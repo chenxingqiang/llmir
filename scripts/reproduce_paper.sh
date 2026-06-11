@@ -27,6 +27,10 @@ echo "=== E6 backend parity ==="
 pytest tests/test_e6_backend_parity.py -q
 python3 scripts/e6_backend_parity_verify.py --model toy
 
+echo "=== M5 lowered hot path ==="
+pytest tests/test_m5_lowered_hot_path.py -q
+python3 scripts/m5_lowered_hot_path_verify.py
+
 echo "=== Paper JSON (optional, needs llmir[full] for HF) ==="
 if python3 -c "import transformers" 2>/dev/null; then
   python3 scripts/paper_benchmark_collect.py --model gpt2 --sharegpt-simulation-only \

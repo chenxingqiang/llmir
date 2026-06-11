@@ -94,7 +94,7 @@ export PATH="$HOME/.local/bin:$PATH"
 pytest tests/ -m "not network" -q
 pytest tests/test_mvp_a_e2e.py tests/test_mvp_c_e2e.py tests/test_sharegpt_prefix_bench.py \
   tests/test_e4_compositional.py tests/test_e5_ablation.py tests/test_e6_backend_parity.py \
-  -m "not network" -q
+  tests/test_m5_lowered_hot_path.py -m "not network" -q
 bash scripts/reproduce_paper.sh   # 或分步跑 E1–E6
 ```
 
@@ -122,8 +122,8 @@ M1  E1 单层 IR + CI                 [done]
 M2  E4 trace 组合验证               [done]
 M3  E5 消融开关                     [done]
 M4  E6 多后端 parity                [done]
-M5  Lowered op hot path             ← 下一优先
-M6  Artifact 包（CPU 可复现 E1–E6）
+M5  Lowered op hot path             [done]
+M6  Artifact 包（CPU 可复现 E1–E6） ← 下一优先
 M7  E8 GPU 实测（可选）
 ```
 
@@ -156,12 +156,13 @@ M7  E8 GPU 实测（可选）
 ```bash
 pytest tests/test_mvp_a_e2e.py tests/test_mvp_c_e2e.py tests/test_sharegpt_prefix_bench.py \
   tests/test_e4_compositional.py tests/test_e5_ablation.py tests/test_e6_backend_parity.py \
-  -m "not network" -q
+  tests/test_m5_lowered_hot_path.py -m "not network" -q
 python3 scripts/e4_compositional_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 python3 scripts/e5_ablation_verify.py --from-sim \
   IEEE-conference/benchmarks/shared_prefix_decoder_2048_sim.json
 python3 scripts/e6_backend_parity_verify.py --model toy
+python3 scripts/m5_lowered_hot_path_verify.py
 python3 -c "
 import json; from pathlib import Path
 p=json.loads(Path('IEEE-conference/benchmarks/paper_results.json').read_text())
@@ -246,6 +247,7 @@ pytest tests/ -m "not network" -q
 | M4 E6 parity | `cursor/m5-hot-path-575e` |
 | M5 hot path | `cursor/m6-artifact-575e` |
 | M6 artifact | `cursor/e8-gpu-bench-575e`（若做 E8） |
+| M6 artifact | `cursor/e8-gpu-bench-575e`（若做 E8） |
 
 ---
 
@@ -284,7 +286,8 @@ pytest tests/ -m "not network" -q
 - **Loop R2（M3，E5 消融）**：`e5_ablation.py` 隔离/累积开关；`e5_ablation.json`。验证：`pytest tests/test_e5_ablation.py -q`。
 - **Loop R3（M4，E6 parity）**：`numpy` vs `torch_cuda` decode token + KV micro parity；`e6_backend_parity_verify.py --model toy`。验证：`pytest tests/test_e6_backend_parity.py -q`。
 - **协议（2026-06）**：本地验证通过后 Agent **自动合并** PR；合并后 pull `main` 并从新分支继续；本文采用 YiRage 式五层闭环结构。
-- **下一轮感知建议（M5）**：lowered `llm.paged_attention`（或等价）上 hot path；对照 `CAPABILITY_MATRIX` Compiler 行与 `test/Dialect/LLM/` lit。
+- **Loop R4（M5，lowered hot path）**：`lowered_hot_path.py` 语义热路径 append→lookup→attention；`m5_lowered_hot_path_verify.py`。验证：`pytest tests/test_m5_lowered_hot_path.py -q`。
+- **下一轮感知建议（M6）**：`reproduce_paper.sh` artifact 包 polish；对照 `CAPABILITY_MATRIX` 与 `IEEE-conference/benchmarks/` 完整性。
 
 ---
 

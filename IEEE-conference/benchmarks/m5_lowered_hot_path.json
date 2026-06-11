@@ -1,0 +1,26 @@
+{
+  "experiment": "M5",
+  "mode": "lowered_hot_path",
+  "mlir_lowered": false,
+  "lowered_symbols_present": {
+    "mlir_llm_append_kv": false,
+    "mlir_llm_lookup_kv": false,
+    "mlir_llm_paged_attention": false
+  },
+  "execution_path": "semantic_lowered::numpy",
+  "reference_backend": "numpy",
+  "max_abs_diff_vs_reference": 0.0,
+  "matches_reference": true,
+  "config": {
+    "block_size_after_pass": 32,
+    "seq_len": 8,
+    "num_heads": 2,
+    "head_dim": 16
+  },
+  "metadata": {
+    "mlir_opt_available": false,
+    "lowered_mlir_bytes": 0,
+    "atol": 1e-05,
+    "has_mlir_before": true
+  }
+}

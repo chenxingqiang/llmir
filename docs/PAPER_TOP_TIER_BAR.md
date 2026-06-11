@@ -93,7 +93,7 @@ M1  E1 单层 IR + CI                    [done]
 M2  E4 trace/compositional 脚本 + JSON  [done]
 M3  E5 消融开关                    [done]
 M4  E6 多后端 parity          [done]
-M5  hot-path lowered op（完整性）
+M5  hot-path lowered op（完整性）  [done]
 M6  artifact 包（E1–E5，CPU 可跑）
 M7  E8 GPU 实测（可选，不阻塞 M6）
 ```

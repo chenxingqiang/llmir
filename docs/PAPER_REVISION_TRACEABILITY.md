@@ -22,6 +22,7 @@ Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E
 | Lit: block size rewrite | `test/Dialect/LLM/kv_cache_optimization.mlir`, `mvp_single_layer_pipeline.mlir` | Implemented |
 | §3.1 model → IR → kernel (single layer) | `llmir-compile --mvp-a-e2e`, `src/llmir/compiler/mvp_pipeline.py` | **E1** |
 | Lower to runtime calls | `-llm-lower-kv-cache-ops` → `@mlir_llm_*` | Implemented (needs `llmir-opt`) |
+| M5 lowered hot path execution | `m5_lowered_hot_path.json`, `scripts/m5_lowered_hot_path_verify.py` | **Semantic parity vs reference** |
 | Reference correctness | `tests/test_mvp_a_e2e.py`, `tests/test_compile_e2e.py` | CI (Python) |
 | §5 shared-prefix decoder / TTFT workload | `scripts/sharegpt_prefix_bench.py`, `llmir-benchmark --shared-prefix-bench` | **E2** (sim + llmir_paged E2E) |
 | GPU KV without CPU NumPy round-trip | `TorchGpuPagedKVCache`, `PagedKVDecoder` GPU path, `llmir-benchmark --mvp-c-bench` | **E3** |
