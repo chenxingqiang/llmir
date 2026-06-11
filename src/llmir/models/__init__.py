@@ -935,7 +935,7 @@ class ModelRegistry:
             "qwen3-14b": QwenOptimizer.for_qwen3_14b().config,
             "qwen2.5-7b": QwenOptimizer.for_qwen2_5_7b().config,
             "qwen2.5-72b": QwenOptimizer.for_qwen2_5_72b().config,
-            # Google Gemma 3 (open-weight Gemini family)
+            # Google Gemma 3 (open-source weights on HuggingFace; not closed Gemini API)
             "gemma-3-4b": GemmaOptimizer.for_gemma3_4b().config,
             "gemma-3-12b": GemmaOptimizer.for_gemma3_12b().config,
             "gemma-3-27b": GemmaOptimizer.for_gemma3_27b().config,

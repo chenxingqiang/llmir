@@ -76,7 +76,7 @@ llmir-benchmark --model qwen3-8b --batch-sizes 1,4
 
 | 文档 | 用途 |
 |------|------|
-| [`docs/DECODER_WORKLOAD_ARCHITECTURES.md`](docs/DECODER_WORKLOAD_ARCHITECTURES.md) | 主流 decoder 架构 + S1/S2/S3 workload（不用 ShareGPT 命名） |
+| [`docs/DECODER_WORKLOAD_ARCHITECTURES.md`](docs/DECODER_WORKLOAD_ARCHITECTURES.md) | Qwen + **开源 Gemma** + DeepSeek；S1/S2/S3 workload |
 | [`docs/CAPABILITY_MATRIX.md`](docs/CAPABILITY_MATRIX.md) | 功能真实实现程度（C++ / Python ref / Demo / Planned） |
 | [`docs/PAPER_REVISION_TRACEABILITY.md`](docs/PAPER_REVISION_TRACEABILITY.md) | 论文主张 ↔ 仓库证据（E1–E3、JSON、测试） |
 | [`IEEE-conference/REVISION_NOTES.md`](IEEE-conference/REVISION_NOTES.md) | 审稿意见映射与「已验证 / 投影 / 未来工作」边界 |

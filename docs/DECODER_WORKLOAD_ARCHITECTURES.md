@@ -1,8 +1,21 @@
 # Decoder 主流架构与标准 Workload
 
-LLMIR 默认模型注册表（`llmir-list-models`）仅保留 **千问 Qwen、Google Gemma 3、DeepSeek** 最新 open-weight preset。**不含 Llama / Mistral / Phi / Falcon**（仍可通过 HuggingFace `from_pretrained` 自动导入）。
+LLMIR 默认模型注册表（`llmir-list-models`）仅保留三大 **开源** decoder 主线：
 
-> **Gemini 说明：** 闭源 Gemini API 模型不在此表；开源侧用 **Gemma 3** 作为 Google decoder 对标。
+1. **千问 Qwen**（Qwen3 / Qwen2.5）
+2. **Google Gemma**（Gemma 3 全系列权重公开于 HuggingFace）
+3. **DeepSeek**（V3 / R1）
+
+**不含 Llama / Mistral / Phi / Falcon**（仍可通过 HuggingFace `from_pretrained` 自动导入）。
+
+### Google 系：用开源 Gemma，不用闭源 Gemini API
+
+| 产品 | 是否开源 | LLMIR 用法 |
+|------|----------|------------|
+| **Gemma / Gemma 2 / Gemma 3** | **是** — 权重、config 可下载，可本地编译/推理 | **注册表主对标**（当前精选 Gemma 3） |
+| **Gemini**（API / App） | **否** — 闭源托管服务 | **不进入** registry；无权重无可复现实验 |
+
+论文与 benchmark 写 Google 对标时，应写 **Gemma 3 decoder**（GQA + sliding-window attention + GeGLU），不要混称 Gemini。
 
 ## 1. 精选架构（`ModelRegistry`）
 
