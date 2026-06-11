@@ -225,6 +225,8 @@ python3 scripts/paper_benchmark_collect.py --model gpt2
 
 **Step 2–5：** 方案拆解 → 最小 diff 开发 → 三层回归（pytest / E1–E3 / 图再生）→ 合并并更新 `CAPABILITY_MATRIX` 与 benchmarks JSON。改动影响论文主张时，同步触发 Loop 2 Step 1。
 
+**Step 5 收工（必做）：** 执行 **§六 Agent 迭代收工协议** — 合并 PR 到 `main` → `git pull origin main` → 从最新 `main` 创建下一轮 `cursor/<topic>-575e` 分支。
+
 ### 三、Loop 2：学术论文迭代闭环
 
 核心职责：**把文章与仓库真实能力对齐**。
@@ -273,6 +275,7 @@ python3 IEEE-conference/figures/generate_projected_figures.py  # 仅附录
 |------|------|------|
 | 工程 → 论文 | E1/E2/E3 PR 合并 | 更新 §5、traceability、regen figures |
 | 论文 → 工程 | 审稿要新实验 | Loop 1 开 harness 分支，先绿测试再写主文 |
+| 迭代收工 | 里程碑 Mx 完成 | **§六**：merge PR → pull `main` → 新分支 |
 
 ### 五、论文对齐验证清单（收工前必跑）
 
@@ -291,14 +294,67 @@ python3 IEEE-conference/figures/generate_all_nature_figures.py
 
 **Definition of Done：** traceability 可核对；主文无未标注的 operator/多卡 measured 口吻；图由脚本生成；E1–E5 命名统一。
 
-### 六、落地规范
+### 六、Agent 迭代收工协议（自动合并 + 新分支）
+
+每完成 **一个里程碑（Mx）或一轮 Loop Step 5** 后，Agent **必须**合并进 `main`，再从 **最新 `main`** 开下一轮分支。不要在未合并的旧分支上连续堆多个里程碑。
+
+> 说明：原 `Agent.md` 已并入本文件；下文 Git 协议对 Cloud Agent 与本地 Agent 均适用。
+
+#### 触发条件（须全部满足）
+
+1. 本迭代 Definition of Done 已达成（测试绿、文档 / traceability 已同步）
+2. 变更已 commit 并 push 到当前 `cursor/<topic>-575e` 分支
+3. PR 已创建或更新，描述含本迭代摘要与测试计划
+
+#### 收工步骤（按序执行，不跳步）
+
+```bash
+# 0. 收工前最后一轮验证（见 §五）
+pytest tests/ -m "not network" -q
+
+# 1. 合并当前 PR 到 main（优先 squash；与仓库默认策略一致即可）
+gh pr merge <PR_NUMBER> --squash --delete-branch
+# 若无 gh：在 GitHub UI 合并后，本地执行 git pull
+
+# 2. 同步最新 main
+git fetch origin main
+git checkout main
+git pull origin main
+
+# 3. 从最新 main 开下一轮分支（命名：cursor/<next-topic>-575e）
+git checkout -b cursor/<next-milestone-topic>-575e
+
+# 4. 推送远程并开始下一迭代
+git push -u origin cursor/<next-milestone-topic>-575e
+```
+
+#### 分支命名示例
+
+| 刚完成 | 下一分支名 |
+|--------|------------|
+| M2 E4 compositional | `cursor/e5-ablation-575e` |
+| M3 E5 ablation | `cursor/e6-backend-parity-575e` |
+| M4 E6 parity | `cursor/m5-hot-path-575e` |
+
+#### 禁止
+
+- 在 **未合并** 的 stale 分支上继续堆 M3、M4、M5（应 merge → pull main → 新分支）
+- 从 **落后 main 数周** 的旧分支直接 rebase 后继续开发（应先合并当前工作，再开新分支）
+- 合并前跳过 §五 验证清单
+
+#### 例外
+
+用户显式要求「继续在同一 PR / 分支上堆叠」时，可跳过合并，但须在回复中说明原因与风险。
+
+### 七、落地规范
 
 1. 主张 ≤ 证据（`CAPABILITY_MATRIX` 为上限）
 2. 代码 / `docs/` / `IEEE-conference/` 三件套同步
 3. 聚焦 LLM 专用 IR + serving 集成，不与通用 MLIR 拼大而全
-4. Agent 分支：`cursor/<topic>-575e`
+4. Agent 分支：`cursor/<topic>-575e`；**每轮迭代收工后从最新 `main` 新建**（见 §六）
+5. 里程碑完成 → 合并 PR → `git pull origin main` → 新分支，作为默认工作流
 
-### 七、快速索引
+### 八、快速索引
 
 | 任务 | Loop | 文档 |
 |------|------|------|
