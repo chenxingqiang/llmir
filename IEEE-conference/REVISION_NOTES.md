@@ -2,7 +2,7 @@
 
 Maps reviewer concerns to **what is verified in the repository** vs **what remains planned or illustrative**.
 
-Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVISION_TRACEABILITY.md) and [`docs/CAPABILITY_MATRIX.md`](../docs/CAPABILITY_MATRIX.md).
+Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVISION_TRACEABILITY.md), [`docs/CAPABILITY_MATRIX.md`](../docs/CAPABILITY_MATRIX.md), and long-term bar [`docs/PAPER_TOP_TIER_BAR.md`](../docs/PAPER_TOP_TIER_BAR.md) (OSDI/ASPLOS/MLSys target vs current ICCD honest scope).
 
 ## Verified in open source (cite these)
 
