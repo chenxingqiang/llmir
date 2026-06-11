@@ -288,7 +288,8 @@ pytest tests/ -m "not network" -q
 - **协议（2026-06）**：本地验证通过后 Agent **自动合并** PR；合并后 pull `main` 并从新分支继续；本文采用 YiRage 式五层闭环结构。
 - **Loop R4（M5，lowered hot path）**：`lowered_hot_path.py` 语义热路径 append→lookup→attention；`m5_lowered_hot_path_verify.py`。验证：`pytest tests/test_m5_lowered_hot_path.py -q`。
 - **Loop R5（M6，artifact 包）**：`artifact_manifest.json` + `verify_artifact_bundle.py`；`reproduce_paper.sh` 末尾自动校验。验证：`pytest tests/test_artifact_bundle.py -q`。
-- **下一轮感知建议（M7/E8）**：可选 GPU 实测；或扩大 decoder workload 桶 / lit 覆盖。
+- **Loop R6（Loop 2 论文对齐 + E8 脚手架）**：`revised.tex` §5 写入 E4–E6/M5/M6；`e8_empirical_gpu.py` + CLI（无 CUDA 时 `status=skipped`）。验证：`pytest tests/test_e8_empirical_gpu.py -q`；`python3 scripts/e8_empirical_gpu_bench.py`。
+- **下一轮感知建议**：真机跑 E8 填 `e8_empirical_gpu.json`；或扩大 decoder workload 桶 / lit 覆盖。
 
 ---
 
@@ -308,7 +309,7 @@ pytest tests/ -m "not network" -q
 | **E5** | Ablation at Verifiable Layers | 已实现 | `scripts/e5_ablation_verify.py` |
 | **E6** | Multi-Backend Correctness Parity | 已实现 | `scripts/e6_backend_parity_verify.py --model toy` |
 | **E7** | Quality (PPL/MMLU) | 可选 | B 类 |
-| **E8** | Empirical vs vLLM (7B+) | 可选 | B 类；**非 Tier-A 必要** |
+| **E8** | Empirical vs vLLM (7B+) | 脚手架已具备 | `scripts/e8_empirical_gpu_bench.py`；B 类；**非 Tier-A 必要** |
 
 详细 venue 口径与六维验收：[`docs/PAPER_TOP_TIER_BAR.md`](docs/PAPER_TOP_TIER_BAR.md)。
 

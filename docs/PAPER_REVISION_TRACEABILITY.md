@@ -12,8 +12,9 @@ Maps reviewer-facing claims in `IEEE-conference/REVISION_NOTES.md` to **verifiab
 | **E4** | Compositional / Trace-Driven Verification | `scripts/e4_compositional_verify.py`, `tests/test_e4_compositional.py` | `docs/E4_COMPOSITIONAL_VERIFICATION.md` |
 | **E5** | Ablation at Verifiable Layers | `scripts/e5_ablation_verify.py`, `tests/test_e5_ablation.py` | `docs/E5_ABLATION.md` |
 | **E6** | Multi-Backend Correctness Parity | `scripts/e6_backend_parity_verify.py`, `tests/test_e6_backend_parity.py` | `docs/E6_BACKEND_PARITY.md` |
+| **E8** | Empirical GPU Benchmark (optional) | `scripts/e8_empirical_gpu_bench.py`, `tests/test_e8_empirical_gpu.py` | `docs/E8_EMPIRICAL_GPU_BENCH.md` |
 
-Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E3** only.
+Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E6** for A-class claims and **E8** only for optional B-class GPU rows.
 
 | Revision item | Verification | Status |
 |---------------|--------------|--------|
@@ -69,6 +70,10 @@ python3 scripts/e6_backend_parity_verify.py --model toy
 python3 scripts/verify_artifact_bundle.py
 pytest tests/test_artifact_bundle.py -q
 
+# E8 optional GPU bench (skips without CUDA)
+pytest tests/test_e8_empirical_gpu.py -q
+python3 scripts/e8_empirical_gpu_bench.py
+
 # Full A-class reproduce (E1–E6 + M5 + figures + verify)
 bash scripts/reproduce_paper.sh
 
@@ -96,6 +101,7 @@ Regenerate projected/illustrative: `python3 IEEE-conference/figures/generate_pro
 
 ## Honesty notes
 
-- Main text §5: **E1–E3 + serving proxies only**; no operator-level kernel claims.
+- Main text §5: **E1–E6 analytical harnesses + M6 CPU bundle**; serving proxies (E2/E3) and no operator-level kernel claims.
+- **E8** (optional): B-class GPU throughput only; `status=skipped` on CPU CI is expected and honest.
 - Throughput heatmap / scale-out tables: **projected** in Appendix `app:projected`.
 - Attention figure: **future operator work** in Appendix `app:future_ops`; not evidence for LLMIR codegen today.

@@ -1,0 +1,15 @@
+{
+  "experiment": "E8",
+  "mode": "empirical_gpu_bench",
+  "evidence_class": "B",
+  "status": "skipped",
+  "cuda_stack": {
+    "torch_cuda": false,
+    "native_cuda_built": false,
+    "native_cuda_runtime": false,
+    "device_count": 0
+  },
+  "results": [],
+  "claim_scope": "Optional same-harness throughput comparison; not a compiler correctness proof.",
+  "reason": "no_cuda_available"
+}

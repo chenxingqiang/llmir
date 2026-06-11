@@ -14,6 +14,11 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 | GPU KV without NumPy round-trip | **E3** | `TorchGpuPagedKVCache`, `tests/test_mvp_c_e2e.py` |
 | Measured decode baseline | gpt2 HF vs `llmir-paged` | `paper_results.json` |
 | External serving reference | Qwen vLLM cited row | `external_baselines.json` (Qwen official benchmark) |
+| Compositional trace (E1+E2+E3) | §5 E4 | `e4_compositional.json`, `scripts/e4_compositional_verify.py` |
+| Verifiable layer ablations | §5 E5 | `e5_ablation.json`, `scripts/e5_ablation_verify.py` |
+| Multi-backend decode parity | §5 E6 | `e6_backend_parity.json`, `scripts/e6_backend_parity_verify.py` |
+| Lowered hot path semantics | §5 M5 | `m5_lowered_hot_path.json`, `scripts/m5_lowered_hot_path_verify.py` |
+| CPU artifact bundle | §5 M6 | `artifact_manifest.json`, `scripts/verify_artifact_bundle.py`, `reproduce_paper.sh` |
 
 ## Partially addressed (labeled illustrative / projected in `revised.tex`)
 
@@ -23,7 +28,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 | Quality (PPL / MMLU) | Table III | **Planned** — illustrative targets, not measured |
 | Memory config / block sweep | Table IV, block-size figure | **KV-append microbench lineage** — not A100 LLaMA e2e |
 | Multi-GPU scaling | Table V | **Illustrative** — no artifact |
-| Ablation | Table VI | **Illustrative** — no artifact |
+| Ablation | Table VI | **Illustrative throughput** — verifiable E5 proxy in `e5_ablation.json` (not Table VI numbers) |
 | Attention speedup figure | Fig. attention | **Standalone C++ microbench** — not production Flash on hot path |
 | TensorRT / MLC / SGLang columns | Table II | **Design targets** until `llmir-benchmark` + GPU CI |
 
@@ -32,7 +37,7 @@ Authoritative status: [`docs/PAPER_REVISION_TRACEABILITY.md`](../docs/PAPER_REVI
 ### Review 1 — implementation & experimental detail
 
 - **Implementation depth**: Addressed in text + E1 (**verified**).
-- **Experimental setup (A100, decoder length sweeps, MMLU)**: §5.1 splits **target environment** vs **completed measurements**; only E1–E3 + gpt2 CPU + KV sim are in CI today.
+- **Experimental setup (A100, decoder length sweeps, MMLU)**: §5.1 splits **target environment** vs **completed measurements**; A-class CI covers E1–E6 + M5/M6 on CPU; optional E8 GPU bench is B-class only (`e8_empirical_gpu.json`).
 
 ### Review 2 — IR flow, multi-model, kernel selection
 
