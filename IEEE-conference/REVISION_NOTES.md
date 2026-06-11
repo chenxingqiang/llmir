@@ -72,6 +72,9 @@ python3 IEEE-conference/figures/generate_all_nature_figures.py
 
 # Illustrative / projected figures (Table II heatmap, block sweep, attention microbench)
 python3 IEEE-conference/figures/generate_projected_figures.py
+
+# E4/E5 multi-bucket appendix tables (from committed JSON)
+python3 scripts/generate_paper_bucket_tables_tex.py
 ```
 
 ## Compile revised paper

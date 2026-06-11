@@ -38,6 +38,7 @@ Repository code and CI retain legacy `mvp-*` flag names; the paper uses **E1–E
 | E4 multi-bucket (S1/S2/S3) | `e4_compositional_buckets.json`, `scripts/e4_e5_multi_bucket_verify.py` | **Per-bucket ideal-bound check** |
 | E5 ablation switches | `e5_ablation.json` | **Isolated + cumulative proxy deltas** |
 | E5 multi-bucket (S1/S2/S3) | `e5_ablation_buckets.json`, `scripts/e4_e5_multi_bucket_verify.py` | **Per-bucket switch matrix** |
+| Appendix E4/E5 bucket tables | `IEEE-conference/generated/e4_e5_bucket_tables.tex`, `scripts/generate_paper_bucket_tables_tex.py` | **LaTeX from JSON** |
 | E6 backend parity | `e6_backend_parity.json` | **Decode tokens + KV micro match** |
 
 ## Quick commands

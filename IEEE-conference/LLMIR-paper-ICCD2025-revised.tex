@@ -367,9 +367,9 @@ Fig.~\ref{fig:e1_e3_eval} summarizes the three evaluation experiments that conne
 
 Beyond E1--E3 integration checks, the repository provides \textbf{A-class analytical} experiments that compose compile-time levers on shared-prefix decoder traces $(L_s, N, L_u)$ without claiming end-to-end superiority over vLLM.
 
-\textbf{E4 (compositional trace verification):} \texttt{e4\_compositional\_verify.py} combines E1 block-size policy, E2 prefill token accounting, and E3 host-copy bounds; output \texttt{e4\_compositional.json} includes an ideal KV speedup bound checked against E2 simulation (\texttt{shared\_prefix\_decoder\_2048\_sim.json}).
+\textbf{E4 (compositional trace verification):} \texttt{e4\_compositional\_verify.py} combines E1 block-size policy, E2 prefill token accounting, and E3 host-copy bounds; output \texttt{e4\_compositional.json} (S2 primary) and \texttt{e4\_compositional\_buckets.json} (S1--S3) include ideal KV speedup bounds checked against per-bucket E2 simulation JSON (Appendix~\ref{app:verified_buckets}, Table~\ref{tab:e4_buckets}).
 
-\textbf{E5 (ablation at verifiable layers):} \texttt{e5\_ablation\_verify.py} toggles block-opt, prefix cache, and GPU KV paths independently and cumulatively; proxy deltas are predictable on CPU (not the illustrative throughput ablation in Table~\ref{tab:ablation}).
+\textbf{E5 (ablation at verifiable layers):} \texttt{e5\_ablation\_verify.py} toggles block-opt, prefix cache, and GPU KV paths independently and cumulatively; proxy deltas are predictable on CPU across S1--S3 (Table~\ref{tab:e5_buckets}), not the illustrative throughput ablation in Table~\ref{tab:ablation}.
 
 \textbf{E6 (multi-backend correctness parity):} \texttt{e6\_backend\_parity\_verify.py} asserts identical greedy decode tokens for \texttt{numpy} vs \texttt{torch\_cuda} KV backends on a toy decoder.
 
@@ -615,8 +615,15 @@ Baseline (no LLMIR opt.) & 32,500 & - \\
 \end{tabular}
 \label{tab:ablation}
 \end{center}
-\textsuperscript{$\dagger$}\footnotesize Illustrative cumulative targets. Verifiable layer ablations (E5 proxy switches) are in \texttt{e5\_ablation.json}, not this throughput table.
+\textsuperscript{$\dagger$}\footnotesize Illustrative cumulative targets. Verifiable layer ablations (E5 proxy switches) are in \texttt{e5\_ablation.json} and \texttt{e5\_ablation\_buckets.json} (Table~\ref{tab:e5_buckets}), not this throughput table.
 \end{table}
+
+\section{Verified Multi-Bucket Decoder Traces (E4/E5)}
+\label{app:verified_buckets}
+
+Standard workload buckets S1 (short multi-tenant), S2 (RAG shared system), and S3 (long-document prefill) are defined in \texttt{docs/DECODER\_WORKLOAD\_ARCHITECTURES.md}. CPU KV simulations live in \texttt{shared\_prefix\_decoder\_\{128,2048,8192\}\_sim.json}; \texttt{scripts/e4\_e5\_multi\_bucket\_verify.py} regenerates the tables below from committed JSON.
+
+\input{generated/e4_e5_bucket_tables.tex}
 
 \section{Future Operator-Level Evaluation}
 \label{app:future_ops}

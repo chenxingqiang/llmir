@@ -1,0 +1,42 @@
+% Auto-generated from e4_compositional_buckets.json and e5_ablation_buckets.json
+% Regenerate: python3 scripts/generate_paper_bucket_tables_tex.py
+
+\begin{table}[htbp]
+\caption{E4 compositional proxies across decoder workload buckets (S1--S3)\textsuperscript{$\ddagger$}}
+\begin{center}
+\small
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Bucket} & $\mathbf{L_s}$ & $\mathbf{N}$ & $\mathbf{L_u}$ & \textbf{E1} & \textbf{E2} & \textbf{E3} & \textbf{Sim} & \textbf{Ideal} \\
+\hline
+S1 & 128 & 32 & 16 & 96.9\% & 86.1\% & 100.0\% & 3.57$\times$ & 7.20$\times$ \\
+\hline
+S2 & 2048 & 32 & 8 & 93.8\% & 96.5\% & 100.0\% & 7.71$\times$ & 28.56$\times$ \\
+\hline
+S3 & 8192 & 16 & 64 & 93.8\% & 93.0\% & 100.0\% & 7.39$\times$ & 14.33$\times$ \\
+\hline
+\end{tabular}
+\label{tab:e4_buckets}
+\end{center}
+\textsuperscript{$\ddagger$}\footnotesize Source: \texttt{e4\_compositional\_buckets.json}; all rows satisfy \texttt{measured\_within\_ideal\_bound}=true.
+\end{table}
+
+\begin{table}[htbp]
+\caption{E5 full-stack proxy ablation across decoder workload buckets (S1--S3)\textsuperscript{$\ddagger$}}
+\begin{center}
+\small
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+\textbf{Bucket} & $\mathbf{L_s}$ & $\mathbf{N}$ & $\mathbf{L_u}$ & \textbf{E1} & \textbf{E2} & \textbf{E3} \\
+\hline
+S1 & 128 & 32 & 16 & 96.9\% & 86.1\% & 100.0\% \\
+\hline
+S2 & 2048 & 32 & 8 & 93.8\% & 96.5\% & 100.0\% \\
+\hline
+S3 & 8192 & 16 & 64 & 93.8\% & 93.0\% & 100.0\% \\
+\hline
+\end{tabular}
+\label{tab:e5_buckets}
+\end{center}
+\textsuperscript{$\ddagger$}\footnotesize Source: \texttt{e5\_ablation\_buckets.json}; isolated/cumulative rows omitted for space.
+\end{table}
