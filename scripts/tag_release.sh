@@ -43,9 +43,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$VERSION" ]]; then
-  VERSION="$(
-    python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
-  )"
+  VERSION="$(python3 scripts/pyproject_tools.py version)"
 fi
 
 TAG="v${VERSION}"
@@ -56,34 +54,21 @@ echo ""
 echo "=== Version / changelog gates ==="
 pytest tests/test_prepare_release.py -q
 
-python3 - <<PY
-import re
-import tomllib
-from pathlib import Path
+python3 scripts/pyproject_tools.py check-alignment "${VERSION}"
 
-version = "${VERSION}"
-data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
-if data["project"]["version"] != version:
-    raise SystemExit(
-        f"pyproject.toml version {data['project']['version']!r} != requested {version!r}"
-    )
-changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
-if not re.search(rf"\\[{re.escape(version)}\\]", changelog):
-    raise SystemExit(f"CHANGELOG.md missing [{version}] section")
-init = Path("src/llmir/__init__.py").read_text(encoding="utf-8")
-m = re.search(r'__version__\\s*=\\s*["\\']([^"\\']+)["\\']', init)
-if not m or m.group(1) != version:
-    raise SystemExit(f"src/llmir/__init__.py __version__ must be {version}")
-print("version alignment OK")
-PY
-
+TAG_EXISTS=0
 if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
-  echo "Tag ${TAG} already exists locally." >&2
-  exit 1
+  TAG_EXISTS=1
+elif git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+  TAG_EXISTS=1
 fi
 
-if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-  echo "Tag ${TAG} already exists on origin." >&2
+if [[ "$TAG_EXISTS" == "1" ]]; then
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY RUN: tag ${TAG} already exists (release gates OK)"
+    exit 0
+  fi
+  echo "Tag ${TAG} already exists locally or on origin." >&2
   exit 1
 fi
 

@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 export PATH="${HOME}/.local/bin:${PATH}"
 
 echo "LLMIR release prep (local)"
-echo "version: $(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+echo "version: $(python3 scripts/pyproject_tools.py version)"
 echo ""
 
 echo "=== Lint gate ==="

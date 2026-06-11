@@ -34,4 +34,4 @@ def test_tag_release_dry_run_passes():
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
     assert "DRY RUN" in proc.stdout
-    assert "0.2.1" in proc.stdout or "v0.2.1" in proc.stdout
+    assert "0.2.2" in proc.stdout or "v0.2.2" in proc.stdout or "already exists" in proc.stdout

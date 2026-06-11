@@ -37,6 +37,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R18 | MVP-C CUDA device wiring test (CPU-safe CI) |
 | R19 | Release 0.2.1 + MLIR lit runbook (`build_mlir_opt.sh`) |
 | R20 | Release tag automation + PyPI trigger workflow |
+| R21 | CI release fixes (tomli, mypy) + 0.2.2 bump |
 
 ## Reviewer commands
 

@@ -34,7 +34,7 @@ import os
 
 os.environ.setdefault("USE_TORCH", "1")
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __author__ = "Xingqiang Chen"
 __email__ = "chenxingqiang@turingai.cc"
 
