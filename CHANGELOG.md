@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- MVP-C `test_mvp_c_engine_device`: CPU CI no longer calls `model.to(cuda)` when CUDA is mocked; GPU integration test gated with `skipif`.
+
 ### Added
 
 - **Release prep**: `scripts/prepare_release.sh`, `docs/PYPI_RELEASE_CHECKLIST.md`, workflow `release-prep.yml`.

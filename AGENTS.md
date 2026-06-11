@@ -300,6 +300,7 @@ pytest tests/ -m "not network" -q
 - **Loop R15（CI lint + walkthrough gates）**：修复 ruff/black；mypy 收窄至 benchmark+compiler；`verify_walkthrough_gates.py` + `ci_lint_gate.sh`。验证：`bash scripts/ci_lint_gate.sh`；`pytest tests/test_verify_walkthrough_gates.py -q`。
 - **Loop R16（Python 3.9+ 矩阵收敛）**：`requires-python >=3.9`；CI 移除 3.8；`PYTHON_VERSION_POLICY.md`。验证：`pytest tests/test_python_version_policy.py -q`。
 - **Loop R17（PyPI release prep）**：`prepare_release.sh` + `PYPI_RELEASE_CHECKLIST.md` + `release-prep.yml`。验证：`pytest tests/test_prepare_release.py -q`；`bash scripts/prepare_release.sh`。
+- **Loop R18（MVP-C device test fix）**：`test_mvp_c_engine_device.py` 在无 GPU CI 上不再误触 `model.to(cuda)`；CPU 安全 spy 验证 `create_paged_kv_cache(device="cuda")`；真 CUDA 集成测试 `skipif`。验证：`pytest tests/test_mvp_c_engine_device.py -q`；全量 `pytest -q` 221 passed。
 - **下一轮感知建议**：打 tag `v0.2.1` 发布；GPU E8 `completed`；mlir-opt lit 全绿。
 
 ---

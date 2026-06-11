@@ -32,6 +32,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R15 | CI lint hardening + `verify_walkthrough_gates.py` |
 | R16 | Python 3.9+ policy; CI matrix drops 3.8 |
 | R17 | PyPI release prep script + checklist + workflow |
+| R18 | MVP-C CUDA device wiring test (CPU-safe CI) |
 
 ## Reviewer commands
 
