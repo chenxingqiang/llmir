@@ -57,7 +57,8 @@ Expected tail: `m6_all_pass: True`, `e8_status: skipped` on CPU CI (honest).
 # B-class E8 (needs CUDA + llmir[full])
 python3 scripts/e8_empirical_gpu_bench.py
 
-# MLIR lit smoke (needs mlir-opt on PATH)
-export PATH=/path/to/llvm-build/bin:$PATH
-python3 scripts/verify_mlir_lit_suite.py
+# MLIR lit smoke (needs in-tree mlir-opt — see docs/MLIR_LIT_RUNBOOK.md)
+bash scripts/build_mlir_opt.sh
+export PATH="${PWD}/build-native/bin:$PATH"
+bash scripts/mlir_lit_smoke.sh
 ```

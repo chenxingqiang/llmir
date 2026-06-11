@@ -35,6 +35,15 @@ def test_pyproject_version_in_changelog():
     )
 
 
+def test_package_version_matches_pyproject():
+    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    expected = data["project"]["version"]
+    init = (ROOT / "src/llmir/__init__.py").read_text(encoding="utf-8")
+    match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', init)
+    assert match, "__version__ not found in src/llmir/__init__.py"
+    assert match.group(1) == expected
+
+
 def test_prepare_release_dry_imports():
     """Ensure tomllib version read works (used by prepare_release.sh banner)."""
     proc = subprocess.run(

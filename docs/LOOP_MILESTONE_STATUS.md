@@ -15,6 +15,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M7 | E8 scaffold + S1/S3 buckets + reproduce E8 | scaffold |
 | M8 | MLIR lit catalog + S1/S2/S3 block-size lit | done |
 | M9 | PyPI release prep (`prepare_release.sh`) | done |
+| M10 | Release 0.2.1 version bump + MLIR lit runbook | done |
 
 ## Recent loops (R6–R13)
 
@@ -33,6 +34,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R16 | Python 3.9+ policy; CI matrix drops 3.8 |
 | R17 | PyPI release prep script + checklist + workflow |
 | R18 | MVP-C CUDA device wiring test (CPU-safe CI) |
+| R19 | Release 0.2.1 + MLIR lit runbook (`build_mlir_opt.sh`) |
 
 ## Reviewer commands
 

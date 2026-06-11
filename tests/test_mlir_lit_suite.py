@@ -62,6 +62,14 @@ def test_run_lit_suite_passes_with_opt():
     assert summary["passed"] == len(LIT_SUITE_FILES)
 
 
+def test_mlir_lit_lab_scripts_and_runbook_exist():
+    assert (ROOT / "scripts/mlir_lit_smoke.sh").is_file()
+    assert (ROOT / "scripts/build_mlir_opt.sh").is_file()
+    runbook = (ROOT / "docs/MLIR_LIT_RUNBOOK.md").read_text(encoding="utf-8")
+    assert "build_mlir_opt.sh" in runbook
+    assert "decoder_workload_buckets.mlir" in runbook
+
+
 def test_lit_status_json_roundtrip(tmp_path):
     out = tmp_path / "status.json"
     summary = run_lit_suite(default_lit_dir(ROOT))

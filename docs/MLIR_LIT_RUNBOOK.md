@@ -1,0 +1,49 @@
+# MLIR Lit Runbook (Tier-A catalog)
+
+Runs the four Python-cataloged lit files under `test/Dialect/LLM/` when a
+**repo-built** `mlir-opt` (with LLM dialect passes) is available. Stock distro
+`mlir-opt` binaries do **not** register `-llm-optimize-kv-cache`.
+
+## Catalog (M8)
+
+| File | Passes exercised |
+|------|------------------|
+| `kv_cache_ops.mlir` | parse / dialect ops |
+| `kv_cache_optimization.mlir` | `-llm-optimize-kv-cache` |
+| `mvp_single_layer_pipeline.mlir` | optimize + `-llm-lower-kv-cache-ops` |
+| `decoder_workload_buckets.mlir` | S1/S2/S3 block-size buckets |
+
+## Build mlir-opt
+
+Requires CMake, a C++17 compiler, and enough disk for an LLVM/MLIR build tree.
+
+```bash
+bash scripts/build_mlir_opt.sh
+export PATH="${PWD}/build-native/bin:$PATH"
+# or: export LLMIR_OPT_EXECUTABLE="${PWD}/build-native/bin/mlir-opt"
+```
+
+Reuses `BUILD_DIR` (default `build-native/`) with `scripts/build_native_runtime.sh`.
+
+## Smoke test
+
+```bash
+bash scripts/mlir_lit_smoke.sh
+# writes IEEE-conference/benchmarks/mlir_lit_suite_status.json
+```
+
+Expected when opt is present: `status: passed`, four files green.
+
+## CI note
+
+A-class walkthrough and CPU CI **skip** lit when opt is absent (`status: skipped`).
+This is honest Tier-A behavior per `CAPABILITY_MATRIX.md`. Full lit closure is a
+**lab** step, not a PyPI wheel requirement.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `unknown pass 'llm-optimize-kv-cache'` | Use in-tree `mlir-opt`, not system package |
+| `mlir-opt not found` | Run `build_mlir_opt.sh` and export `PATH` |
+| FileCheck failures | Rebuild after changing `lib/Dialect/LLM/` passes |
