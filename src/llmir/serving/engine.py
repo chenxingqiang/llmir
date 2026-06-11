@@ -472,20 +472,26 @@ class LLMEngine:
     def _to_vllm_sampling_params(self, params: SamplingParams) -> Any:
         """Convert LLMIR sampling parameters to vLLM sampling parameters."""
         self._ensure_vllm()
+        cls = self._vllm_sampling_params_cls
+        if cls is None:
+            raise RuntimeError("vLLM sampling params class not initialized")
         kwargs = params.to_dict()
         if not kwargs.get("stop"):
             kwargs.pop("stop", None)
         if not kwargs.get("stop_token_ids"):
             kwargs.pop("stop_token_ids", None)
-        return self._vllm_sampling_params_cls(**kwargs)
+        return cls(**kwargs)
 
     def _generate_vllm(
         self, prompts: List[str], sampling_params: SamplingParams
     ) -> List[RequestOutput]:
         """Generate completions through vLLM and normalize outputs."""
         self._ensure_vllm()
+        engine = self._vllm_engine
+        if engine is None:
+            raise RuntimeError("vLLM engine not initialized")
         vllm_params = self._to_vllm_sampling_params(sampling_params)
-        vllm_outputs = self._vllm_engine.generate(prompts, vllm_params)
+        vllm_outputs = engine.generate(prompts, vllm_params)
 
         outputs = []
         for index, output in enumerate(vllm_outputs):

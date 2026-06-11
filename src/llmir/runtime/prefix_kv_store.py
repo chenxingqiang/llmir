@@ -153,5 +153,5 @@ def _restore_layer_kv(
 def _to_numpy(data: object) -> np.ndarray:
     """Normalize torch or NumPy KV tensors for CPU prefix persistence."""
     if _is_torch_tensor(data):
-        return data.detach().cpu().numpy()  # type: ignore[union-attr]
+        return data.detach().cpu().numpy()  # type: ignore[attr-defined]
     return np.asarray(data).copy()

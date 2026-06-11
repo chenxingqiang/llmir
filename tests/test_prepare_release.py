@@ -5,12 +5,31 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts/prepare_release.sh"
 CHECKLIST = ROOT / "docs/PYPI_RELEASE_CHECKLIST.md"
+TOOLS = ROOT / "scripts/pyproject_tools.py"
+
+
+def _load_pyproject() -> dict:
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys; sys.path.insert(0, 'scripts'); "
+            "from pyproject_tools import load_pyproject; "
+            "import json; print(json.dumps(load_pyproject()))",
+        ],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    import json
+
+    return json.loads(proc.stdout)
 
 
 def test_prepare_release_script_exists():
@@ -27,7 +46,7 @@ def test_release_checklist_documents_tag_publish():
 
 
 def test_pyproject_version_in_changelog():
-    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    data = _load_pyproject()
     version = data["project"]["version"]
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     assert re.search(rf"\[{re.escape(version)}\]", changelog), (
@@ -36,7 +55,7 @@ def test_pyproject_version_in_changelog():
 
 
 def test_package_version_matches_pyproject():
-    data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    data = _load_pyproject()
     expected = data["project"]["version"]
     init = (ROOT / "src/llmir/__init__.py").read_text(encoding="utf-8")
     match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', init)
@@ -44,19 +63,13 @@ def test_package_version_matches_pyproject():
     assert match.group(1) == expected
 
 
-def test_prepare_release_dry_imports():
-    """Ensure tomllib version read works (used by prepare_release.sh banner)."""
+def test_pyproject_tools_reads_version():
     proc = subprocess.run(
-        [
-            sys.executable,
-            "-c",
-            "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])",
-        ],
+        [sys.executable, str(TOOLS), "version"],
         cwd=str(ROOT),
         capture_output=True,
         text=True,
         check=True,
     )
-    assert proc.stdout.strip() == tomllib.loads(
-        (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    )["project"]["version"]
+    version = proc.stdout.strip()
+    assert version == _load_pyproject()["project"]["version"]

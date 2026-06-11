@@ -235,7 +235,7 @@ class NativePagedKVCacheHandle:
         ok = lib.llmir_kvcache_clear_sequence(self._handle, seq_id) == 0
         if ok:
             self._seq_lengths.pop(seq_id, None)
-        return ok
+        return bool(ok)
 
     def reset(self) -> None:
         lib = _load_library()

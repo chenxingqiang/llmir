@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-12
+
+### Fixed
+
+- **CI Python 3.9/3.10**: `scripts/pyproject_tools.py` with `tomli` fallback (no stdlib `tomllib`).
+- **Release tag dry-run**: succeeds when the release tag already exists (gates-only validation).
+- **mypy lint**: type fixes in `native_bridge`, `prefix_kv_store`, `engine` (vLLM lazy init).
+
+## [0.2.1] - 2026-06-05
+
 ### Added
 
 - **Release tag automation**: `scripts/tag_release.sh`, workflow `release-tag.yml` (push `v*` → PyPI via `python-package.yml`).
-
-## [0.2.1] - 2026-06-05
 
 ### Fixed
 
