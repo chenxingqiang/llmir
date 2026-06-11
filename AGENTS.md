@@ -299,7 +299,8 @@ pytest tests/ -m "not network" -q
 - **Loop R14（Evidence dashboard + README badges）**：`generate_evidence_dashboard.py` → `docs/EVIDENCE_DASHBOARD.md`；README CI badges。验证：`pytest tests/test_evidence_dashboard.py -q`。
 - **Loop R15（CI lint + walkthrough gates）**：修复 ruff/black；mypy 收窄至 benchmark+compiler；`verify_walkthrough_gates.py` + `ci_lint_gate.sh`。验证：`bash scripts/ci_lint_gate.sh`；`pytest tests/test_verify_walkthrough_gates.py -q`。
 - **Loop R16（Python 3.9+ 矩阵收敛）**：`requires-python >=3.9`；CI 移除 3.8；`PYTHON_VERSION_POLICY.md`。验证：`pytest tests/test_python_version_policy.py -q`。
-- **下一轮感知建议**：GPU runner 上 E8 `completed`；有 mlir-opt 时 lit 全绿；或 PyPI release 对齐 0.2.x。
+- **Loop R17（PyPI release prep）**：`prepare_release.sh` + `PYPI_RELEASE_CHECKLIST.md` + `release-prep.yml`。验证：`pytest tests/test_prepare_release.py -q`；`bash scripts/prepare_release.sh`。
+- **下一轮感知建议**：打 tag `v0.2.1` 发布；GPU E8 `completed`；mlir-opt lit 全绿。
 
 ---
 

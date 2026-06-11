@@ -1,0 +1,32 @@
+name: Release prep
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package and tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest numpy torch build twine
+          pip install transformers || true
+
+      - name: Run release prep script
+        run: bash scripts/prepare_release.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist/*
+          if-no-files-found: error
