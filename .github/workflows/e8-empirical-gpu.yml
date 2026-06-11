@@ -1,0 +1,59 @@
+name: E8 empirical GPU (B-class, optional)
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: HuggingFace model id
+        required: false
+        default: gpt2
+      backends:
+        description: Comma-separated backends
+        required: false
+        default: hf,llmir-paged
+
+jobs:
+  e8-bench:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install LLMIR and deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[full]"
+          pip install pytest
+
+      - name: E8 unit tests
+        run: pytest tests/test_e8_empirical_gpu.py -q
+
+      - name: E8 empirical GPU bench (CUDA when available)
+        run: |
+          python3 scripts/e8_empirical_gpu_bench.py \
+            --model "${{ github.event.inputs.model }}" \
+            --backends "${{ github.event.inputs.backends }}"
+
+      - name: Validate E8 JSON schema
+        run: |
+          python3 -c "
+          import json
+          from pathlib import Path
+          p = Path('IEEE-conference/benchmarks/e8_empirical_gpu.json')
+          d = json.loads(p.read_text())
+          assert d['experiment'] == 'E8'
+          assert d['evidence_class'] == 'B'
+          assert d['status'] in ('skipped', 'completed')
+          print('status:', d['status'])
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: e8-empirical-gpu-json
+          path: IEEE-conference/benchmarks/e8_empirical_gpu.json
+          if-no-files-found: error

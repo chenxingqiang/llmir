@@ -32,7 +32,15 @@ llmir-compile --emit-kv-pipeline --run-reference --compare-torch -o /tmp/kv.mlir
 llmir-list-models
 
 pytest tests/ -v
+
+# A-class reviewer walkthrough (~5 min CPU, verify committed artifacts)
+bash scripts/walkthrough_a_class.sh
+
+# Full paper artifact regen (E1–E6 + M5 + figures)
+bash scripts/reproduce_paper.sh
 ```
+
+See [`docs/WALKTHROUGH.md`](./docs/WALKTHROUGH.md) for step-by-step evidence checks. Optional B-class GPU bench: [`docs/E8_LAB_RUNBOOK.md`](./docs/E8_LAB_RUNBOOK.md).
 
 **Capability matrix** (what is C++ vs reference Python vs demo-only):
 [`docs/CAPABILITY_MATRIX.md`](./docs/CAPABILITY_MATRIX.md)

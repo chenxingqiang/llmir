@@ -1,0 +1,41 @@
+name: A-class walkthrough
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  walkthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install LLMIR and test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest numpy torch
+          pip install transformers || true
+
+      - name: Run A-class walkthrough
+        run: bash scripts/walkthrough_a_class.sh
+
+      - name: Upload walkthrough status artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: walkthrough-status-json
+          path: |
+            IEEE-conference/benchmarks/artifact_bundle_status.json
+            IEEE-conference/benchmarks/mlir_lit_suite_status.json
+            IEEE-conference/benchmarks/e8_empirical_gpu.json
+          if-no-files-found: warn
