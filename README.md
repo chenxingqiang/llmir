@@ -9,6 +9,8 @@ LLMIR is a compiler infrastructure for large language models based on MLIR (Mult
 
 **Evidence dashboard**: [`docs/EVIDENCE_DASHBOARD.md`](./docs/EVIDENCE_DASHBOARD.md) · [`docs/LOOP_MILESTONE_STATUS.md`](./docs/LOOP_MILESTONE_STATUS.md)
 
+**Release**: [`docs/PYPI_RELEASE_CHECKLIST.md`](./docs/PYPI_RELEASE_CHECKLIST.md) · `bash scripts/prepare_release.sh`
+
 ---
 
 ## Quick Start

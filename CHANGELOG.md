@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Release prep**: `scripts/prepare_release.sh`, `docs/PYPI_RELEASE_CHECKLIST.md`, workflow `release-prep.yml`.
+
 ### Changed
 
 - **Python**: minimum supported version is **3.9** (CI matrix 3.9–3.12; 3.8 dropped). See `docs/PYTHON_VERSION_POLICY.md`.
+
+### Added (Loop R6–R16 evidence chain)
+
+- E4–E6 multi-bucket traces, M6 artifact bundle extensions, E8 B-class scaffold.
+- A-class walkthrough + CI (`a-class-walkthrough.yml`), evidence dashboard, lint gates.
+- MLIR lit catalog (`decoder_workload_buckets.mlir`), paper appendix tables from JSON.
 
 ### Added (P5)
 

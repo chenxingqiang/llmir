@@ -14,6 +14,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M6 | CPU artifact bundle | done |
 | M7 | E8 scaffold + S1/S3 buckets + reproduce E8 | scaffold |
 | M8 | MLIR lit catalog + S1/S2/S3 block-size lit | done |
+| M9 | PyPI release prep (`prepare_release.sh`) | done |
 
 ## Recent loops (R6–R13)
 
@@ -30,6 +31,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R14 | README CI badges + `EVIDENCE_DASHBOARD.md` |
 | R15 | CI lint hardening + `verify_walkthrough_gates.py` |
 | R16 | Python 3.9+ policy; CI matrix drops 3.8 |
+| R17 | PyPI release prep script + checklist + workflow |
 
 ## Reviewer commands
 
