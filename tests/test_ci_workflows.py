@@ -41,6 +41,9 @@ def test_pypi_republish_workflow_exists():
     text = path.read_text(encoding="utf-8")
     assert "workflow_dispatch" in text
     assert "pypa/gh-action-pypi-publish" in text
+    assert "pypi_republish_preflight.sh" in text
+    assert "verify_pypi_release.py" in text
+    assert "--require-published" in text
 
 
 def test_release_tag_workflow_exists():

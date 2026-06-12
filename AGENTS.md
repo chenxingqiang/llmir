@@ -316,7 +316,8 @@ pytest tests/ -m "not network" -q
 - **Loop R31（CI workflow index）**：`docs/CI_WORKFLOW_INDEX.md` 汇总自动/手动 workflow。验证：`pytest tests/test_ci_workflow_index.py -q`。
 - **Loop R32（Paper traceability lab）**：`PAPER_REVISION_TRACEABILITY.md` 对齐 lab_smoke / release 命令。验证：`pytest tests/test_paper_traceability_lab.py -q`。
 - **Loop R33（Native runtime prereqs CI）**：`native-runtime.yml` 前置 `check_native_build_prereqs.sh`、上传报告、`workflow_dispatch` + `strict_prereqs`。验证：`pytest tests/test_ci_workflows.py tests/test_ci_workflow_index.py -q`。
-- **下一轮感知建议**：PyPI republish；LLVM lit 全绿；CUDA E8 strict lab。
+- **Loop R34（PyPI republish gates）**：`pypi_republish_preflight.sh` + `verify_pypi_release.py --require-published` + republish workflow 闭环。验证：`pytest tests/test_pypi_release_status.py tests/test_ci_workflows.py -q`。
+- **下一轮感知建议**：配置 PyPI trusted publisher 后 dispatch republish；LLVM lit 全绿；CUDA E8 strict lab。
 
 ---
 

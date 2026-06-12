@@ -20,7 +20,7 @@ Dispatch and automatic workflows for reviewers and maintainers.
 | [E8 GPU lab (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/e8-gpu-lab.yml) | `require_completed=true` on CUDA runner |
 | [Release prep](https://github.com/chenxingqiang/llmir/actions/workflows/release-prep.yml) | Wheel build + lab JSON before tag |
 | [Release tag (PyPI trigger)](https://github.com/chenxingqiang/llmir/actions/workflows/release-tag.yml) | Create/push annotated tag |
-| [PyPI republish (maintainer)](https://github.com/chenxingqiang/llmir/actions/workflows/pypi-republish.yml) | Retry publish after trusted publisher setup |
+| [PyPI republish (maintainer)](https://github.com/chenxingqiang/llmir/actions/workflows/pypi-republish.yml) | Preflight + retry publish + `--require-published` verify |
 | [E8 empirical GPU (legacy)](https://github.com/chenxingqiang/llmir/actions/workflows/e8-empirical-gpu.yml) | Same as E8 smoke on `ubuntu-latest` |
 | [GPU inference compare (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/gpu-benchmark.yml) | HF vs llmir-paged compare (GPU runner) |
 

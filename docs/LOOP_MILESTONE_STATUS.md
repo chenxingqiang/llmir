@@ -29,6 +29,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M21 | CI workflow index doc | done |
 | M22 | Paper traceability lab/release commands | done |
 | M23 | Native runtime CI prereq check + dispatch | done |
+| M24 | PyPI republish preflight + post-publish verify | done |
 
 ## Recent loops (R6–R13)
 
@@ -62,6 +63,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R31 | CI_WORKFLOW_INDEX.md |
 | R32 | Paper traceability lab commands |
 | R33 | Native runtime prereqs + workflow_dispatch |
+| R34 | PyPI republish preflight + verify gates |
 
 ## Reviewer commands
 
