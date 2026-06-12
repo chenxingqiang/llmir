@@ -8,12 +8,13 @@ Dispatch and automatic workflows for reviewers and maintainers.
 |----------|---------|
 | [A-class walkthrough](https://github.com/chenxingqiang/llmir/actions/workflows/a-class-walkthrough.yml) | E1–E6 + M6 walkthrough + lab/walkthrough gates |
 | [Python package](https://github.com/chenxingqiang/llmir/actions/workflows/python-package.yml) | pytest matrix, lint, build; **publish** on `v*` tags |
-| [Native Runtime (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/native-runtime.yml) | Best-effort `libMLIRLLMRuntime` build |
+| [Native Runtime (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/native-runtime.yml) | Best-effort prereq check + `libMLIRLLMRuntime` build (also dispatchable) |
 
 ## Manual (`workflow_dispatch`)
 
 | Workflow | When to use |
 |----------|-------------|
+| [Native Runtime (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/native-runtime.yml) | Prereq report + `libMLIRLLMRuntime` build; set `strict_prereqs` on LLVM runners |
 | [Lab smoke (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/lab-smoke.yml) | mlir/E8/PyPI/native rollup on CPU |
 | [MLIR lit lab (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/mlir-lit-lab.yml) | Pass `mlir_opt_executable` from lab build |
 | [E8 GPU lab (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/e8-gpu-lab.yml) | `require_completed=true` on CUDA runner |
@@ -30,6 +31,7 @@ bash scripts/walkthrough_a_class.sh          # A-class (CI walkthrough job)
 bash scripts/lab_smoke_all.sh                # Lab smoke job
 bash scripts/prepare_release.sh              # Release prep job
 bash scripts/tag_release.sh --dry-run        # Release tag dry-run
+bash scripts/check_native_build_prereqs.sh   # Native runtime prereq report
 ```
 
 See also: [`LAB_RUNBOOK.md`](LAB_RUNBOOK.md), [`WALKTHROUGH.md`](WALKTHROUGH.md), [`PYPI_RELEASE_CHECKLIST.md`](PYPI_RELEASE_CHECKLIST.md).

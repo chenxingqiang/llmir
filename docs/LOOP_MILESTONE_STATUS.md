@@ -28,6 +28,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M20 | CI explicit lab gates + release-prep artifacts | done |
 | M21 | CI workflow index doc | done |
 | M22 | Paper traceability lab/release commands | done |
+| M23 | Native runtime CI prereq check + dispatch | done |
 
 ## Recent loops (R6–R13)
 
@@ -60,6 +61,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R30 | CI lab gates step + release-prep lab artifacts |
 | R31 | CI_WORKFLOW_INDEX.md |
 | R32 | Paper traceability lab commands |
+| R33 | Native runtime prereqs + workflow_dispatch |
 
 ## Reviewer commands
 

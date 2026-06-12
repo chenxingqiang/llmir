@@ -13,6 +13,7 @@ def test_ci_workflow_index_lists_core_workflows():
         "a-class-walkthrough.yml",
         "python-package.yml",
         "lab-smoke.yml",
+        "native-runtime.yml",
         "pypi-republish.yml",
         "mlir-lit-lab.yml",
         "e8-gpu-lab.yml",
