@@ -37,8 +37,13 @@ def test_release_tag_workflow_exists():
 
 def test_e8_workflow_and_lab_script_exist():
     wf = ROOT / ".github/workflows/e8-empirical-gpu.yml"
+    lab_wf = ROOT / ".github/workflows/e8-gpu-lab.yml"
+    smoke = ROOT / "scripts/e8_lab_smoke.sh"
     lab = ROOT / "scripts/e8_lab_run.sh"
     assert wf.is_file()
+    assert lab_wf.is_file()
+    assert smoke.is_file()
     assert lab.is_file()
-    assert "e8_empirical_gpu_bench.py" in wf.read_text(encoding="utf-8")
-    assert "status=completed" in lab.read_text(encoding="utf-8")
+    assert "e8_lab_smoke.sh" in wf.read_text(encoding="utf-8")
+    assert "e8_lab_run.sh" in lab_wf.read_text(encoding="utf-8")
+    assert "require_completed" in lab_wf.read_text(encoding="utf-8")

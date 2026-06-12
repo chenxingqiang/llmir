@@ -1,4 +1,4 @@
-name: E8 empirical GPU (B-class, optional)
+name: E8 GPU lab (optional)
 
 on:
   workflow_dispatch:
@@ -11,11 +11,17 @@ on:
         description: Comma-separated backends
         required: false
         default: hf,llmir-paged
+      require_completed:
+        description: Fail unless e8_empirical_gpu.json status=completed (GPU lab)
+        type: boolean
+        required: false
+        default: false
 
 jobs:
-  e8-bench:
+  e8-lab:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 60
+    continue-on-error: ${{ !inputs.require_completed }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,14 +36,24 @@ jobs:
           pip install -e ".[full]"
           pip install pytest
 
-      - name: E8 lab smoke
+      - name: E8 lab smoke (honest skip on CPU)
+        if: inputs.require_completed == false
         env:
           E8_MODEL: ${{ github.event.inputs.model }}
           E8_BACKENDS: ${{ github.event.inputs.backends }}
         run: bash scripts/e8_lab_smoke.sh
 
-      - uses: actions/upload-artifact@v4
+      - name: E8 lab strict (requires CUDA)
+        if: inputs.require_completed == true
+        env:
+          E8_MODEL: ${{ github.event.inputs.model }}
+          E8_BACKENDS: ${{ github.event.inputs.backends }}
+        run: bash scripts/e8_lab_run.sh
+
+      - name: Upload E8 JSON
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: e8-empirical-gpu-json
           path: IEEE-conference/benchmarks/e8_empirical_gpu.json
-          if-no-files-found: error
+          if-no-files-found: warn

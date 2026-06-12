@@ -39,6 +39,12 @@ def main() -> int:
                 f"pypi={fresh.get('pypi_version')})",
                 file=sys.stderr,
             )
+        if fresh.get("e8_status") == "skipped":
+            print(
+                "NOTE: E8 empirical GPU skipped (expected on CPU CI; "
+                "use e8_lab_run.sh or E8 GPU lab workflow on CUDA)",
+                file=sys.stderr,
+            )
 
     if not DASHBOARD.is_file():
         errors.append(f"missing {DASHBOARD}")
