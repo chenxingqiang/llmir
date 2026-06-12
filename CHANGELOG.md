@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Reproduce lab tail**: `reproduce_paper.sh` uses mlir/E8 smoke scripts + lab summary/gates.
 - **Lab smoke CI**: `lab-smoke.yml` workflow_dispatch; `docs/LAB_RUNBOOK.md` hub; `WALKTHROUGH.md` 9-step table.
 - **Lab gates**: `verify_lab_gates.py` integrated into walkthrough/prepare_release checks.
 - **PyPI republish workflow**: `pypi-republish.yml` for maintainer retry after trusted publisher setup.

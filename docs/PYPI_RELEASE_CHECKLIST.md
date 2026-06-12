@@ -39,6 +39,8 @@ Or GitHub Actions → **Release prep** → `workflow_dispatch`.
 
 Optional B-class: `bash scripts/e8_lab_run.sh` on GPU lab (`status=completed`).
 
+Lab index: [`docs/LAB_RUNBOOK.md`](LAB_RUNBOOK.md).
+
 ## Not in the wheel
 
 - MLIR C++ tree / `mlir-opt` (build separately)

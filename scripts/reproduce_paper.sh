@@ -14,7 +14,7 @@ pytest tests/test_mvp_a_e2e.py -m "not network" -q
 
 echo "=== MLIR lit suite (optional, needs mlir-opt) ==="
 pytest tests/test_mlir_lit_suite.py -q
-python3 scripts/verify_mlir_lit_suite.py || true
+bash scripts/mlir_lit_smoke.sh
 
 echo "=== E2 prefix decoder ==="
 pytest tests/test_sharegpt_prefix_bench.py tests/test_decoder_workload_buckets.py -m "not network" -q
@@ -72,9 +72,14 @@ else
 fi
 
 echo "=== E8 optional GPU bench (B-class, non-blocking) ==="
-pytest tests/test_e8_empirical_gpu.py -q
-python3 scripts/e8_empirical_gpu_bench.py || true
+bash scripts/e8_lab_smoke.sh
+
+echo "=== PyPI + lab summary (optional network) ==="
+python3 scripts/verify_pypi_release.py || true
+python3 scripts/lab_status_summary.py
+python3 scripts/verify_lab_gates.py
 
 echo ""
 echo "Done. Artifacts: IEEE-conference/benchmarks/"
 echo "Status: IEEE-conference/benchmarks/artifact_bundle_status.json"
+echo "Lab:    IEEE-conference/benchmarks/lab_status_summary.json"

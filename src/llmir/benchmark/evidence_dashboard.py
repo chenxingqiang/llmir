@@ -87,7 +87,7 @@ def build_evidence_dashboard_markdown(root: Optional[Path] = None) -> str:
             summary["reproduce_command"],
             "```",
             "",
-            "See also: `docs/WALKTHROUGH.md`, `docs/LOOP_MILESTONE_STATUS.md`.",
+            "See also: `docs/WALKTHROUGH.md`, `docs/LOOP_MILESTONE_STATUS.md`, `docs/LAB_RUNBOOK.md`.",
             "",
         ]
     )

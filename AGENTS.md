@@ -311,7 +311,8 @@ pytest tests/ -m "not network" -q
 - **Loop R26（Lab → dashboard wire）**：`lab_status_summary` 模块接入 walkthrough + `EVIDENCE_DASHBOARD.md`；walkthrough 步骤编号统一 1–9。验证：`pytest tests/test_evidence_dashboard.py tests/test_walkthrough_summary.py -q`。
 - **Loop R27（Lab gates + PyPI republish）**：`verify_lab_gates.py` 接入 walkthrough/prepare_release；`pypi-republish.yml` maintainer 重发。验证：`pytest tests/test_verify_lab_gates.py -q`；`python3 scripts/verify_walkthrough_gates.py`。
 - **Loop R28（Lab smoke CI + runbook hub）**：`lab-smoke.yml` + `LAB_RUNBOOK.md` + `WALKTHROUGH.md` 9 步对齐。验证：`pytest tests/test_lab_runbook.py tests/test_ci_workflows.py -q`。
-- **下一轮感知建议**：PyPI republish；LLVM lit 全绿；CUDA E8 strict；`reproduce_paper.sh` lab 尾步对齐。
+- **Loop R29（Reproduce lab tail）**：`reproduce_paper.sh` 尾步对齐 `mlir_lit_smoke` / `e8_lab_smoke` / lab gates。验证：`pytest tests/test_reproduce_paper_lab.py -q`。
+- **下一轮感知建议**：PyPI republish；LLVM lit 全绿；CUDA E8 strict lab。
 
 ---
 
