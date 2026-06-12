@@ -24,6 +24,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M16 | Lab status wired into walkthrough + dashboard | done |
 | M17 | Lab gates + PyPI republish workflow | done |
 | M18 | Lab smoke CI + LAB_RUNBOOK hub | done |
+| M19 | Reproduce paper lab tail alignment | done |
 
 ## Recent loops (R6–R13)
 
@@ -52,6 +53,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R26 | Lab status in evidence dashboard + walkthrough |
 | R27 | verify_lab_gates + pypi-republish workflow |
 | R28 | lab-smoke.yml + LAB_RUNBOOK hub |
+| R29 | reproduce_paper.sh lab tail |
 
 ## Reviewer commands
 

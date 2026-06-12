@@ -39,7 +39,7 @@ bash scripts/walkthrough_a_class.sh
 | Command | Scope | Time |
 |---------|-------|------|
 | `walkthrough_a_class.sh` | Verify committed artifacts + pytest gates | ~5 min CPU |
-| `reproduce_paper.sh` | Regen JSON, figures, multi-bucket TeX, full verify | longer |
+| `reproduce_paper.sh` | Regen JSON, figures, multi-bucket TeX, lab tail | longer |
 | `lab_smoke_all.sh` | Optional lab checks only | ~2 min |
 
 ## Demo recording (optional)
