@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from llmir.benchmark.artifact_bundle import verify_artifact_bundle
+from llmir.benchmark.lab_status_summary import build_lab_status_summary
 from llmir.benchmark.pypi_release_status import (
     build_pypi_release_status,
     read_local_version,
@@ -37,6 +38,12 @@ def build_walkthrough_summary(root: Optional[Path] = None) -> Dict[str, Any]:
     else:
         pypi = build_pypi_release_status(root, fetch_remote=False)
 
+    lab_path = root / "IEEE-conference/benchmarks/lab_status_summary.json"
+    if lab_path.is_file():
+        lab = json.loads(lab_path.read_text(encoding="utf-8"))
+    else:
+        lab = build_lab_status_summary(root)
+
     failed = [a for a in m6.artifacts if not a["ok"]]
 
     return {
@@ -55,6 +62,8 @@ def build_walkthrough_summary(root: Optional[Path] = None) -> Dict[str, Any]:
         "pypi_version": pypi.get("pypi_version"),
         "pypi_release_status": pypi.get("status", "unknown"),
         "pypi_published": pypi.get("published", False),
+        "lab_smoke_command": "bash scripts/lab_smoke_all.sh",
+        "native_build_prereqs_ok": lab.get("native_build_prereqs_ok", False),
         "reproduce_command": "bash scripts/reproduce_paper.sh",
         "walkthrough_command": "bash scripts/walkthrough_a_class.sh",
     }

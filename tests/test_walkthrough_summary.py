@@ -18,6 +18,8 @@ def test_build_walkthrough_summary_in_process():
     assert payload["artifact_count"] >= 9
     assert payload["package_version"] == "0.2.2"
     assert payload["pypi_release_status"] in ("published", "pending", "unavailable")
+    assert "lab_smoke_command" in payload
+    assert "native_build_prereqs_ok" in payload
 
 
 def test_walkthrough_summary_script():

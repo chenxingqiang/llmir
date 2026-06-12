@@ -308,7 +308,8 @@ pytest tests/ -m "not network" -q
 - **Loop R23（Walkthrough + mlir-lit lab CI）**：walkthrough 串联 PyPI verify；`mlir_lit_smoke.sh` skip 时 exit 0；`mlir-lit-lab.yml` workflow_dispatch。验证：`bash scripts/walkthrough_a_class.sh`；`pytest tests/test_mlir_lit_suite.py -q`。
 - **Loop R24（E8 GPU lab smoke）**：`e8_lab_smoke.sh` + `e8-gpu-lab.yml`（`require_completed` 严格模式）；walkthrough 用 smoke。验证：`pytest tests/test_e8_lab_smoke.py -q`；`bash scripts/e8_lab_smoke.sh`。
 - **Loop R25（Lab hub + native build prereqs）**：`lab_smoke_all.sh` + `lab_status_summary.json` + `check_native_build_prereqs.sh` + `MLIR_NATIVE_BUILD.md`。验证：`bash scripts/lab_smoke_all.sh`；`pytest tests/test_lab_smoke_all.py -q`。
-- **下一轮感知建议**：PyPI trusted publisher；LLVM monorepo 上 `build_mlir_opt` + lit 全绿；CUDA E8 `require_completed=true`。
+- **Loop R26（Lab → dashboard wire）**：`lab_status_summary` 模块接入 walkthrough + `EVIDENCE_DASHBOARD.md`；walkthrough 步骤编号统一 1–9。验证：`pytest tests/test_evidence_dashboard.py tests/test_walkthrough_summary.py -q`。
+- **下一轮感知建议**：PyPI trusted publisher；LLVM `build_mlir_opt` + lit 全绿；CUDA E8 strict lab。
 
 ---
 
