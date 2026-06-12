@@ -96,6 +96,14 @@
       "kind": "json",
       "required_keys": ["local_version", "status", "published"],
       "optional": true
+    },
+    {
+      "id": "lab_status_summary",
+      "experiment": "lab",
+      "path": "IEEE-conference/benchmarks/lab_status_summary.json",
+      "kind": "json",
+      "required_keys": ["mode", "package_version", "mlir_lit_status", "e8_status"],
+      "optional": true
     }
   ],
   "figures": [

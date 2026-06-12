@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Lab smoke hub**: `lab_smoke_all.sh`, `lab_status_summary.py`, `check_native_build_prereqs.sh`, `docs/MLIR_NATIVE_BUILD.md`.
 - **E8 GPU lab smoke**: `e8_lab_smoke.sh` + `e8-gpu-lab.yml` (`require_completed` for strict CUDA lab).
 - **Walkthrough closure**: PyPI verify step in `walkthrough_a_class.sh`; walkthrough gates log pending PyPI.
 - **MLIR lit lab CI**: `mlir-lit-lab.yml` workflow_dispatch; `mlir_lit_smoke.sh` exits 0 when skipped.

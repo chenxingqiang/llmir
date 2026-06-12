@@ -15,7 +15,8 @@ Runs the four Python-cataloged lit files under `test/Dialect/LLM/` when a
 
 ## Build mlir-opt
 
-Requires CMake, a C++17 compiler, and enough disk for an LLVM/MLIR build tree.
+Requires CMake, a C++17 compiler, and LLVM/MLIR dev packages or monorepo build.
+See `docs/MLIR_NATIVE_BUILD.md` and `bash scripts/check_native_build_prereqs.sh`.
 
 ```bash
 bash scripts/build_mlir_opt.sh
