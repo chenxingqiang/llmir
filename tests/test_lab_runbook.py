@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_lab_runbook_exists_and_links_workflows():
     text = (ROOT / "docs/LAB_RUNBOOK.md").read_text(encoding="utf-8")
     assert "lab_smoke_all.sh" in text
+    assert "LAB_CLOSURE_MATRIX.md" in text
     assert "PYPI_TRUSTED_PUBLISHER.md" in text
     assert "MLIR_LIT_RUNBOOK.md" in text
 

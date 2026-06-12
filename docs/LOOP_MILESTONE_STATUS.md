@@ -32,6 +32,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M24 | PyPI republish preflight + post-publish verify | done |
 | M25 | MLIR lit lab preflight + require_passed gates | done |
 | M26 | E8 GPU lab preflight + require_completed gates | done |
+| M27 | Lab closure hub + LAB_CLOSURE_MATRIX | done |
 
 ## Recent loops (R6–R13)
 
@@ -68,6 +69,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R34 | PyPI republish preflight + verify gates |
 | R35 | MLIR lit lab preflight + require_passed |
 | R36 | E8 GPU lab preflight + require_completed |
+| R37 | Lab closure hub + LAB_CLOSURE_MATRIX |
 
 ## Reviewer commands
 

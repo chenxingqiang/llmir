@@ -3,6 +3,8 @@
 CPU CI honestly records `skipped` for mlir lit and E8 GPU. Use this index for
 **lab closure** on machines with LLVM, CUDA, or PyPI maintainer access.
 
+See also: [`LAB_CLOSURE_MATRIX.md`](LAB_CLOSURE_MATRIX.md) for smoke vs strict commands.
+
 ## One-shot smoke (CPU or GPU)
 
 ```bash

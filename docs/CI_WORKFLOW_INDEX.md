@@ -34,4 +34,4 @@ bash scripts/tag_release.sh --dry-run        # Release tag dry-run
 bash scripts/check_native_build_prereqs.sh   # Native runtime prereq report
 ```
 
-See also: [`LAB_RUNBOOK.md`](LAB_RUNBOOK.md), [`WALKTHROUGH.md`](WALKTHROUGH.md), [`PYPI_RELEASE_CHECKLIST.md`](PYPI_RELEASE_CHECKLIST.md).
+See also: [`LAB_RUNBOOK.md`](LAB_RUNBOOK.md), [`LAB_CLOSURE_MATRIX.md`](LAB_CLOSURE_MATRIX.md), [`WALKTHROUGH.md`](WALKTHROUGH.md), [`PYPI_RELEASE_CHECKLIST.md`](PYPI_RELEASE_CHECKLIST.md).
