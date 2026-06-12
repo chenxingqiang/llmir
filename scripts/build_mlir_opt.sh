@@ -10,6 +10,8 @@ echo "LLMIR mlir-opt build"
 echo "  source: ${ROOT}"
 echo "  build:  ${BUILD_DIR}"
 
+bash "$(dirname "$0")/check_native_build_prereqs.sh" || true
+
 if ! command -v cmake >/dev/null 2>&1; then
   echo "cmake not found; install cmake to build mlir-opt." >&2
   exit 1

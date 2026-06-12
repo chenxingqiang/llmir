@@ -11,6 +11,8 @@ LLMIR is a compiler infrastructure for large language models based on MLIR (Mult
 
 **Release**: [`docs/PYPI_RELEASE_CHECKLIST.md`](./docs/PYPI_RELEASE_CHECKLIST.md) · `bash scripts/prepare_release.sh`
 
+**Lab smoke** (mlir lit / E8 GPU / PyPI): `bash scripts/lab_smoke_all.sh` · [`docs/MLIR_NATIVE_BUILD.md`](./docs/MLIR_NATIVE_BUILD.md)
+
 ---
 
 ## Quick Start

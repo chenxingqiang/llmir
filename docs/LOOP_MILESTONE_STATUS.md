@@ -20,6 +20,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M12 | PyPI release verify + trusted publisher runbook | done |
 | M13 | Walkthrough PyPI step + mlir-lit-lab workflow | done |
 | M14 | E8 GPU lab smoke + e8-gpu-lab workflow | done |
+| M15 | Lab smoke hub + MLIR native build guide | done |
 
 ## Recent loops (R6–R13)
 
@@ -44,6 +45,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R22 | PyPI verify JSON + trusted publisher docs |
 | R23 | Walkthrough PyPI + mlir-lit-lab CI workflow |
 | R24 | E8 GPU lab smoke + e8-gpu-lab workflow |
+| R25 | Lab smoke hub + native build prerequisites |
 
 ## Reviewer commands
 

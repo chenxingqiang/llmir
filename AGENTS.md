@@ -307,7 +307,8 @@ pytest tests/ -m "not network" -q
 - **Loop R22（PyPI verify + trusted publisher docs）**：`v0.2.2` CI 绿但 publish 因 `invalid-publisher` 失败；`verify_pypi_release.py` + dashboard PyPI 行 + `PYPI_TRUSTED_PUBLISHER.md`。验证：`pytest tests/test_pypi_release_status.py -q`；`python3 scripts/verify_pypi_release.py --offline`。
 - **Loop R23（Walkthrough + mlir-lit lab CI）**：walkthrough 串联 PyPI verify；`mlir_lit_smoke.sh` skip 时 exit 0；`mlir-lit-lab.yml` workflow_dispatch。验证：`bash scripts/walkthrough_a_class.sh`；`pytest tests/test_mlir_lit_suite.py -q`。
 - **Loop R24（E8 GPU lab smoke）**：`e8_lab_smoke.sh` + `e8-gpu-lab.yml`（`require_completed` 严格模式）；walkthrough 用 smoke。验证：`pytest tests/test_e8_lab_smoke.py -q`；`bash scripts/e8_lab_smoke.sh`。
-- **下一轮感知建议**：PyPI trusted publisher；CUDA runner 上 E8 `require_completed=true`；mlir-opt lit 四文件全绿。
+- **Loop R25（Lab hub + native build prereqs）**：`lab_smoke_all.sh` + `lab_status_summary.json` + `check_native_build_prereqs.sh` + `MLIR_NATIVE_BUILD.md`。验证：`bash scripts/lab_smoke_all.sh`；`pytest tests/test_lab_smoke_all.py -q`。
+- **下一轮感知建议**：PyPI trusted publisher；LLVM monorepo 上 `build_mlir_opt` + lit 全绿；CUDA E8 `require_completed=true`。
 
 ---
 
