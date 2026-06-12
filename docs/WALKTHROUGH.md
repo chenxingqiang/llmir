@@ -17,19 +17,20 @@ bash scripts/walkthrough_a_class.sh
 | 3 | E3 | MVP-C / torch KV CPU tests |
 | 4 | E4/E5 | Compositional + ablation + multi-bucket |
 | 5 | E6/M5 | Backend parity + lowered hot path |
-| 6 | MLIR lit | Catalog tests; `mlir-opt` runs when on PATH |
-| 7 | E8 (optional) | B-class GPU bench; `skipped` without CUDA is OK |
-| 8 | M6 | `artifact_manifest.json` + committed JSON |
+| 6 | MLIR lit | `mlir_lit_smoke.sh`; `skipped` without mlir-opt OK |
+| 7 | PyPI | `verify_pypi_release.py`; `pending` until published OK |
+| 8 | E8 (optional) | `e8_lab_smoke.sh`; `skipped` without CUDA OK |
+| 9 | M6 | `artifact_manifest.json` + committed JSON |
 
 ## Outputs to inspect
 
 | File | Meaning |
 |------|---------|
-| `walkthrough_summary.json` | One-page reviewer snapshot (m6/e8/lit) |
+| `walkthrough_summary.json` | One-page reviewer snapshot |
+| `lab_status_summary.json` | Optional lab rollup (mlir/e8/pypi/native) |
 | `docs/EVIDENCE_DASHBOARD.md` | Human-readable dashboard (auto-generated) |
 | `artifact_bundle_status.json` | M6 verify summary |
-| `e4_compositional_buckets.json` | S1/S2/S3 compositional proxies |
-| `e5_ablation_buckets.json` | S1/S2/S3 ablation matrix |
+| `pypi_release_status.json` | Local vs PyPI version |
 | `e8_empirical_gpu.json` | B-class; `status=skipped` on CPU CI |
 | `mlir_lit_suite_status.json` | Lit runner; `skipped` without mlir-opt |
 
@@ -39,26 +40,16 @@ bash scripts/walkthrough_a_class.sh
 |---------|-------|------|
 | `walkthrough_a_class.sh` | Verify committed artifacts + pytest gates | ~5 min CPU |
 | `reproduce_paper.sh` | Regen JSON, figures, multi-bucket TeX, full verify | longer |
+| `lab_smoke_all.sh` | Optional lab checks only | ~2 min |
 
 ## Demo recording (optional)
 
-Record a terminal session for reviewers:
-
 ```bash
 bash scripts/walkthrough_a_class.sh
-# ends with walkthrough_summary.json
 ```
 
 Expected tail: `m6_all_pass: True`, `e8_status: skipped` on CPU CI (honest).
 
-## GPU / MLIR lab follow-ups
+## Lab follow-ups
 
-```bash
-# B-class E8 (needs CUDA + llmir[full])
-python3 scripts/e8_empirical_gpu_bench.py
-
-# MLIR lit smoke (needs in-tree mlir-opt — see docs/MLIR_LIT_RUNBOOK.md)
-bash scripts/build_mlir_opt.sh
-export PATH="${PWD}/build-native/bin:$PATH"
-bash scripts/mlir_lit_smoke.sh
-```
+See [`LAB_RUNBOOK.md`](LAB_RUNBOOK.md) for mlir-opt build, E8 GPU strict lab, and PyPI republish workflows.

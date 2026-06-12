@@ -1,0 +1,40 @@
+name: Lab smoke (optional)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lab-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install LLMIR
+        run: |
+          python -m pip install --upgrade pip
+          pip install tomli
+          pip install -e .
+          pip install pytest numpy torch
+          pip install transformers || true
+
+      - name: Run lab smoke
+        run: bash scripts/lab_smoke_all.sh
+
+      - name: Verify lab gates
+        run: python3 scripts/verify_lab_gates.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lab-smoke-artifacts
+          path: |
+            IEEE-conference/benchmarks/lab_status_summary.json
+            IEEE-conference/benchmarks/mlir_lit_suite_status.json
+            IEEE-conference/benchmarks/e8_empirical_gpu.json
+            IEEE-conference/benchmarks/pypi_release_status.json
+          if-no-files-found: warn
