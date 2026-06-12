@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **CI workflow index**: `docs/CI_WORKFLOW_INDEX.md` for all GitHub Actions entry points.
+- **Paper traceability**: lab smoke + release commands in `PAPER_REVISION_TRACEABILITY.md`.
 - **CI lab gates step**: a-class-walkthrough runs `verify_lab_gates` explicitly; release-prep uploads lab JSON artifacts.
 - **Reproduce lab tail**: `reproduce_paper.sh` uses mlir/E8 smoke scripts + lab summary/gates.
 - **Lab smoke CI**: `lab-smoke.yml` workflow_dispatch; `docs/LAB_RUNBOOK.md` hub; `WALKTHROUGH.md` 9-step table.
