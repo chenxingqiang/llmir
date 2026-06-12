@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from llmir.benchmark.artifact_bundle import verify_artifact_bundle
+from llmir.benchmark.pypi_release_status import (
+    build_pypi_release_status,
+    read_local_version,
+)
 from llmir.compiler.mlir_lit_suite import default_lit_dir, run_lit_suite
 from llmir.compiler.opt_driver import find_mlir_opt
 
@@ -27,6 +31,12 @@ def build_walkthrough_summary(root: Optional[Path] = None) -> Dict[str, Any]:
     if e8_path.is_file():
         e8 = json.loads(e8_path.read_text(encoding="utf-8"))
 
+    pypi_path = root / "IEEE-conference/benchmarks/pypi_release_status.json"
+    if pypi_path.is_file():
+        pypi = json.loads(pypi_path.read_text(encoding="utf-8"))
+    else:
+        pypi = build_pypi_release_status(root, fetch_remote=False)
+
     failed = [a for a in m6.artifacts if not a["ok"]]
 
     return {
@@ -41,6 +51,10 @@ def build_walkthrough_summary(root: Optional[Path] = None) -> Dict[str, Any]:
         "mlir_lit_suite_status": lit["status"],
         "mlir_lit_passed": lit["passed"],
         "mlir_lit_skipped": lit["skipped"],
+        "package_version": read_local_version(root),
+        "pypi_version": pypi.get("pypi_version"),
+        "pypi_release_status": pypi.get("status", "unknown"),
+        "pypi_published": pypi.get("published", False),
         "reproduce_command": "bash scripts/reproduce_paper.sh",
         "walkthrough_command": "bash scripts/walkthrough_a_class.sh",
     }

@@ -304,7 +304,8 @@ pytest tests/ -m "not network" -q
 - **Loop R19（Release 0.2.1 + MLIR lit runbook）**：`pyproject.toml` / `__init__.py` → `0.2.1`；CHANGELOG `[0.2.1]`；`build_mlir_opt.sh` + `mlir_lit_smoke.sh` + `MLIR_LIT_RUNBOOK.md`。验证：`pytest tests/test_prepare_release.py tests/test_mlir_lit_suite.py -q`；`bash scripts/prepare_release.sh`。
 - **Loop R20（Release tag automation）**：`tag_release.sh`（dry-run / --push）+ `release-tag.yml` workflow_dispatch。验证：`bash scripts/tag_release.sh --dry-run`；`pytest tests/test_tag_release.py -q`。
 - **Loop R21（CI release fixes + 0.2.2）**：`pyproject_tools.py`（tomli 3.9/3.10）；tag dry-run 已存在 tag 时通过；mypy 修复；bump `0.2.2`。验证：`pytest -q`；`mypy src/llmir/benchmark src/llmir/compiler`；`bash scripts/tag_release.sh --dry-run`。
-- **下一轮感知建议**：`bash scripts/tag_release.sh --push` 发布 `v0.2.2`；GPU lab E8；mlir lit 四文件全绿。
+- **Loop R22（PyPI verify + trusted publisher docs）**：`v0.2.2` CI 绿但 publish 因 `invalid-publisher` 失败；`verify_pypi_release.py` + dashboard PyPI 行 + `PYPI_TRUSTED_PUBLISHER.md`。验证：`pytest tests/test_pypi_release_status.py -q`；`python3 scripts/verify_pypi_release.py --offline`。
+- **下一轮感知建议**：维护者配置 PyPI trusted publisher 后重跑 publish；GPU lab E8；mlir lit 四文件全绿。
 
 ---
 

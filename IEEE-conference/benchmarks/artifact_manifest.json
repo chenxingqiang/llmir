@@ -88,6 +88,14 @@
       "required_keys": ["mode", "m6_all_pass", "walkthrough_command"],
       "assert_true": ["m6_all_pass"],
       "optional": true
+    },
+    {
+      "id": "pypi_release_status",
+      "experiment": "release",
+      "path": "IEEE-conference/benchmarks/pypi_release_status.json",
+      "kind": "json",
+      "required_keys": ["local_version", "status", "published"],
+      "optional": true
     }
   ],
   "figures": [

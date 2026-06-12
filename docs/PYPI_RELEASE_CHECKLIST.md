@@ -22,7 +22,12 @@ Or GitHub Actions → **Release prep** → `workflow_dispatch`.
    ```
    Or GitHub Actions → **Release tag (PyPI trigger)** → `workflow_dispatch`.
 5. Confirm **Python package** workflow: `test`, `lint`, `build`, `publish` all green.
-6. Verify on PyPI: https://pypi.org/project/llmir/
+   - Publish requires **trusted publisher** on PyPI — see `docs/PYPI_TRUSTED_PUBLISHER.md`.
+6. Verify on PyPI:
+   ```bash
+   python3 scripts/verify_pypi_release.py
+   ```
+   Or: https://pypi.org/project/llmir/
 
 ## Evidence bar (A-class)
 

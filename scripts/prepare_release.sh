@@ -25,6 +25,10 @@ python3 scripts/walkthrough_summary.py
 python3 scripts/generate_evidence_dashboard.py
 
 echo ""
+echo "=== PyPI alignment (optional network) ==="
+python3 scripts/verify_pypi_release.py || true
+
+echo ""
 echo "=== Build wheel/sdist ==="
 python3 -m pip install -q build twine
 rm -rf dist/
