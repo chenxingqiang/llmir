@@ -312,6 +312,7 @@ pytest tests/ -m "not network" -q
 - **Loop R27（Lab gates + PyPI republish）**：`verify_lab_gates.py` 接入 walkthrough/prepare_release；`pypi-republish.yml` maintainer 重发。验证：`pytest tests/test_verify_lab_gates.py -q`；`python3 scripts/verify_walkthrough_gates.py`。
 - **Loop R28（Lab smoke CI + runbook hub）**：`lab-smoke.yml` + `LAB_RUNBOOK.md` + `WALKTHROUGH.md` 9 步对齐。验证：`pytest tests/test_lab_runbook.py tests/test_ci_workflows.py -q`。
 - **Loop R29（Reproduce lab tail）**：`reproduce_paper.sh` 尾步对齐 `mlir_lit_smoke` / `e8_lab_smoke` / lab gates。验证：`pytest tests/test_reproduce_paper_lab.py -q`。
+- **Loop R30（CI lab gates step）**：`a-class-walkthrough.yml` 显式 `verify_lab_gates`；`release-prep.yml` 上传 lab JSON。验证：`pytest tests/test_walkthrough_a_class.py tests/test_ci_workflows.py -q`。
 - **下一轮感知建议**：PyPI republish；LLVM lit 全绿；CUDA E8 strict lab。
 
 ---

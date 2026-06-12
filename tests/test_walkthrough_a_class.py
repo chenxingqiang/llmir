@@ -21,8 +21,11 @@ def test_walkthrough_script_lists_core_steps():
         "test_e4_e5_multi_bucket",
         "verify_artifact_bundle",
         "e8_lab_smoke.sh",
+        "verify_pypi_release.py",
+        "lab_status_summary.py",
     ):
         assert needle in text
+    assert text.count("step ") >= 9
 
 
 def test_optional_artifacts_in_manifest():

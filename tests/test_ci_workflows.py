@@ -11,6 +11,7 @@ def test_a_class_walkthrough_workflow_exists():
     path = ROOT / ".github/workflows/a-class-walkthrough.yml"
     text = path.read_text(encoding="utf-8")
     assert "walkthrough_a_class.sh" in text
+    assert "verify_lab_gates.py" in text
     assert "workflow_dispatch" in text
 
 
