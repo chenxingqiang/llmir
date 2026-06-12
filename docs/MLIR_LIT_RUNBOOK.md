@@ -42,7 +42,13 @@ A-class walkthrough and CPU CI **skip** lit when opt is absent (`status: skipped
 skipped (exit 1 only on `failed`).
 
 **GitHub Actions**: workflow **MLIR lit lab (optional)** (`mlir-lit-lab.yml`)
-accepts an optional `mlir_opt_executable` input for self-hosted / lab runners.
+accepts optional `mlir_opt_executable` and `require_passed=true` for strict lab closure.
+
+```bash
+bash scripts/mlir_lit_preflight.sh --strict /path/to/build-native/bin/mlir-opt
+bash scripts/mlir_lit_smoke.sh
+python3 scripts/verify_mlir_lit_suite.py --require-passed
+```
 
 Full lit closure is a **lab** step, not a PyPI wheel requirement.
 

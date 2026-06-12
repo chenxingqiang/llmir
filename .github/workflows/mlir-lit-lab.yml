@@ -7,13 +7,31 @@ on:
         description: Absolute path to repo-built mlir-opt (optional)
         required: false
         default: ""
+      require_passed:
+        description: Fail unless mlir_lit_suite_status.json status=passed (4/4 lit green)
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   mlir-lit:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    continue-on-error: ${{ !inputs.require_passed }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: MLIR lit preflight
+        run: |
+          chmod +x scripts/mlir_lit_preflight.sh
+          ARGS=()
+          if [[ "${{ inputs.require_passed }}" == "true" ]]; then
+            ARGS+=(--strict)
+          fi
+          if [[ -n "${{ github.event.inputs.mlir_opt_executable }}" ]]; then
+            ARGS+=("${{ github.event.inputs.mlir_opt_executable }}")
+          fi
+          bash scripts/mlir_lit_preflight.sh "${ARGS[@]}"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,6 +48,12 @@ jobs:
         env:
           LLMIR_OPT_EXECUTABLE: ${{ github.event.inputs.mlir_opt_executable }}
         run: bash scripts/mlir_lit_smoke.sh
+
+      - name: Verify MLIR lit suite
+        if: inputs.require_passed == true
+        env:
+          LLMIR_OPT_EXECUTABLE: ${{ github.event.inputs.mlir_opt_executable }}
+        run: python3 scripts/verify_mlir_lit_suite.py --require-passed
 
       - name: Upload lit status
         if: always()

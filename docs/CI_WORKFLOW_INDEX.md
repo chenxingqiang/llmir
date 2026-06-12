@@ -16,7 +16,7 @@ Dispatch and automatic workflows for reviewers and maintainers.
 |----------|-------------|
 | [Native Runtime (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/native-runtime.yml) | Prereq report + `libMLIRLLMRuntime` build; set `strict_prereqs` on LLVM runners |
 | [Lab smoke (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/lab-smoke.yml) | mlir/E8/PyPI/native rollup on CPU |
-| [MLIR lit lab (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/mlir-lit-lab.yml) | Pass `mlir_opt_executable` from lab build |
+| [MLIR lit lab (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/mlir-lit-lab.yml) | Preflight + `require_passed` for 4/4 lit green |
 | [E8 GPU lab (optional)](https://github.com/chenxingqiang/llmir/actions/workflows/e8-gpu-lab.yml) | `require_completed=true` on CUDA runner |
 | [Release prep](https://github.com/chenxingqiang/llmir/actions/workflows/release-prep.yml) | Wheel build + lab JSON before tag |
 | [Release tag (PyPI trigger)](https://github.com/chenxingqiang/llmir/actions/workflows/release-tag.yml) | Create/push annotated tag |

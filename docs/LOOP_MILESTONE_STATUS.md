@@ -30,6 +30,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M22 | Paper traceability lab/release commands | done |
 | M23 | Native runtime CI prereq check + dispatch | done |
 | M24 | PyPI republish preflight + post-publish verify | done |
+| M25 | MLIR lit lab preflight + require_passed gates | done |
 
 ## Recent loops (R6–R13)
 
@@ -64,6 +65,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R32 | Paper traceability lab commands |
 | R33 | Native runtime prereqs + workflow_dispatch |
 | R34 | PyPI republish preflight + verify gates |
+| R35 | MLIR lit lab preflight + require_passed |
 
 ## Reviewer commands
 

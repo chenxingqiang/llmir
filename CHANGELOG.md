@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **MLIR lit lab gates**: `mlir_lit_preflight.sh`, `verify_mlir_lit_suite.py --require-passed`, strict mode in `mlir-lit-lab.yml`.
 - **PyPI republish gates**: `pypi_republish_preflight.sh`, post-publish `verify_pypi_release.py --require-published` with retries in `pypi-republish.yml`.
 - **Native runtime CI**: `native-runtime.yml` runs `check_native_build_prereqs.sh`, uploads report, supports `workflow_dispatch` with `strict_prereqs`.
 - **CI workflow index**: `docs/CI_WORKFLOW_INDEX.md` for all GitHub Actions entry points.

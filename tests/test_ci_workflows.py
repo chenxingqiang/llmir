@@ -26,6 +26,9 @@ def test_mlir_lit_lab_workflow_exists():
     path = ROOT / ".github/workflows/mlir-lit-lab.yml"
     text = path.read_text(encoding="utf-8")
     assert "mlir_lit_smoke.sh" in text
+    assert "mlir_lit_preflight.sh" in text
+    assert "verify_mlir_lit_suite.py" in text
+    assert "require_passed" in text
     assert "workflow_dispatch" in text
 
 
