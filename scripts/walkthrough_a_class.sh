@@ -27,15 +27,18 @@ pytest tests/test_e4_compositional.py tests/test_e5_ablation.py tests/test_e4_e5
 step "5/8 — E6 backend parity + M5 lowered hot path"
 pytest tests/test_e6_backend_parity.py tests/test_m5_lowered_hot_path.py -q
 
-step "6/8 — MLIR lit catalog (skipped without mlir-opt)"
+step "6/9 — MLIR lit catalog (skipped without mlir-opt)"
 pytest tests/test_mlir_lit_suite.py -q
-python3 scripts/verify_mlir_lit_suite.py || true
+bash scripts/mlir_lit_smoke.sh
 
-step "7/8 — Optional E8 empirical GPU (B-class)"
+step "7/9 — PyPI release alignment (optional network)"
+python3 scripts/verify_pypi_release.py || true
+
+step "8/9 — Optional E8 empirical GPU (B-class)"
 pytest tests/test_e8_empirical_gpu.py -q
 python3 scripts/e8_empirical_gpu_bench.py || true
 
-step "8/8 — M6 artifact bundle verify"
+step "9/9 — M6 artifact bundle verify"
 python3 scripts/verify_artifact_bundle.py --skip-figures
 
 python3 scripts/walkthrough_summary.py

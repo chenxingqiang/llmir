@@ -1,0 +1,40 @@
+name: MLIR lit lab (optional)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mlir_opt_executable:
+        description: Absolute path to repo-built mlir-opt (optional)
+        required: false
+        default: ""
+
+jobs:
+  mlir-lit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install LLMIR
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: MLIR lit smoke
+        env:
+          LLMIR_OPT_EXECUTABLE: ${{ github.event.inputs.mlir_opt_executable }}
+        run: bash scripts/mlir_lit_smoke.sh
+
+      - name: Upload lit status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlir-lit-suite-status
+          path: IEEE-conference/benchmarks/mlir_lit_suite_status.json
+          if-no-files-found: warn

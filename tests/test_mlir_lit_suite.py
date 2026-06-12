@@ -62,6 +62,26 @@ def test_run_lit_suite_passes_with_opt():
     assert summary["passed"] == len(LIT_SUITE_FILES)
 
 
+def test_mlir_lit_smoke_exits_zero_when_skipped():
+    import subprocess
+
+    proc = subprocess.run(
+        ["bash", str(ROOT / "scripts/mlir_lit_smoke.sh")],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**__import__("os").environ, "LLMIR_OPT_EXECUTABLE": "", "MLIR_OPT_EXECUTABLE": ""},
+    )
+    if find_mlir_opt():
+        pytest.skip("mlir-opt present; skip no-opt exit test")
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    status_path = ROOT / "IEEE-conference/benchmarks/mlir_lit_suite_status.json"
+    assert status_path.is_file()
+    data = json.loads(status_path.read_text(encoding="utf-8"))
+    assert data["status"] == "skipped"
+
+
 def test_mlir_lit_lab_scripts_and_runbook_exist():
     assert (ROOT / "scripts/mlir_lit_smoke.sh").is_file()
     assert (ROOT / "scripts/build_mlir_opt.sh").is_file()

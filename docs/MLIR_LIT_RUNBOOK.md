@@ -37,8 +37,13 @@ Expected when opt is present: `status: passed`, four files green.
 ## CI note
 
 A-class walkthrough and CPU CI **skip** lit when opt is absent (`status: skipped`).
-This is honest Tier-A behavior per `CAPABILITY_MATRIX.md`. Full lit closure is a
-**lab** step, not a PyPI wheel requirement.
+`mlir_lit_smoke.sh` always writes `mlir_lit_suite_status.json` and exits 0 when
+skipped (exit 1 only on `failed`).
+
+**GitHub Actions**: workflow **MLIR lit lab (optional)** (`mlir-lit-lab.yml`)
+accepts an optional `mlir_opt_executable` input for self-hosted / lab runners.
+
+Full lit closure is a **lab** step, not a PyPI wheel requirement.
 
 ## Troubleshooting
 

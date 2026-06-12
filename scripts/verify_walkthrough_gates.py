@@ -29,6 +29,16 @@ def main() -> int:
         fresh = build_walkthrough_summary(ROOT)
         if fresh["m6_all_pass"] is not True:
             errors.append("live walkthrough summary: m6_all_pass is not true")
+        if not fresh.get("package_version"):
+            errors.append("walkthrough summary: package_version missing")
+        pypi_status = fresh.get("pypi_release_status")
+        if pypi_status == "pending":
+            print(
+                "NOTE: PyPI release pending "
+                f"(local={fresh.get('package_version')}, "
+                f"pypi={fresh.get('pypi_version')})",
+                file=sys.stderr,
+            )
 
     if not DASHBOARD.is_file():
         errors.append(f"missing {DASHBOARD}")
