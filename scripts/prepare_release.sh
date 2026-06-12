@@ -15,14 +15,18 @@ echo ""
 echo "=== Fast pytest gates ==="
 pytest tests/test_python_version_policy.py \
   tests/test_verify_walkthrough_gates.py \
+  tests/test_verify_lab_gates.py \
   tests/test_artifact_bundle.py \
   tests/test_walkthrough_summary.py \
+  tests/test_lab_smoke_all.py \
   -q
 
 echo ""
-echo "=== Walkthrough summary ==="
+echo "=== Walkthrough / lab summary ==="
+python3 scripts/lab_status_summary.py
 python3 scripts/walkthrough_summary.py
 python3 scripts/generate_evidence_dashboard.py
+python3 scripts/verify_lab_gates.py
 
 echo ""
 echo "=== PyPI alignment (optional network) ==="
