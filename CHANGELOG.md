@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **E8 GPU lab gates**: `e8_lab_preflight.sh`, `verify_e8_lab.py --require-completed`, strict closure in `e8-gpu-lab.yml`.
 - **MLIR lit lab gates**: `mlir_lit_preflight.sh`, `verify_mlir_lit_suite.py --require-passed`, strict mode in `mlir-lit-lab.yml`.
 - **PyPI republish gates**: `pypi_republish_preflight.sh`, post-publish `verify_pypi_release.py --require-published` with retries in `pypi-republish.yml`.
 - **Native runtime CI**: `native-runtime.yml` runs `check_native_build_prereqs.sh`, uploads report, supports `workflow_dispatch` with `strict_prereqs`.

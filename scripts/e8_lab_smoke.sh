@@ -31,3 +31,5 @@ print(f"E8 smoke OK: status={status}")
 if status == "skipped":
     print("NOTE: no CUDA — honest skip (use e8_lab_run.sh on GPU lab for completed)")
 PY
+
+python3 scripts/verify_e8_lab.py
