@@ -26,6 +26,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M18 | Lab smoke CI + LAB_RUNBOOK hub | done |
 | M19 | Reproduce paper lab tail alignment | done |
 | M20 | CI explicit lab gates + release-prep artifacts | done |
+| M21 | CI workflow index doc | done |
 
 ## Recent loops (R6–R13)
 
@@ -56,6 +57,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R28 | lab-smoke.yml + LAB_RUNBOOK hub |
 | R29 | reproduce_paper.sh lab tail |
 | R30 | CI lab gates step + release-prep lab artifacts |
+| R31 | CI_WORKFLOW_INDEX.md |
 
 ## Reviewer commands
 
