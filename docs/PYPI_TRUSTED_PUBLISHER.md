@@ -16,11 +16,12 @@ configured for this repository.
    - **PyPI project**: `llmir`
    - **Owner**: `chenxingqiang`
    - **Repository**: `llmir`
-   - **Workflow**: `python-package.yml`
+   - **Workflow**: `python-package.yml` (and optionally `pypi-republish.yml`)
    - **Environment**: `pypi` (matches workflow `environment: name: pypi`)
 3. Merge/save on PyPI, then re-run publish:
-   - Re-push the same tag (delete remote tag first if needed), **or**
-   - GitHub Actions → **Python Package** → re-run failed `publish` job on tag `v*`
+   - GitHub Actions → **PyPI republish (maintainer)** → `workflow_dispatch` with tag `v0.2.2`, **or**
+   - Re-run failed `publish` job on tag `v*` in **Python package**, **or**
+   - Re-push the same tag (delete remote tag first if needed)
 
 ## Verify after publish
 

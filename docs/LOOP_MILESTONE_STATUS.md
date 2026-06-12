@@ -22,6 +22,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M14 | E8 GPU lab smoke + e8-gpu-lab workflow | done |
 | M15 | Lab smoke hub + MLIR native build guide | done |
 | M16 | Lab status wired into walkthrough + dashboard | done |
+| M17 | Lab gates + PyPI republish workflow | done |
 
 ## Recent loops (R6–R13)
 
@@ -48,6 +49,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R24 | E8 GPU lab smoke + e8-gpu-lab workflow |
 | R25 | Lab smoke hub + native build prerequisites |
 | R26 | Lab status in evidence dashboard + walkthrough |
+| R27 | verify_lab_gates + pypi-republish workflow |
 
 ## Reviewer commands
 

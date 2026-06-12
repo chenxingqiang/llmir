@@ -28,6 +28,13 @@ def test_mlir_lit_lab_workflow_exists():
     assert "workflow_dispatch" in text
 
 
+def test_pypi_republish_workflow_exists():
+    path = ROOT / ".github/workflows/pypi-republish.yml"
+    text = path.read_text(encoding="utf-8")
+    assert "workflow_dispatch" in text
+    assert "pypa/gh-action-pypi-publish" in text
+
+
 def test_release_tag_workflow_exists():
     path = ROOT / ".github/workflows/release-tag.yml"
     text = path.read_text(encoding="utf-8")

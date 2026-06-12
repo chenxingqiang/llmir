@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Lab gates**: `verify_lab_gates.py` integrated into walkthrough/prepare_release checks.
+- **PyPI republish workflow**: `pypi-republish.yml` for maintainer retry after trusted publisher setup.
 - **Lab evidence wiring**: `lab_status_summary` module in walkthrough + evidence dashboard; CI uploads lab JSON.
 - **Lab smoke hub**: `lab_smoke_all.sh`, `lab_status_summary.py`, `check_native_build_prereqs.sh`, `docs/MLIR_NATIVE_BUILD.md`.
 - **E8 GPU lab smoke**: `e8_lab_smoke.sh` + `e8-gpu-lab.yml` (`require_completed` for strict CUDA lab).

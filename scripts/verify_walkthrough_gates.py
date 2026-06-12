@@ -15,6 +15,7 @@ from llmir.benchmark.walkthrough_summary import build_walkthrough_summary  # noq
 
 SUMMARY = ROOT / "IEEE-conference/benchmarks/walkthrough_summary.json"
 DASHBOARD = ROOT / "docs/EVIDENCE_DASHBOARD.md"
+LAB_GATES = ROOT / "scripts/verify_lab_gates.py"
 
 
 def main() -> int:
@@ -60,6 +61,23 @@ def main() -> int:
             errors.append(f"generate_evidence_dashboard failed: {proc.stderr}")
         elif "M6 artifact bundle" not in DASHBOARD.read_text(encoding="utf-8"):
             errors.append("EVIDENCE_DASHBOARD.md missing M6 section")
+        elif "Lab snapshot" not in DASHBOARD.read_text(encoding="utf-8"):
+            errors.append("EVIDENCE_DASHBOARD.md missing Lab snapshot section")
+
+    if LAB_GATES.is_file():
+        proc = subprocess.run(
+            [sys.executable, str(LAB_GATES)],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            errors.append(f"verify_lab_gates failed: {proc.stderr or proc.stdout}")
+        else:
+            for line in (proc.stdout or "").splitlines():
+                if line.startswith("NOTE:"):
+                    print(line, file=sys.stderr)
 
     if errors:
         for err in errors:
