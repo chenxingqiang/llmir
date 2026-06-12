@@ -315,6 +315,7 @@ pytest tests/ -m "not network" -q
 - **Loop R30（CI lab gates step）**：`a-class-walkthrough.yml` 显式 `verify_lab_gates`；`release-prep.yml` 上传 lab JSON。验证：`pytest tests/test_walkthrough_a_class.py tests/test_ci_workflows.py -q`。
 - **Loop R31（CI workflow index）**：`docs/CI_WORKFLOW_INDEX.md` 汇总自动/手动 workflow。验证：`pytest tests/test_ci_workflow_index.py -q`。
 - **Loop R32（Paper traceability lab）**：`PAPER_REVISION_TRACEABILITY.md` 对齐 lab_smoke / release 命令。验证：`pytest tests/test_paper_traceability_lab.py -q`。
+- **Loop R33（Native runtime prereqs CI）**：`native-runtime.yml` 前置 `check_native_build_prereqs.sh`、上传报告、`workflow_dispatch` + `strict_prereqs`。验证：`pytest tests/test_ci_workflows.py tests/test_ci_workflow_index.py -q`。
 - **下一轮感知建议**：PyPI republish；LLVM lit 全绿；CUDA E8 strict lab。
 
 ---

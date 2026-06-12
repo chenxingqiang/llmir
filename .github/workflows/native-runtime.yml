@@ -5,20 +5,46 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      strict_prereqs:
+        description: Exit 1 when llvm/toolchain prereqs are missing
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   native-runtime:
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check native build prerequisites
+        id: prereqs
+        run: |
+          chmod +x scripts/check_native_build_prereqs.sh
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.strict_prereqs }}" == "true" ]]; then
+            scripts/check_native_build_prereqs.sh --strict | tee native_prereqs_report.txt
+          else
+            scripts/check_native_build_prereqs.sh | tee native_prereqs_report.txt
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-prereqs-report
+          path: native_prereqs_report.txt
+          if-no-files-found: ignore
+
       - name: Install build deps
+        if: steps.prereqs.outcome == 'success'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends cmake ninja-build clang lld
 
       - name: Attempt MLIRLLMRuntime build
+        if: steps.prereqs.outcome == 'success'
         env:
           LLMIR_ENABLE_CUDA: auto
         run: |
@@ -36,7 +62,7 @@ jobs:
   python-with-native:
     runs-on: ubuntu-latest
     needs: native-runtime
-    continue-on-error: true
+    continue-on-error: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
 

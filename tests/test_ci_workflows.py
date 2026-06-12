@@ -50,6 +50,15 @@ def test_release_tag_workflow_exists():
     assert "workflow_dispatch" in text
 
 
+def test_native_runtime_workflow_exists():
+    path = ROOT / ".github/workflows/native-runtime.yml"
+    text = path.read_text(encoding="utf-8")
+    assert "check_native_build_prereqs.sh" in text
+    assert "workflow_dispatch" in text
+    assert "strict_prereqs" in text
+    assert "native_prereqs_report.txt" in text
+
+
 def test_e8_workflow_and_lab_script_exist():
     wf = ROOT / ".github/workflows/e8-empirical-gpu.yml"
     lab_wf = ROOT / ".github/workflows/e8-gpu-lab.yml"
