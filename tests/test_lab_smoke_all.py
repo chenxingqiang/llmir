@@ -31,7 +31,16 @@ def test_check_native_build_prereqs_runs():
     assert "Native / MLIR build prerequisites" in proc.stdout
 
 
-def test_lab_status_summary_writes_json(tmp_path):
+def test_lab_status_summary_module():
+    from llmir.benchmark.lab_status_summary import build_lab_status_summary
+
+    data = build_lab_status_summary(ROOT)
+    assert data["mode"] == "lab_status_summary"
+    assert data["package_version"] == "0.2.2"
+    assert data["mlir_lit_status"] in ("skipped", "passed", "failed", "missing")
+
+
+def test_lab_status_summary_script_writes_json(tmp_path):
     out = tmp_path / "lab_status_summary.json"
     proc = subprocess.run(
         [sys.executable, str(ROOT / "scripts/lab_status_summary.py"), "--json-out", str(out)],
@@ -43,5 +52,3 @@ def test_lab_status_summary_writes_json(tmp_path):
     assert proc.returncode == 0
     data = json.loads(out.read_text(encoding="utf-8"))
     assert data["mode"] == "lab_status_summary"
-    assert data["package_version"] == "0.2.2"
-    assert data["mlir_lit_status"] in ("skipped", "passed", "failed", "missing")

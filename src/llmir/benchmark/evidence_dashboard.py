@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from llmir.benchmark.artifact_bundle import verify_artifact_bundle
+from llmir.benchmark.lab_status_summary import build_lab_status_summary
 from llmir.benchmark.pypi_release_status import read_local_version
 from llmir.benchmark.walkthrough_summary import build_walkthrough_summary
 
@@ -13,6 +14,7 @@ from llmir.benchmark.walkthrough_summary import build_walkthrough_summary
 def build_evidence_dashboard_markdown(root: Optional[Path] = None) -> str:
     root = Path(__file__).resolve().parents[3] if root is None else root
     summary = build_walkthrough_summary(root)
+    lab = build_lab_status_summary(root)
     m6 = verify_artifact_bundle(root, check_figures=False)
     local_version = read_local_version(root)
     pypi_status = summary.get("pypi_release_status", "unknown")
@@ -52,6 +54,17 @@ def build_evidence_dashboard_markdown(root: Optional[Path] = None) -> str:
         f"| M6 artifact bundle | **{m6_icon}** ({summary['artifact_count']} entries) |",
         f"| E8 empirical GPU | `{summary['e8_status']}` ({e8_note}) |",
         f"| MLIR lit suite | `{summary['mlir_lit_suite_status']}` ({lit_note}) |",
+        f"| Native build prereqs | `{'ok' if lab['native_build_prereqs_ok'] else 'missing llvm'}` |",
+        "",
+        "## Lab snapshot (optional)",
+        "",
+        "| Check | Status |",
+        "|-------|--------|",
+        f"| mlir lit | `{lab['mlir_lit_status']}` |",
+        f"| E8 GPU | `{lab['e8_status']}` |",
+        f"| PyPI publish | `{lab['pypi_release_status']}` |",
+        "",
+        "Regenerate: `bash scripts/lab_smoke_all.sh`",
         "",
         "## Artifact rows",
         "",
@@ -70,6 +83,7 @@ def build_evidence_dashboard_markdown(root: Optional[Path] = None) -> str:
             "```bash",
             summary["walkthrough_command"],
             "python3 scripts/walkthrough_summary.py",
+            "bash scripts/lab_smoke_all.sh",
             summary["reproduce_command"],
             "```",
             "",

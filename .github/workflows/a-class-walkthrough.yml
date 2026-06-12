@@ -43,5 +43,6 @@ jobs:
             IEEE-conference/benchmarks/mlir_lit_suite_status.json
             IEEE-conference/benchmarks/e8_empirical_gpu.json
             IEEE-conference/benchmarks/pypi_release_status.json
+            IEEE-conference/benchmarks/lab_status_summary.json
             docs/EVIDENCE_DASHBOARD.md
           if-no-files-found: warn

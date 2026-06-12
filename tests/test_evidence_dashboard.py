@@ -20,6 +20,8 @@ def test_dashboard_contains_core_sections():
     assert "python-package.yml/badge.svg" in md
     assert "Package (local)" in md
     assert "PyPI latest" in md
+    assert "Lab snapshot" in md
+    assert "lab_smoke_all.sh" in md
 
 
 def test_generate_script_writes_file():
