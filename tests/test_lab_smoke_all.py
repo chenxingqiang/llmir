@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_lab_scripts_exist():
     for name in (
         "lab_smoke_all.sh",
+        "mlir_lit_preflight.sh",
+        "e8_lab_preflight.sh",
         "check_native_build_prereqs.sh",
         "lab_status_summary.py",
     ):

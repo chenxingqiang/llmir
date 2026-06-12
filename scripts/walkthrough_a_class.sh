@@ -44,6 +44,9 @@ python3 scripts/lab_status_summary.py
 python3 scripts/walkthrough_summary.py
 python3 scripts/generate_evidence_dashboard.py
 
+python3 scripts/verify_lab_gates.py
+python3 scripts/verify_walkthrough_gates.py
+
 echo ""
 echo "Walkthrough complete."
 echo "  Summary: IEEE-conference/benchmarks/walkthrough_summary.json"

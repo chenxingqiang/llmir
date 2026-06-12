@@ -7,6 +7,11 @@ export PATH="${HOME}/.local/bin:${PATH}"
 echo "LLMIR lab smoke (all optional B-class / lab checks)"
 echo ""
 
+echo "=== Lab preflights (non-strict) ==="
+bash scripts/mlir_lit_preflight.sh
+bash scripts/e8_lab_preflight.sh
+
+echo ""
 echo "=== MLIR lit ==="
 bash scripts/mlir_lit_smoke.sh
 
@@ -24,6 +29,10 @@ bash scripts/check_native_build_prereqs.sh || true
 
 echo ""
 python3 scripts/lab_status_summary.py
+
+echo ""
+echo "=== Lab gates ==="
+python3 scripts/verify_lab_gates.py
 
 echo ""
 echo "Lab smoke all complete."

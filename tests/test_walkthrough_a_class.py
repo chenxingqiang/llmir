@@ -23,6 +23,8 @@ def test_walkthrough_script_lists_core_steps():
         "e8_lab_smoke.sh",
         "verify_pypi_release.py",
         "lab_status_summary.py",
+        "verify_lab_gates.py",
+        "verify_walkthrough_gates.py",
     ):
         assert needle in text
     assert text.count("step ") >= 9
