@@ -26,8 +26,15 @@ Or GitHub Actions → **Release prep** → `workflow_dispatch`.
 6. Verify on PyPI:
    ```bash
    python3 scripts/verify_pypi_release.py
+   python3 scripts/verify_pypi_release.py --require-published   # strict after republish
    ```
    Or: https://pypi.org/project/llmir/
+
+7. If publish failed with `invalid-publisher`, configure trusted publisher then:
+   ```bash
+   bash scripts/pypi_republish_preflight.sh v0.2.2
+   ```
+   GitHub Actions → **PyPI republish (maintainer)** → tag `v0.2.2`.
 
 ## Evidence bar (A-class)
 

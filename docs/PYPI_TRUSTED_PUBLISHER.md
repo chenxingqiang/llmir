@@ -19,7 +19,8 @@ configured for this repository.
    - **Workflow**: `python-package.yml` (and optionally `pypi-republish.yml`)
    - **Environment**: `pypi` (matches workflow `environment: name: pypi`)
 3. Merge/save on PyPI, then re-run publish:
-   - GitHub Actions → **PyPI republish (maintainer)** → `workflow_dispatch` with tag `v0.2.2`, **or**
+   - GitHub Actions → **PyPI republish (maintainer)** → `workflow_dispatch` with tag `v0.2.2`
+     (runs `pypi_republish_preflight.sh`, publish, then `verify_pypi_release.py --require-published`), **or**
    - Re-run failed `publish` job on tag `v*` in **Python package**, **or**
    - Re-push the same tag (delete remote tag first if needed)
 

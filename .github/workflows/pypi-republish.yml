@@ -24,6 +24,11 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag }}
 
+      - name: Republish preflight
+        run: |
+          chmod +x scripts/pypi_republish_preflight.sh
+          bash scripts/pypi_republish_preflight.sh "${{ github.event.inputs.tag }}"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -43,3 +48,14 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+
+      - name: Verify PyPI publish
+        run: |
+          python3 scripts/verify_pypi_release.py --require-published --retries 6 --retry-delay 15
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pypi-release-status
+          path: IEEE-conference/benchmarks/pypi_release_status.json
+          if-no-files-found: warn
