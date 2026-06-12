@@ -20,23 +20,10 @@ print('cuda_stack:', stack)
 if not stack.get('torch_cuda'):
     raise SystemExit(
         'No CUDA available. E8 will write status=skipped (honest). '
-        'Run on a GPU lab machine or workflow_dispatch e8-empirical-gpu.yml.'
+        'Run on a GPU lab machine or workflow_dispatch e8-gpu-lab.yml with CUDA runner.'
     )
 "
 
 pytest tests/test_e8_empirical_gpu.py -q
 python3 scripts/e8_empirical_gpu_bench.py --model "$MODEL" --backends "$BACKENDS" -o "$OUT"
-
-python3 -c "
-import json
-from pathlib import Path
-d = json.loads(Path('$OUT').read_text())
-status = d.get('status')
-rows = len(d.get('results', []))
-print(f'E8 status={status} rows={rows}')
-if status != 'completed':
-    raise SystemExit('Expected status=completed on GPU lab; got ' + str(status))
-if rows < 1:
-    raise SystemExit('E8 completed but no result rows')
-print('E8 lab run OK')
-"
+python3 scripts/verify_e8_lab.py --require-completed

@@ -318,7 +318,8 @@ pytest tests/ -m "not network" -q
 - **Loop R33（Native runtime prereqs CI）**：`native-runtime.yml` 前置 `check_native_build_prereqs.sh`、上传报告、`workflow_dispatch` + `strict_prereqs`。验证：`pytest tests/test_ci_workflows.py tests/test_ci_workflow_index.py -q`。
 - **Loop R34（PyPI republish gates）**：`pypi_republish_preflight.sh` + `verify_pypi_release.py --require-published` + republish workflow 闭环。验证：`pytest tests/test_pypi_release_status.py tests/test_ci_workflows.py -q`。
 - **Loop R35（MLIR lit lab gates）**：`mlir_lit_preflight.sh` + `verify_mlir_lit_suite.py --require-passed` + `mlir-lit-lab.yml` strict 模式。验证：`pytest tests/test_mlir_lit_suite.py tests/test_ci_workflows.py -q`。
-- **下一轮感知建议**：LLVM 实验机跑 lit strict lab；CUDA E8 `require_completed=true`；PyPI trusted publisher republish。
+- **Loop R36（E8 GPU lab gates）**：`e8_lab_preflight.sh` + `verify_e8_lab.py --require-completed` + `e8-gpu-lab.yml` preflight/verify。验证：`pytest tests/test_e8_lab_smoke.py tests/test_ci_workflows.py -q`。
+- **下一轮感知建议**：LLVM 实验机 lit strict；CUDA runner E8 strict；PyPI trusted publisher republish。
 
 ---
 

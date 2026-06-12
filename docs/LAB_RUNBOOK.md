@@ -28,6 +28,7 @@ cat IEEE-conference/benchmarks/lab_status_summary.json
 | **Smoke** | `mlir_lit_smoke.sh` | `e8_lab_smoke.sh` | No (exit 0) |
 | **Strict** | opt on PATH + `passed` | `e8_lab_run.sh` | Yes on failure |
 | **MLIR strict** | `mlir_lit_preflight.sh --strict` + `require_passed` | MLIR lit lab | Yes on failure |
+| **E8 strict** | `e8_lab_preflight.sh --strict` + `require_completed` | E8 GPU lab | Yes on failure |
 
 E8 GPU lab workflow: set `require_completed=true` on a CUDA runner.
 

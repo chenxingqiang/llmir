@@ -31,6 +31,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M23 | Native runtime CI prereq check + dispatch | done |
 | M24 | PyPI republish preflight + post-publish verify | done |
 | M25 | MLIR lit lab preflight + require_passed gates | done |
+| M26 | E8 GPU lab preflight + require_completed gates | done |
 
 ## Recent loops (R6–R13)
 
@@ -66,6 +67,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R33 | Native runtime prereqs + workflow_dispatch |
 | R34 | PyPI republish preflight + verify gates |
 | R35 | MLIR lit lab preflight + require_passed |
+| R36 | E8 GPU lab preflight + require_completed |
 
 ## Reviewer commands
 

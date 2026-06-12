@@ -36,6 +36,18 @@ jobs:
           pip install -e ".[full]"
           pip install pytest
 
+      - name: E8 lab preflight
+        env:
+          E8_MODEL: ${{ github.event.inputs.model }}
+          E8_BACKENDS: ${{ github.event.inputs.backends }}
+        run: |
+          chmod +x scripts/e8_lab_preflight.sh
+          ARGS=()
+          if [[ "${{ inputs.require_completed }}" == "true" ]]; then
+            ARGS+=(--strict)
+          fi
+          bash scripts/e8_lab_preflight.sh "${ARGS[@]}"
+
       - name: E8 lab smoke (honest skip on CPU)
         if: inputs.require_completed == false
         env:
@@ -49,6 +61,15 @@ jobs:
           E8_MODEL: ${{ github.event.inputs.model }}
           E8_BACKENDS: ${{ github.event.inputs.backends }}
         run: bash scripts/e8_lab_run.sh
+
+      - name: Verify E8 lab output
+        if: always()
+        run: |
+          if [[ "${{ inputs.require_completed }}" == "true" ]]; then
+            python3 scripts/verify_e8_lab.py --require-completed
+          else
+            python3 scripts/verify_e8_lab.py
+          fi
 
       - name: Upload E8 JSON
         if: always()
