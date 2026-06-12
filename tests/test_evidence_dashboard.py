@@ -17,6 +17,9 @@ def test_dashboard_contains_core_sections():
     assert "M6 artifact bundle" in md
     assert "`e6_backend_parity`" in md
     assert "a-class-walkthrough.yml/badge.svg" in md
+    assert "python-package.yml/badge.svg" in md
+    assert "Package (local)" in md
+    assert "PyPI latest" in md
 
 
 def test_generate_script_writes_file():

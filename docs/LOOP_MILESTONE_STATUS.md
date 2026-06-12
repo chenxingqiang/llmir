@@ -17,6 +17,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M9 | PyPI release prep (`prepare_release.sh`) | done |
 | M10 | Release 0.2.1 version bump + MLIR lit runbook | done |
 | M11 | Release tag automation (`tag_release.sh` + workflow) | done |
+| M12 | PyPI release verify + trusted publisher runbook | done |
 
 ## Recent loops (R6–R13)
 
@@ -38,6 +39,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R19 | Release 0.2.1 + MLIR lit runbook (`build_mlir_opt.sh`) |
 | R20 | Release tag automation + PyPI trigger workflow |
 | R21 | CI release fixes (tomli, mypy) + 0.2.2 bump |
+| R22 | PyPI verify JSON + trusted publisher docs |
 
 ## Reviewer commands
 
