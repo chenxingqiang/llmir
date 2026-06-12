@@ -27,10 +27,11 @@ cat IEEE-conference/benchmarks/lab_status_summary.json
 |------|----------|--------|--------------|
 | **Smoke** | `mlir_lit_smoke.sh` | `e8_lab_smoke.sh` | No (exit 0) |
 | **Strict** | opt on PATH + `passed` | `e8_lab_run.sh` | Yes on failure |
+| **MLIR strict** | `mlir_lit_preflight.sh --strict` + `require_passed` | MLIR lit lab | Yes on failure |
 
 E8 GPU lab workflow: set `require_completed=true` on a CUDA runner.
 
-MLIR lit lab workflow: pass `mlir_opt_executable` from `build_mlir_opt.sh`.
+MLIR lit lab workflow: pass `mlir_opt_executable` from `build_mlir_opt.sh`; set `require_passed=true` for 4/4 green.
 
 ## Gates in A-class CI
 

@@ -25,6 +25,11 @@ def main() -> int:
         type=Path,
         default=ROOT / "IEEE-conference/benchmarks/mlir_lit_suite_status.json",
     )
+    parser.add_argument(
+        "--require-passed",
+        action="store_true",
+        help="Exit 1 unless lit suite status is passed (4/4 green)",
+    )
     args = parser.parse_args()
 
     summary = run_lit_suite(default_lit_dir(ROOT))
@@ -42,6 +47,12 @@ def main() -> int:
     print(f"Wrote {args.json_out}")
 
     if summary["status"] == "failed":
+        return 1
+    if args.require_passed and summary["status"] != "passed":
+        print(
+            f"ERROR: MLIR lit suite status={summary['status']!r}; expected passed",
+            file=sys.stderr,
+        )
         return 1
     return 0
 

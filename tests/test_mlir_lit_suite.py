@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -85,9 +86,45 @@ def test_mlir_lit_smoke_exits_zero_when_skipped():
 def test_mlir_lit_lab_scripts_and_runbook_exist():
     assert (ROOT / "scripts/mlir_lit_smoke.sh").is_file()
     assert (ROOT / "scripts/build_mlir_opt.sh").is_file()
+    assert (ROOT / "scripts/mlir_lit_preflight.sh").is_file()
     runbook = (ROOT / "docs/MLIR_LIT_RUNBOOK.md").read_text(encoding="utf-8")
     assert "build_mlir_opt.sh" in runbook
+    assert "mlir_lit_preflight.sh" in runbook
     assert "decoder_workload_buckets.mlir" in runbook
+
+
+def test_mlir_lit_preflight_runs_without_opt():
+    import subprocess
+
+    proc = subprocess.run(
+        ["bash", str(ROOT / "scripts/mlir_lit_preflight.sh")],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**__import__("os").environ, "LLMIR_OPT_EXECUTABLE": "", "MLIR_OPT_EXECUTABLE": ""},
+    )
+    if find_mlir_opt():
+        pytest.skip("mlir-opt present; skip no-opt preflight test")
+    assert proc.returncode == 0
+    assert "Preflight OK" in proc.stdout
+
+
+def test_verify_mlir_lit_require_passed_fails_when_skipped(tmp_path):
+    import importlib.util
+
+    script = ROOT / "scripts/verify_mlir_lit_suite.py"
+    spec = importlib.util.spec_from_file_location("verify_mlir_lit_suite", script)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    out = tmp_path / "status.json"
+    with patch("sys.argv", ["verify", "--require-passed", "--json-out", str(out)]):
+        if find_mlir_opt():
+            pytest.skip("mlir-opt present")
+        code = module.main()
+    assert code == 1
 
 
 def test_lit_status_json_roundtrip(tmp_path):
