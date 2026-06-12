@@ -23,6 +23,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M15 | Lab smoke hub + MLIR native build guide | done |
 | M16 | Lab status wired into walkthrough + dashboard | done |
 | M17 | Lab gates + PyPI republish workflow | done |
+| M18 | Lab smoke CI + LAB_RUNBOOK hub | done |
 
 ## Recent loops (R6–R13)
 
@@ -50,6 +51,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R25 | Lab smoke hub + native build prerequisites |
 | R26 | Lab status in evidence dashboard + walkthrough |
 | R27 | verify_lab_gates + pypi-republish workflow |
+| R28 | lab-smoke.yml + LAB_RUNBOOK hub |
 
 ## Reviewer commands
 

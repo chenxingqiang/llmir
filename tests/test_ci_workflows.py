@@ -28,6 +28,13 @@ def test_mlir_lit_lab_workflow_exists():
     assert "workflow_dispatch" in text
 
 
+def test_lab_smoke_workflow_exists():
+    path = ROOT / ".github/workflows/lab-smoke.yml"
+    text = path.read_text(encoding="utf-8")
+    assert "lab_smoke_all.sh" in text
+    assert "verify_lab_gates.py" in text
+
+
 def test_pypi_republish_workflow_exists():
     path = ROOT / ".github/workflows/pypi-republish.yml"
     text = path.read_text(encoding="utf-8")
