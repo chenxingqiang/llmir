@@ -78,18 +78,28 @@ python3 scripts/verify_artifact_bundle.py
 pytest tests/test_artifact_bundle.py -q
 
 # E8 optional GPU bench (skips without CUDA)
-pytest tests/test_e8_empirical_gpu.py -q
-python3 scripts/e8_empirical_gpu_bench.py
+bash scripts/e8_lab_smoke.sh
+
+# Lab rollup (mlir + E8 + PyPI + native prereqs)
+bash scripts/lab_smoke_all.sh
+python3 scripts/verify_lab_gates.py
+cat IEEE-conference/benchmarks/lab_status_summary.json
 
 # Fast reviewer walkthrough (verify committed artifacts, ~5 min CPU)
 bash scripts/walkthrough_a_class.sh
 
 # CI: .github/workflows/a-class-walkthrough.yml (same script on ubuntu-latest)
+# Lab CI: .github/workflows/lab-smoke.yml (workflow_dispatch)
 
-# E8 GPU lab (B-class, optional)
-bash scripts/e8_lab_run.sh   # requires CUDA for status=completed
+# E8 GPU strict lab (B-class, requires CUDA)
+bash scripts/e8_lab_run.sh   # status=completed on GPU lab
 
-# Full A-class reproduce (E1–E6 + M5 + figures + verify)
+# PyPI / release (maintainer)
+bash scripts/prepare_release.sh
+bash scripts/tag_release.sh --dry-run
+# See docs/PYPI_TRUSTED_PUBLISHER.md, docs/CI_WORKFLOW_INDEX.md
+
+# Full A-class reproduce (E1–E6 + M5 + figures + lab tail)
 bash scripts/reproduce_paper.sh
 
 # Full path when llmir-opt is on PATH
@@ -97,12 +107,8 @@ llmir-compile --mvp-a-e2e --run-opt --run-reference --compare-torch \
   --seq-len 8 --mvp-json /tmp/mvp_a.json -o /tmp/mvp_a.mlir
 
 # MLIR lit suite (optional mlir-opt)
-pytest tests/test_mlir_lit_suite.py -q
-python3 scripts/verify_mlir_lit_suite.py
-
-# Single-file lit (LLVM/MLIR build tree)
-mlir-opt test/Dialect/LLM/mvp_single_layer_pipeline.mlir -llm-optimize-kv-cache
-mlir-opt test/Dialect/LLM/decoder_workload_buckets.mlir -llm-optimize-kv-cache -split-input-file
+bash scripts/mlir_lit_smoke.sh
+# Build: bash scripts/build_mlir_opt.sh (see docs/MLIR_NATIVE_BUILD.md)
 ```
 
 ## Paper figures (Nature style)
