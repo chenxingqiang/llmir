@@ -305,7 +305,8 @@ pytest tests/ -m "not network" -q
 - **Loop R20（Release tag automation）**：`tag_release.sh`（dry-run / --push）+ `release-tag.yml` workflow_dispatch。验证：`bash scripts/tag_release.sh --dry-run`；`pytest tests/test_tag_release.py -q`。
 - **Loop R21（CI release fixes + 0.2.2）**：`pyproject_tools.py`（tomli 3.9/3.10）；tag dry-run 已存在 tag 时通过；mypy 修复；bump `0.2.2`。验证：`pytest -q`；`mypy src/llmir/benchmark src/llmir/compiler`；`bash scripts/tag_release.sh --dry-run`。
 - **Loop R22（PyPI verify + trusted publisher docs）**：`v0.2.2` CI 绿但 publish 因 `invalid-publisher` 失败；`verify_pypi_release.py` + dashboard PyPI 行 + `PYPI_TRUSTED_PUBLISHER.md`。验证：`pytest tests/test_pypi_release_status.py -q`；`python3 scripts/verify_pypi_release.py --offline`。
-- **下一轮感知建议**：维护者配置 PyPI trusted publisher 后重跑 publish；GPU lab E8；mlir lit 四文件全绿。
+- **Loop R23（Walkthrough + mlir-lit lab CI）**：walkthrough 串联 PyPI verify；`mlir_lit_smoke.sh` skip 时 exit 0；`mlir-lit-lab.yml` workflow_dispatch。验证：`bash scripts/walkthrough_a_class.sh`；`pytest tests/test_mlir_lit_suite.py -q`。
+- **下一轮感知建议**：PyPI trusted publisher；GPU E8 lab；lab 上 mlir-opt 四文件 lit 全绿。
 
 ---
 

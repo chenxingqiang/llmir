@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Walkthrough closure**: PyPI verify step in `walkthrough_a_class.sh`; walkthrough gates log pending PyPI.
+- **MLIR lit lab CI**: `mlir-lit-lab.yml` workflow_dispatch; `mlir_lit_smoke.sh` exits 0 when skipped.
+
+### Added (R22)
+
 - **PyPI release verify**: `verify_pypi_release.py`, `pypi_release_status.json`, dashboard row; `docs/PYPI_TRUSTED_PUBLISHER.md` for OIDC publisher setup.
 
 ## [0.2.2] - 2026-06-12
