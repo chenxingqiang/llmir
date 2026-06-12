@@ -19,6 +19,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | M11 | Release tag automation (`tag_release.sh` + workflow) | done |
 | M12 | PyPI release verify + trusted publisher runbook | done |
 | M13 | Walkthrough PyPI step + mlir-lit-lab workflow | done |
+| M14 | E8 GPU lab smoke + e8-gpu-lab workflow | done |
 
 ## Recent loops (R6–R13)
 
@@ -42,6 +43,7 @@ Engineering milestones **M1–M8** and recent **Loop** iterations. Update after 
 | R21 | CI release fixes (tomli, mypy) + 0.2.2 bump |
 | R22 | PyPI verify JSON + trusted publisher docs |
 | R23 | Walkthrough PyPI + mlir-lit-lab CI workflow |
+| R24 | E8 GPU lab smoke + e8-gpu-lab workflow |
 
 ## Reviewer commands
 

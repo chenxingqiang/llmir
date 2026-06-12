@@ -8,7 +8,16 @@ Run **E8** on a machine with CUDA to produce `status=completed` in `e8_empirical
 - `pip install -e ".[full]"` (transformers, torch with CUDA)
 - Optional: vLLM if comparing `vllm` backend
 
-## One-shot lab script
+## Smoke (CPU or GPU — honest skip)
+
+```bash
+bash scripts/e8_lab_smoke.sh
+```
+
+Writes `e8_empirical_gpu.json` with `status=skipped` (no CUDA) or `completed` (GPU).
+Exit 0 for both; used by A-class walkthrough and CPU CI.
+
+## Strict lab (GPU required)
 
 ```bash
 export E8_MODEL=gpt2
@@ -16,7 +25,7 @@ export E8_BACKENDS=hf,llmir-paged
 bash scripts/e8_lab_run.sh
 ```
 
-On success: `e8_empirical_gpu.json` has `status=completed` and non-empty `results`.
+On success: `status=completed` and non-empty `results`. Fails if CUDA absent.
 
 ## Manual steps
 
@@ -29,9 +38,12 @@ python3 scripts/verify_artifact_bundle.py --skip-figures
 ## GitHub Actions (optional)
 
 - **CPU walkthrough:** `.github/workflows/a-class-walkthrough.yml` (auto on PR/main)
-- **E8 dispatch:** Actions → *E8 empirical GPU* → `workflow_dispatch`
+- **E8 GPU lab:** Actions → *E8 GPU lab (optional)* → `workflow_dispatch`
+  - Default: smoke mode (`require_completed=false`) — honest skip on `ubuntu-latest`
+  - GPU self-hosted: set `require_completed=true` on a CUDA runner
+- Legacy: `e8-empirical-gpu.yml` (same smoke path)
 
-Upload artifact `e8-empirical-gpu.json` after GPU runner completes.
+Upload artifact `e8-empirical-gpu.json` after the workflow completes.
 
 ## Paper wording
 

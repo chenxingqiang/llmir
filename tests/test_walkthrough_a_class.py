@@ -20,7 +20,7 @@ def test_walkthrough_script_lists_core_steps():
         "test_mvp_a_e2e",
         "test_e4_e5_multi_bucket",
         "verify_artifact_bundle",
-        "test_e8_empirical_gpu",
+        "e8_lab_smoke.sh",
     ):
         assert needle in text
 

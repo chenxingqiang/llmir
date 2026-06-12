@@ -35,8 +35,7 @@ step "7/9 — PyPI release alignment (optional network)"
 python3 scripts/verify_pypi_release.py || true
 
 step "8/9 — Optional E8 empirical GPU (B-class)"
-pytest tests/test_e8_empirical_gpu.py -q
-python3 scripts/e8_empirical_gpu_bench.py || true
+bash scripts/e8_lab_smoke.sh
 
 step "9/9 — M6 artifact bundle verify"
 python3 scripts/verify_artifact_bundle.py --skip-figures
