@@ -11,7 +11,7 @@ import numpy as np
 
 FIGURES = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(FIGURES))
-from nature_style import apply_nature_style, panel_label, save_figure  # noqa: E402
+from nature_style import SINGLE_COL_MM, apply_nature_style, figsize_mm, panel_label, save_figure, source_footnote  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 
@@ -45,7 +45,7 @@ DATA = np.array(
 
 def main() -> None:
     apply_nature_style(base_size=7)
-    fig, ax = plt.subplots(figsize=(3.6, 3.2))
+    fig, ax = plt.subplots(figsize=figsize_mm(SINGLE_COL_MM, 78))
 
     # Normalize per model row for colour (shows relative ranking)
     row_max = DATA.max(axis=1, keepdims=True)

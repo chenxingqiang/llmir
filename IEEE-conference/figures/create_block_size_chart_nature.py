@@ -8,7 +8,16 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nature_style import NATURE_COLORS, apply_nature_style, despine, panel_label, save_figure
+from nature_style import (
+    DOUBLE_COL_MM,
+    NATURE_COLORS,
+    apply_nature_style,
+    despine,
+    figsize_mm,
+    panel_label,
+    save_figure,
+    source_footnote,
+)
 
 HERE = Path(__file__).resolve().parent
 
@@ -20,8 +29,8 @@ OPTIMAL_IDX = int(np.argmax(THROUGHPUT))
 
 
 def main() -> None:
-    apply_nature_style(base_size=8)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.2, 2.8))
+    apply_nature_style(base_size=7)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize_mm(DOUBLE_COL_MM, 62))
     width = 28
 
     colors = ["#D9D9D9"] * len(BLOCK_SIZES)
@@ -49,15 +58,12 @@ def main() -> None:
     despine(ax2)
     panel_label(ax2, "b")
 
-    fig.text(
-        0.5,
-        0.02,
-        "ILLUSTRATIVE — KV-append microbench lineage (see benchmark_summary.txt); not A100 LLaMA e2e.",
-        ha="center",
-        fontsize=6.5,
-        color="#666666",
+    source_footnote(
+        fig,
+        "ILLUSTRATIVE — KV-append microbench lineage; not A100 LLaMA e2e.",
+        y=0.02,
     )
-    fig.subplots_adjust(bottom=0.18, wspace=0.38)
+    fig.subplots_adjust(bottom=0.16, wspace=0.42)
 
     save_figure(fig, "block_size_optimization_nature", out_dir=HERE)
     print(f"Wrote {HERE / 'block_size_optimization_nature.pdf'}")

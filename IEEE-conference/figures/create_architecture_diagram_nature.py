@@ -8,14 +8,14 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
-from nature_style import NATURE_COLORS, NATURE_SEQ, apply_nature_style, save_figure
+from nature_style import DOUBLE_COL_MM, NATURE_COLORS, NATURE_SEQ, apply_nature_style, figsize_mm, save_figure
 
 HERE = Path(__file__).resolve().parent
 
 
 def main() -> None:
-    apply_nature_style(base_size=8)
-    fig, ax = plt.subplots(figsize=(7.2, 3.6))
+    apply_nature_style(base_size=7)
+    fig, ax = plt.subplots(figsize=figsize_mm(DOUBLE_COL_MM, 72))
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 4)
     ax.axis("off")

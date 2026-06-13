@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Nature-style paper figures**: mm-based layout (`89`/`183` mm), JSON-backed E1/E2 panels, `plot_from_results.py` theme; regen via `generate_all_nature_figures.py`.
 - **Lab closure hub**: `lab_smoke_all.sh` runs preflights + lab gates; `LAB_CLOSURE_MATRIX.md`; walkthrough local gate parity.
 - **E8 GPU lab gates**: `e8_lab_preflight.sh`, `verify_e8_lab.py --require-completed`, strict closure in `e8-gpu-lab.yml`.
 - **MLIR lit lab gates**: `mlir_lit_preflight.sh`, `verify_mlir_lit_suite.py --require-passed`, strict mode in `mlir-lit-lab.yml`.
