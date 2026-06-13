@@ -2,20 +2,25 @@
 Nature-journal-inspired matplotlib style for LLMIR paper figures.
 
 Guidelines adapted from Nature figure specifications:
+- Single-column width 89 mm; double-column 183 mm (at 300 dpi export)
 - Sans-serif typography (Arial / Helvetica fallback)
 - Colour-blind-friendly palette (ggsci::nature)
 - Minimal chartjunk; despine top/right
-- Panel labels a, b, c in bold
-- Thin axes (~0.8 pt), white background
+- Panel labels a, b, c in bold sans-serif
+- Thin axes (~0.5–0.8 pt), white background, editable PDF fonts
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+MM_PER_INCH = 25.4
+SINGLE_COL_MM = 89.0
+DOUBLE_COL_MM = 183.0
 
 # ggsci Nature palette (colour-blind friendly)
 NATURE_COLORS: Tuple[str, ...] = (
@@ -40,33 +45,51 @@ NATURE_SEQ: Tuple[str, ...] = (
     "#F39B7F",
 )
 
+NATURE_MUTED: Tuple[str, ...] = (
+    "#D9D9D9",
+    "#E8E8E8",
+    "#C8C8C8",
+)
 
-def apply_nature_style(*, base_size: float = 8.0) -> None:
+
+def figsize_mm(width_mm: float, height_mm: float) -> Tuple[float, float]:
+    """Convert Nature layout width/height in millimetres to matplotlib inches."""
+    return (width_mm / MM_PER_INCH, height_mm / MM_PER_INCH)
+
+
+def apply_nature_style(*, base_size: float = 7.0) -> None:
     """Apply global rcParams for Nature-style figures."""
     mpl.rcParams.update(
         {
             "font.family": "sans-serif",
-            "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+            "font.sans-serif": ["Arial", "Helvetica", "Liberation Sans", "DejaVu Sans"],
             "font.size": base_size,
             "axes.labelsize": base_size,
-            "axes.titlesize": base_size + 1,
-            "axes.linewidth": 0.8,
+            "axes.titlesize": base_size,
+            "axes.linewidth": 0.6,
             "axes.edgecolor": "#333333",
             "axes.labelcolor": "#222222",
             "axes.facecolor": "white",
+            "axes.grid": False,
+            "axes.unicode_minus": False,
             "figure.facecolor": "white",
-            "xtick.labelsize": base_size - 1,
-            "ytick.labelsize": base_size - 1,
+            "xtick.labelsize": base_size - 0.5,
+            "ytick.labelsize": base_size - 0.5,
             "xtick.color": "#333333",
             "ytick.color": "#333333",
-            "xtick.major.width": 0.8,
-            "ytick.major.width": 0.8,
-            "xtick.major.size": 3,
-            "ytick.major.size": 3,
-            "legend.fontsize": base_size - 1,
+            "xtick.major.width": 0.6,
+            "ytick.major.width": 0.6,
+            "xtick.major.size": 2.5,
+            "ytick.major.size": 2.5,
+            "xtick.direction": "out",
+            "ytick.direction": "out",
+            "legend.fontsize": base_size - 0.5,
             "legend.frameon": False,
-            "lines.linewidth": 1.2,
+            "legend.handlelength": 1.4,
+            "lines.linewidth": 1.0,
             "lines.markersize": 4,
+            "patch.linewidth": 0.0,
+            "mathtext.fontset": "dejavusans",
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "savefig.dpi": 300,
@@ -86,19 +109,38 @@ def despine(ax: plt.Axes, *, left: bool = True, bottom: bool = True) -> None:
         ax.spines["bottom"].set_visible(False)
 
 
-def panel_label(ax: plt.Axes, label: str, x: float = -0.12, y: float = 1.08) -> None:
-    """Add bold panel label (a, b, c) outside axes."""
+def panel_label(
+    ax: plt.Axes,
+    label: str,
+    *,
+    x: float = -0.14,
+    y: float = 1.12,
+    fontsize: float = 8.0,
+) -> None:
+    """Add bold panel label (a, b, c) outside axes — Nature convention."""
     ax.text(
         x,
         y,
         label,
         transform=ax.transAxes,
-        fontsize=9,
+        fontsize=fontsize,
         fontweight="bold",
         va="top",
         ha="left",
         color="#222222",
     )
+
+
+def source_footnote(
+    fig: plt.Figure,
+    text: str,
+    *,
+    y: float = 0.02,
+    fontsize: float = 6.0,
+    color: str = "#666666",
+) -> None:
+    """Centered data-source or honesty footnote below panels."""
+    fig.text(0.5, y, text, ha="center", fontsize=fontsize, color=color)
 
 
 def save_figure(

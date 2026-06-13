@@ -8,10 +8,14 @@ import json
 import sys
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+FIGURES = ROOT / "IEEE-conference" / "figures"
+sys.path.insert(0, str(FIGURES))
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Generate plots from reproducible benchmark JSON (no hard-coded throughput)."
+        description="Generate Nature-style plots from reproducible benchmark JSON."
     )
     parser.add_argument(
         "--input",
@@ -23,7 +27,7 @@ def main() -> int:
         "--output",
         "-o",
         default="benchmark_plot.png",
-        help="Output image path (requires matplotlib)",
+        help="Output image path (PDF if .pdf extension)",
     )
     args = parser.parse_args()
 
@@ -46,16 +50,28 @@ def main() -> int:
         )
         return 1
 
+    from nature_style import NATURE_COLORS, SINGLE_COL_MM, apply_nature_style, despine, figsize_mm, source_footnote
+
     engines = [r.get("engine", r.get("backend", "?")) for r in rows]
     throughputs = [float(r.get("throughput_tokens_s", r.get("throughput", 0))) for r in rows]
+    colors = [NATURE_COLORS[i % len(NATURE_COLORS)] for i in range(len(engines))]
 
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar(engines, throughputs)
-    ax.set_ylabel("tokens/s")
-    ax.set_title(f"Benchmark: {path.name}")
-    fig.tight_layout()
-    fig.savefig(args.output, dpi=150)
-    print(f"Wrote {args.output}")
+    apply_nature_style(base_size=7)
+    fig, ax = plt.subplots(figsize=figsize_mm(SINGLE_COL_MM, 62))
+    ax.bar(engines, throughputs, color=colors, width=0.55, edgecolor="none")
+    ax.set_ylabel("Throughput (tok s$^{-1}$)")
+    ax.set_title(f"Benchmark: {path.name}", fontsize=7)
+    despine(ax)
+    source_footnote(fig, f"Source: {path.name}", y=0.02)
+    fig.subplots_adjust(bottom=0.14)
+
+    out = Path(args.output)
+    if out.suffix.lower() == ".pdf":
+        fig.savefig(out, facecolor="white", edgecolor="none")
+    else:
+        fig.savefig(out, dpi=300, facecolor="white", edgecolor="none")
+    plt.close(fig)
+    print(f"Wrote {out}")
     return 0
 
 

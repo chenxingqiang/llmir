@@ -8,7 +8,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from nature_style import NATURE_SEQ, apply_nature_style, despine, save_figure
+from nature_style import DOUBLE_COL_MM, NATURE_SEQ, apply_nature_style, despine, figsize_mm, save_figure, source_footnote
 
 HERE = Path(__file__).resolve().parent
 
@@ -23,8 +23,8 @@ SERIES = {
 
 
 def main() -> None:
-    apply_nature_style(base_size=8)
-    fig, ax = plt.subplots(figsize=(3.6, 2.8))
+    apply_nature_style(base_size=7)
+    fig, ax = plt.subplots(figsize=figsize_mm(DOUBLE_COL_MM * 0.5, 62))
 
     for i, (name, values) in enumerate(SERIES.items()):
         ax.plot(
@@ -47,15 +47,12 @@ def main() -> None:
     despine(ax)
     ax.legend(loc="upper left", ncol=1, handlelength=1.5)
 
-    fig.text(
-        0.5,
-        0.01,
+    source_footnote(
+        fig,
         "Future operator work — standalone C++ microbench; not LLMIR lowered kernels.",
-        ha="center",
-        fontsize=6.5,
-        color="#666666",
+        y=0.01,
     )
-    fig.subplots_adjust(bottom=0.16)
+    fig.subplots_adjust(bottom=0.14)
 
     save_figure(fig, "attention_speedup_nature", out_dir=HERE)
     print(f"Wrote {HERE / 'attention_speedup_nature.pdf'}")

@@ -13,7 +13,17 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 BENCH = HERE.parent / "benchmarks"
 sys.path.insert(0, str(HERE))
-from nature_style import NATURE_COLORS, apply_nature_style, despine, panel_label, save_figure
+from nature_style import (
+    DOUBLE_COL_MM,
+    NATURE_COLORS,
+    SINGLE_COL_MM,
+    apply_nature_style,
+    despine,
+    figsize_mm,
+    panel_label,
+    save_figure,
+    source_footnote,
+)
 
 
 def _load() -> dict:
@@ -40,8 +50,8 @@ def fig_gpt2_latency(data: dict) -> None:
     labels = [labels[i] for i, e in enumerate(engines) if e in rows]
     colors = [NATURE_COLORS[3], NATURE_COLORS[0][:7] + "CC"]
 
-    apply_nature_style(base_size=8)
-    fig, ax = plt.subplots(figsize=(3.2, 2.8))
+    apply_nature_style(base_size=7)
+    fig, ax = plt.subplots(figsize=figsize_mm(SINGLE_COL_MM, 62))
     ax.bar(labels, tps, color=colors, width=0.55, edgecolor="none")
     ax.set_ylabel("Throughput (tok s$^{-1}$)")
     notes = data.get("notes", {})
@@ -50,21 +60,14 @@ def fig_gpt2_latency(data: dict) -> None:
         fontsize=8,
     )
     despine(ax)
-    fig.text(
-        0.5,
-        0.01,
-        "Source: scripts/paper_benchmark_collect.py → paper_results.json",
-        ha="center",
-        fontsize=6,
-        color="#666666",
-    )
-    fig.subplots_adjust(bottom=0.18)
+    source_footnote(fig, "Source: scripts/paper_benchmark_collect.py → paper_results.json", y=0.01)
+    fig.subplots_adjust(bottom=0.16)
     save_figure(fig, "gpt2_measured_latency_nature", out_dir=HERE)
 
 
 def fig_prefix_ttft(data: dict, sim2048: dict) -> None:
-    apply_nature_style(base_size=8)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.2, 2.8))
+    apply_nature_style(base_size=7)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize_mm(DOUBLE_COL_MM, 62))
 
     # (a) KV simulation @ 2048 tokens
     if sim2048.get("results"):
@@ -96,15 +99,12 @@ def fig_prefix_ttft(data: dict, sim2048: dict) -> None:
     despine(ax2)
     panel_label(ax2, "b")
 
-    fig.text(
-        0.5,
-        0.02,
+    source_footnote(
+        fig,
         "a: KV simulation (2048-token system prompt). b: gpt2 llmir_paged E2E prefill savings.",
-        ha="center",
-        fontsize=6.5,
-        color="#666666",
+        y=0.02,
     )
-    fig.subplots_adjust(bottom=0.2, wspace=0.38)
+    fig.subplots_adjust(bottom=0.18, wspace=0.42)
     save_figure(fig, "prefix_ttft_nature", out_dir=HERE)
 
 

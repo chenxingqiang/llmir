@@ -11,7 +11,16 @@ import numpy as np
 
 FIGURES = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(FIGURES))
-from nature_style import NATURE_COLORS, apply_nature_style, despine, panel_label, save_figure  # noqa: E402
+from nature_style import (  # noqa: E402
+    DOUBLE_COL_MM,
+    NATURE_COLORS,
+    apply_nature_style,
+    despine,
+    figsize_mm,
+    panel_label,
+    save_figure,
+    source_footnote,
+)
 
 HERE = Path(__file__).resolve().parent
 
@@ -24,8 +33,8 @@ WARM = np.concatenate(
 
 
 def main() -> None:
-    apply_nature_style(base_size=8)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.2, 2.6))
+    apply_nature_style(base_size=7)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize_mm(DOUBLE_COL_MM, 58))
 
     ax1.plot(REQUESTS, COLD, color=NATURE_COLORS[4], linewidth=1.1, label="No warm prefix")
     ax1.plot(REQUESTS, WARM, color=NATURE_COLORS[2], linewidth=1.1, label="After warm_prefix")
@@ -45,15 +54,8 @@ def main() -> None:
     panel_label(ax2, "b")
     ax2.tick_params(axis="x", labelsize=6.5)
 
-    fig.text(
-        0.5,
-        0.02,
-        "E2 harness: shared-prefix decoder / llmir-benchmark --shared-prefix-bench.",
-        ha="center",
-        fontsize=6.5,
-        color="#666666",
-    )
-    fig.subplots_adjust(bottom=0.2, wspace=0.38)
+    source_footnote(fig, "E2 harness: shared-prefix decoder / llmir-benchmark --shared-prefix-bench.", y=0.02)
+    fig.subplots_adjust(bottom=0.16, wspace=0.42)
 
     save_figure(fig, "prefix_cache_nature", out_dir=HERE)
     print(f"Wrote {HERE / 'prefix_cache_nature.pdf'}")
